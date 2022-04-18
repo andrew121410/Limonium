@@ -1,4 +1,3 @@
-use std::io::Read;
 use crate::api::platform;
 
 use async_trait::async_trait;
@@ -8,7 +7,7 @@ pub struct PurpurAPI;
 #[async_trait]
 impl platform::IPlatform for PurpurAPI {
 
-    fn get_download_link(&self, project: &String, version: &String, build: &String) -> String {
+    fn get_download_link(&self, _project: &String, version: &String, build: &String) -> String {
         let mut to_return = String::from("https://api.pl3x.net/v2/purpur/");
         to_return.push_str(&version);
         to_return.push_str("/");
@@ -17,7 +16,7 @@ impl platform::IPlatform for PurpurAPI {
         return to_return;
     }
 
-    fn get_jar_name(&self, project: &String, version: &String, build: &String) -> String {
+    fn get_jar_name(&self, _project: &String, version: &String, build: &String) -> String {
         let mut to_return = String::from("purpur-");
         to_return.push_str(&version);
         to_return.push_str("-");
@@ -26,7 +25,7 @@ impl platform::IPlatform for PurpurAPI {
         return to_return;
     }
 
-    async fn is_error(&self, project: &String, version: &String, build: &String) -> Option<String> {
+    async fn is_error(&self, _project: &String, version: &String, build: &String) -> Option<String> {
         let mut link = String::from("https://api.pl3x.net/v2/purpur/");
         link.push_str(&version);
         link.push_str("/");
@@ -52,7 +51,7 @@ impl platform::IPlatform for PurpurAPI {
         return None
     }
 
-    async fn get_latest_build(&self, project: &String, version: &String) -> Option<String> {
+    async fn get_latest_build(&self, _project: &String, _version: &String) -> Option<String> {
         // Thank you purpur for keeping the latest tag <3
         return Some(String::from("latest"));
     }

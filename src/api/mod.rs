@@ -17,7 +17,7 @@ pub fn get_platform(the_project: &String) -> &dyn IPlatform {
 }
 
 pub async fn download(link: &String, path: &String){
-    let mut response = reqwest::get(link).await.unwrap();
+    let response = reqwest::get(link).await.unwrap();
     let mut file = File::create(&path).unwrap();
     let mut content =  Cursor::new(response.bytes().await.unwrap());
     io::copy(&mut content, &mut file).unwrap();

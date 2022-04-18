@@ -16,7 +16,7 @@ Limonium uses the API's or Jenkins to download the .jars
 
 1. Paper -> `./limonium paper 1.18.2 latest`
 2. Purpur -> `./limonium purpur 1.18.2 latest`
-3. Airplane -> `./limonium airplane 1.18.2 latest`
+3. Pufferfish -> `./limonium pufferfish 1.18.2 latest`
 
 ##### Proxies
 

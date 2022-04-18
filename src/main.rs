@@ -1,27 +1,25 @@
+extern crate core;
+extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
-extern crate serde;
 
-extern crate core;
+use std::{env, process};
+use std::collections::HashMap;
+use std::string::String;
+use std::time::Instant;
+
+use colored::Colorize;
 
 mod api;
-
-use futures::executor::block_on;
-use std::{env, process};
-use std::borrow::Borrow;
-use std::collections::HashMap;
-use tokio::runtime::Runtime;
-use std::string::String;
-use crate::api::download;
 
 #[tokio::main]
 async fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 3 {
-        println!("Bruh are you serious?");
-        process::exit(0x0100);
+        println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Example:").yellow(), format!("./limonium paper 1.18.2 latest").green());
+        process::exit(101);
     }
 
     let project = args[1].to_lowercase();
@@ -31,8 +29,8 @@ async fn main() {
     let other_args = Vec::from_iter(&args[4..args.len()]);
 
     if other_args.len() % 2 != 0 {
-        println!("Something went wrong with otherArgs");
-        process::exit(0x0100);
+        println!("other_args make sure it's divisible by 2!");
+        process::exit(101);
     }
 
     let mut other_args_map = HashMap::new();
@@ -61,6 +59,18 @@ async fn main() {
         path.push_str(platform.get_jar_name(&project, &version, &build).as_str());
     }
 
+    let start = Instant::now();
+
+    // Check for any problems before trying to download the .jar
+    let is_error = platform.is_error(&project, &version, &build).await;
+    if is_error.is_some() {
+        println!("{} {}", format!("Platform is_error returned:").red().bold(), format!("{}", is_error.unwrap()).yellow().bold());
+        process::exit(101);
+    }
+
     api::download(&platform.get_download_link(&project, &version, &build), &path).await;
-    println!("Downloaded {}", &path);
+
+    let duration = start.elapsed().as_millis().to_string();
+
+    println!("{} {} {} {}", format!("Downloaded:").green().bold(), format!("{}", &path.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
 }
