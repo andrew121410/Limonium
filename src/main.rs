@@ -1,4 +1,6 @@
 extern crate core;
+#[macro_use]
+extern crate self_update;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -30,25 +32,32 @@ async fn main() {
 
     let other_args = Vec::from_iter(&args[4..args.len()]);
 
-    if other_args.len() % 2 != 0 {
-        println!("other_args make sure it's divisible by 2!");
-        process::exit(101);
-    }
-
-    let mut other_args_map = HashMap::new();
+    let mut other_args_map: HashMap<String, String> = HashMap::new();
     let mut i = 0;
     while i < other_args.len() {
-        other_args_map.insert(other_args[i], other_args[i + 1]);
-        i += 2;
+        let current = other_args[i];
+
+        match current.to_lowercase().as_str() {
+            "--o" | "--n" => {
+                other_args_map.insert(current.clone(), other_args[i + 1].clone());
+                i += 2;
+                break;
+            }
+            _ => {
+                other_args_map.insert(current.clone(), String::from(""));
+                i += 1;
+                break;
+            }
+        }
     }
 
     let mut path: String = String::from("");
     if other_args_map.contains_key(&String::from("--o")) {
-        path.push_str(other_args_map[&String::from("--o")]);
+        path.push_str(&other_args_map[&String::from("--o")]);
     }
 
     if other_args_map.contains_key(&String::from("--n")) {
-        path.push_str(other_args_map[&String::from("--n")]);
+        path.push_str(&other_args_map[&String::from("--n")]);
     }
 
     // Spigot is special because it's dumb
@@ -88,4 +97,29 @@ async fn main() {
     let duration = start.elapsed().as_millis().to_string();
 
     println!("{} {} {} {}", format!("Downloaded:").green().bold(), format!("{}", &path.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
+
+    if other_args_map.contains_key(&String::from("--self-update")) {
+        tokio::task::spawn_blocking(move || {
+            if let Err(e) = update() {
+                println!("[ERROR] {}", e);
+                ::std::process::exit(1);
+            }
+        }).await.expect("Something went wrong at self update?");
+    }
 }
+
+fn update() -> Result<(), Box<dyn ::std::error::Error>> {
+    let status = self_update::backends::github::Update::configure()
+        .repo_owner("andrew121410")
+        .repo_name("Limonium")
+        .bin_name("limonium")
+        .target("limonium")
+        .no_confirm(true)
+        .current_version(cargo_crate_version!())
+        .show_download_progress(true)
+        .build()?
+        .update()?;
+    println!("Update status: `{}`!", status.version());
+    Ok(())
+}
+

@@ -50,3 +50,7 @@ Extra arguments
 ```
 ./limonium paper 1.17 latest --n Paper.jar --o /mc-servers/hub/
 ```
+
+Other Arguments:
+`--self-update` this will update Limonium if there's a new Limonium version available.\
+*I have a lot of Minecraft Servers so this is helpful for me cause I'm really lazy*
