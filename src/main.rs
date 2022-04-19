@@ -41,12 +41,10 @@ async fn main() {
             "--o" | "--n" => {
                 other_args_map.insert(current.clone(), other_args[i + 1].clone());
                 i += 2;
-                break;
             }
             _ => {
                 other_args_map.insert(current.clone(), String::from(""));
                 i += 1;
-                break;
             }
         }
     }
@@ -70,33 +68,32 @@ async fn main() {
 
         SpigotAPI::download_build_tools();
         SpigotAPI::run_build_tools(&version, &path);
-        return;
+    } else {
+        let platform = api::get_platform(&project);
+
+        if build.eq_ignore_ascii_case("latest") {
+            build = platform.get_latest_build(&project, &version).await.expect("Getting the latest build failed?");
+        }
+
+        if path.eq("") {
+            path.push_str(platform.get_jar_name(&project, &version, &build).as_str());
+        }
+
+        let start = Instant::now();
+
+        // Check for any problems before trying to download the .jar
+        let is_error = platform.is_error(&project, &version, &build).await;
+        if is_error.is_some() {
+            println!("{} {}", format!("Platform is_error returned:").red().bold(), format!("{}", is_error.unwrap()).yellow().bold());
+            process::exit(101);
+        }
+
+        api::download(&platform.get_download_link(&project, &version, &build), &path).await;
+
+        let duration = start.elapsed().as_millis().to_string();
+
+        println!("{} {} {} {}", format!("Downloaded:").green().bold(), format!("{}", &path.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
     }
-
-    let platform = api::get_platform(&project);
-
-    if build.eq_ignore_ascii_case("latest") {
-        build = platform.get_latest_build(&project, &version).await.expect("MAIN get latest build returned none");
-    }
-
-    if path.eq("") {
-        path.push_str(platform.get_jar_name(&project, &version, &build).as_str());
-    }
-
-    let start = Instant::now();
-
-    // Check for any problems before trying to download the .jar
-    let is_error = platform.is_error(&project, &version, &build).await;
-    if is_error.is_some() {
-        println!("{} {}", format!("Platform is_error returned:").red().bold(), format!("{}", is_error.unwrap()).yellow().bold());
-        process::exit(101);
-    }
-
-    api::download(&platform.get_download_link(&project, &version, &build), &path).await;
-
-    let duration = start.elapsed().as_millis().to_string();
-
-    println!("{} {} {} {}", format!("Downloaded:").green().bold(), format!("{}", &path.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
 
     if other_args_map.contains_key(&String::from("--self-update")) {
         tokio::task::spawn_blocking(move || {
