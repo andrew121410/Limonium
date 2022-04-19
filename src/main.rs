@@ -11,6 +11,8 @@ use std::time::Instant;
 
 use colored::Colorize;
 
+use crate::api::spigotmc::SpigotAPI;
+
 mod api;
 
 #[tokio::main]
@@ -40,12 +42,6 @@ async fn main() {
         i += 2;
     }
 
-    let platform = api::get_platform(&project);
-
-    if build.eq_ignore_ascii_case("latest") {
-        build = platform.get_latest_build(&project, &version).await.expect("MAIN get latest build returned none");
-    }
-
     let mut path: String = String::from("");
     if other_args_map.contains_key(&String::from("--o")) {
         path.push_str(other_args_map[&String::from("--o")]);
@@ -53,6 +49,25 @@ async fn main() {
 
     if other_args_map.contains_key(&String::from("--n")) {
         path.push_str(other_args_map[&String::from("--n")]);
+    }
+
+    // Spigot is special because it's dumb
+    if project.eq_ignore_ascii_case("spigot") {
+        if path.eq("") {
+            path.push_str("./spigot-");
+            path.push_str(&version);
+            path.push_str(".jar");
+        }
+
+        SpigotAPI::download_build_tools();
+        SpigotAPI::run_build_tools(&version, &path);
+        return;
+    }
+
+    let platform = api::get_platform(&project);
+
+    if build.eq_ignore_ascii_case("latest") {
+        build = platform.get_latest_build(&project, &version).await.expect("MAIN get latest build returned none");
     }
 
     if path.eq("") {

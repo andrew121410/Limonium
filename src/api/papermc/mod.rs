@@ -3,6 +3,7 @@ use crate::api::platform;
 use async_trait::async_trait;
 use std::string::String;
 
+// https://github.com/PaperMC
 pub struct PaperAPI;
 #[async_trait]
 impl platform::IPlatform for PaperAPI {

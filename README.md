@@ -17,6 +17,10 @@ Limonium uses the API's or Jenkins to download the .jars
 1. Paper -> `./limonium paper 1.18.2 latest`
 2. Purpur -> `./limonium purpur 1.18.2 latest`
 3. Pufferfish -> `./limonium pufferfish 1.18.2 latest`
+4. Patina -> `./limonium patina 1.18.2 latest`
+5. Mirai -> `./limonium mirai 1.18.2 latest`
+6. Spigot -> `./limonium spigot 1.18.2 latest` **NOT RECOMMENDED**\
+__If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run it__
 
 ##### Proxies
 
