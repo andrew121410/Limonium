@@ -8,8 +8,10 @@ extern crate serde_json;
 
 use std::{env, fs, process};
 use std::collections::HashMap;
+use std::env::current_dir;
 use std::fs::File;
 use std::path::Path;
+use std::process::Command;
 use std::string::String;
 use std::time::Instant;
 
@@ -124,7 +126,7 @@ fn update() -> Result<(), Box<dyn ::std::error::Error>> {
     println!("Current Version: {}", &current_version);
 
     let release: &Release = &releases[0];
-    let release_asset: ReleaseAsset = releases[0].asset_for("limonium").expect("Something went wrong?");
+    let release_asset: ReleaseAsset = releases[0].asset_for("limonium").expect("release_asset failed?");
 
     if self_update::version::bump_is_greater(&current_version, &release.version)? {
         fs::create_dir_all("./lmtmp-update");
@@ -132,7 +134,7 @@ fn update() -> Result<(), Box<dyn ::std::error::Error>> {
         let mut binary_with_path_string: String = String::from("./lmtmp-update/");
         binary_with_path_string.push_str(&release_asset.name);
 
-        let binary_with_path_file: File = File::create(&binary_with_path_string).expect("Making file failed in update()");
+        let binary_with_path_file: File = File::create(&binary_with_path_string).expect("binary_with_path_file failed in update()");
 
         self_update::Download::from_url(&release_asset.download_url)
             .set_header(reqwest::header::ACCEPT, "application/octet-stream".parse()?)
@@ -141,9 +143,13 @@ fn update() -> Result<(), Box<dyn ::std::error::Error>> {
         self_update::Move::from_source(Path::new(&binary_with_path_string))
             .to_dest(&::std::env::current_exe()?)?;
 
+        println!("{}", &current_dir().unwrap().display().to_string());
+
+        Command::new("chmod").arg("+x").arg("limonium").current_dir(&std::env::current_dir()?).spawn().expect("Running chmod +x limonium failed");
+
         fs::remove_dir_all("./lmtmp-update/");
 
-        println!("Downloaded update! New Version: {}", &current_version);
+        println!("Downloaded update! New Version: {}", &release.version);
     } else {
         println!("No update is available!");
     }
