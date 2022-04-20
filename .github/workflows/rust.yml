@@ -2,8 +2,9 @@ name: Rust
 
 on:
   push:
-    tags:
-      - "v*.*.*"
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -15,6 +16,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
+    - name: Set version
+      id: set_version
+      run: |
+        THE_VERSION_STRING=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
+        echo "::set-output name=t_cargo_version::$THE_VERSION_STRING"
+    
     - name: Build
       run: cargo build --release
       
@@ -24,7 +31,9 @@ jobs:
         name: limonium
         path: ${{ github.workspace }}/target/release/limonium
         
-    - name: Release
-      uses: softprops/action-gh-release@v1
+    - name: Deploy release
+      uses: "marvinpinto/action-automatic-releases@latest"
       with:
-        files: ${{ github.workspace }}/target/release/limonium
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: ${{ steps.set_version.outputs.t_cargo_version }}"
+        prerelease: false
