@@ -2,9 +2,8 @@ name: Rust
 
 on:
   push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+    tags:
+      - "v*.*.*"
 
 env:
   CARGO_TERM_COLOR: always
@@ -24,3 +23,8 @@ jobs:
       with:
         name: limonium
         path: ${{ github.workspace }}/target/release/limonium
+        
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ${{ github.workspace }}/target/release/limonium
