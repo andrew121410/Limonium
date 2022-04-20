@@ -25,19 +25,13 @@ jobs:
         THE_VERSION_STRING=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
         echo "::set-output name=t_cargo_version::$THE_VERSION_STRING"
     
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: limonium
-        path: ${{ github.workspace }}/target/release/limonium
-    
     - name: Zip Linux Binary
       uses: vimtor/action-zip@v1
       with:
         files: /target/release/limonium
         dest: /target/release/limonium.zip
     
-    - name: Deploy release
+    - name: Deploy release with artifact
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
