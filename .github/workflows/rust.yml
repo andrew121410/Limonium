@@ -16,15 +16,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
+    - name: Build
+      run: cargo build --release
+    
     - name: Set version
       id: set_version
       run: |
         THE_VERSION_STRING=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
         echo "::set-output name=t_cargo_version::$THE_VERSION_STRING"
     
-    - name: Build
-      run: cargo build --release
-      
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3
       with:
