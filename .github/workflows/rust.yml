@@ -23,4 +23,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: limonium
-        path: ${{ github.workspace }}/release/limonium
+        path: /target/release/limonium
