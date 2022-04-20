@@ -23,7 +23,7 @@ jobs:
       id: set_version
       run: |
         THE_VERSION_STRING=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
-        echo "::set-output name=t_cargo_version::$THE_VERSION_STRING"
+        echo ::set-output name=t_cargo_version::$THE_VERSION_STRING
     
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v3
