@@ -6,12 +6,15 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
-use std::{env, process};
+use std::{env, fs, process};
 use std::collections::HashMap;
+use std::fs::File;
+use std::path::Path;
 use std::string::String;
 use std::time::Instant;
 
 use colored::Colorize;
+use self_update::update::{Release, ReleaseAsset};
 
 use crate::api::spigotmc::SpigotAPI;
 
@@ -106,16 +109,42 @@ async fn main() {
 }
 
 fn update() -> Result<(), Box<dyn ::std::error::Error>> {
-    let status = self_update::backends::github::Update::configure()
+    let releases = self_update::backends::github::ReleaseList::configure()
         .repo_owner("andrew121410")
         .repo_name("Limonium")
-        .bin_name("limonium")
-        .target("limonium")
-        .no_confirm(true)
-        .current_version(cargo_crate_version!())
-        .show_download_progress(true)
         .build()?
-        .update()?;
-    println!("Update status: `{}`!", status.version());
+        .fetch()?;
+
+    if releases.is_empty() {
+        return Ok(());
+    }
+
+    let current_version: &str = cargo_crate_version!();
+
+    let release: &Release = &releases[0];
+    let release_asset: ReleaseAsset = releases[0].asset_for("limonium").expect("Something went wrong?");
+
+    if self_update::version::bump_is_greater(&current_version, &release.version)? {
+        fs::create_dir_all("./lmtmp-update");
+
+        let mut binary_with_path_string: String = String::from("./lmtmp-update/");
+        binary_with_path_string.push_str(&release_asset.name);
+
+        let binary_with_path_file: File = File::create(&binary_with_path_string).expect("Making file failed in update()");
+
+        self_update::Download::from_url(&release_asset.download_url)
+            .set_header(reqwest::header::ACCEPT, "application/octet-stream".parse()?)
+            .download_to(&binary_with_path_file);
+
+        self_update::Move::from_source(Path::new(&binary_with_path_string))
+            .to_dest(&::std::env::current_exe()?)?;
+
+        fs::remove_dir_all("./lmtmp-update/");
+
+        println!("Downloaded update!");
+    } else {
+        println!("No update is available!");
+    }
+
     Ok(())
 }

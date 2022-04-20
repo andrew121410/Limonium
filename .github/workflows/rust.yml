@@ -25,11 +25,11 @@ jobs:
         THE_VERSION_STRING=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
         echo "::set-output name=t_cargo_version::$THE_VERSION_STRING"
     
-    - name: Zip Linux Binary
-      uses: vimtor/action-zip@v1
-      with:
-        files: /target/release/limonium
-        dest: /target/release/limonium.zip
+#    - name: Zip Linux Binary
+#      uses: vimtor/action-zip@v1
+#      with:
+#        files: /target/release/limonium
+#        dest: /target/release/limonium.zip
     
     - name: Deploy release with artifact
       uses: "marvinpinto/action-automatic-releases@latest"
@@ -38,4 +38,4 @@ jobs:
         automatic_release_tag: "${{ steps.set_version.outputs.t_cargo_version }}"
         prerelease: false
         files: |
-          target/release/limonium.zip
+          target/release/limonium
