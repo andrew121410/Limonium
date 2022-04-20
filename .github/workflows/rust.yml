@@ -35,7 +35,7 @@ jobs:
       uses: vimtor/action-zip@v1
       with:
         files: /target/release/limonium
-        dest: limonium.zip
+        dest: /target/release/limonium.zip
     
     - name: Deploy release
       uses: "marvinpinto/action-automatic-releases@latest"
