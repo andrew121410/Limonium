@@ -121,6 +121,8 @@ fn update() -> Result<(), Box<dyn ::std::error::Error>> {
 
     let current_version: &str = cargo_crate_version!();
 
+    println!("Current Version: {}", &current_version);
+
     let release: &Release = &releases[0];
     let release_asset: ReleaseAsset = releases[0].asset_for("limonium").expect("Something went wrong?");
 
@@ -141,7 +143,7 @@ fn update() -> Result<(), Box<dyn ::std::error::Error>> {
 
         fs::remove_dir_all("./lmtmp-update/");
 
-        println!("Downloaded update!");
+        println!("Downloaded update! New Version: {}", &current_version);
     } else {
         println!("No update is available!");
     }
