@@ -97,7 +97,7 @@ async fn main() {
 
         let duration = start.elapsed().as_millis().to_string();
 
-        println!("{} {} {} {}", format!("Downloaded:").green().bold(), format!("{}", &path.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
+        println!("{} {} {} {}", format!("Downloaded JAR:").green().bold(), format!("{}", &path.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
     }
 
     if other_args_map.contains_key(&String::from("--self-update")) {
@@ -129,6 +129,8 @@ fn update() -> Result<(), Box<dyn ::std::error::Error>> {
     let release_asset: ReleaseAsset = releases[0].asset_for("limonium").expect("release_asset failed?");
 
     if self_update::version::bump_is_greater(&current_version, &release.version)? {
+        println!("New update is available! Downloading...");
+
         fs::create_dir_all("./lmtmp-update");
 
         let mut binary_with_path_string: String = String::from("./lmtmp-update/");
@@ -143,13 +145,12 @@ fn update() -> Result<(), Box<dyn ::std::error::Error>> {
         self_update::Move::from_source(Path::new(&binary_with_path_string))
             .to_dest(&::std::env::current_exe()?)?;
 
-        println!("{}", &current_dir().unwrap().display().to_string());
-
         Command::new("chmod").arg("+x").arg("limonium").current_dir(&std::env::current_dir()?).spawn().expect("Running chmod +x limonium failed");
 
         fs::remove_dir_all("./lmtmp-update/");
 
-        println!("Downloaded update! New Version: {}", &release.version);
+        println!("Downloaded update!");
+        println!("New Version: {}", &release.version)
     } else {
         println!("No update is available!");
     }
