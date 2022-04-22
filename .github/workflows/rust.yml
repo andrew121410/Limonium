@@ -14,28 +14,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Build
-      run: cargo build --release
-    
-    - name: Set version
-      id: set_version
-      run: |
-        THE_VERSION_STRING=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
-        echo "::set-output name=t_cargo_version::$THE_VERSION_STRING"
-    
-#    - name: Zip Linux Binary
-#      uses: vimtor/action-zip@v1
-#      with:
-#        files: /target/release/limonium
-#        dest: /target/release/limonium.zip
-    
-    - name: Deploy release with artifact
-      uses: "marvinpinto/action-automatic-releases@latest"
-      with:
-        repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "${{ steps.set_version.outputs.t_cargo_version }}"
-        prerelease: false
-        files: |
-          target/release/limonium
+      - uses: actions/checkout@v3
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Get Cargo Version
+        id: cargo_version
+        run: |
+          THE_VERSION_STRING=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
+          echo "::set-output name=t_cargo_version::$THE_VERSION_STRING"
+
+      - name: Zip Linux Binary
+        uses: vimtor/action-zip@v1
+        with:
+          files: /target/release/limonium
+          dest: /target/release/limonium-linux.zip
+
+      - name: Deploy Release With Artifact
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "${{ steps.cargo_version.outputs.t_cargo_version }}"
+          prerelease: false
+          files: |
+            target/release/limonium-linux.zip
