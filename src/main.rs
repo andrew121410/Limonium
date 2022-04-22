@@ -10,6 +10,7 @@ use std::{env, fs, process};
 use std::collections::HashMap;
 use std::env::current_dir;
 use std::fs::File;
+use std::os::linux::raw::stat;
 use std::path::Path;
 use std::process::Command;
 use std::string::String;
@@ -111,49 +112,22 @@ async fn main() {
 }
 
 fn update() -> Result<(), Box<dyn ::std::error::Error>> {
-    let releases = self_update::backends::github::ReleaseList::configure()
+    println!("Current Version: {}", cargo_crate_version!());
+    let status = self_update::backends::github::Update::configure()
         .repo_owner("andrew121410")
-        .repo_name("Limonium")
+        .repo_name("limonium")
+        .target("limonium-linux.zip")
+        .bin_name("limonium")
+        .no_confirm(true)
+        .show_download_progress(false)
+        .show_output(false)
+        .current_version(cargo_crate_version!())
         .build()?
-        .fetch()?;
-
-    if releases.is_empty() {
-        return Ok(());
-    }
-
-    let current_version: &str = cargo_crate_version!();
-
-    println!("Current Version: {}", &current_version);
-
-    let release: &Release = &releases[0];
-    let release_asset: ReleaseAsset = releases[0].asset_for("limonium").expect("release_asset failed?");
-
-    if self_update::version::bump_is_greater(&current_version, &release.version)? {
-        println!("New update is available! Downloading...");
-
-        fs::create_dir_all("./lmtmp-update");
-
-        let mut binary_with_path_string: String = String::from("./lmtmp-update/");
-        binary_with_path_string.push_str(&release_asset.name);
-
-        let binary_with_path_file: File = File::create(&binary_with_path_string).expect("binary_with_path_file failed in update()");
-
-        self_update::Download::from_url(&release_asset.download_url)
-            .set_header(reqwest::header::ACCEPT, "application/octet-stream".parse()?)
-            .download_to(&binary_with_path_file);
-
-        self_update::Move::from_source(Path::new(&binary_with_path_string))
-            .to_dest(&::std::env::current_exe()?)?;
-
-        Command::new("chmod").arg("+x").arg("limonium").current_dir(&std::env::current_dir()?).spawn().expect("Running chmod +x limonium failed");
-
-        fs::remove_dir_all("./lmtmp-update/");
-
-        println!("Downloaded update!");
-        println!("New Version: {}", &release.version)
+        .update()?;
+    if status.updated() {
+        println!("Updated Limonium from {} to {}", cargo_crate_version!(), &status.version());
     } else {
-        println!("No update is available!");
+        println!("Already up to date!");
     }
-
     Ok(())
 }
