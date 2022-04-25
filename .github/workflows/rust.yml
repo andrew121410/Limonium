@@ -19,7 +19,7 @@ jobs:
       - name: Build
         run: cargo build --release
 
-      - name: Get Cargo Version
+      - name: Get Version from Cargo.toml
         id: cargo_version
         run: |
           THE_VERSION_STRING=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
