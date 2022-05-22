@@ -11,7 +11,7 @@ impl platform::IPlatform for PaperAPI {
     fn get_download_link(&self, project: &String, version: &String, build: &String) -> String {
         let jar_name = PaperAPI::get_jar_name(&self, &project, &version, &build);
 
-        let mut to_return = String::from("https://papermc.io/api/v2/projects/");
+        let mut to_return = String::from("https://api.papermc.io/v2/projects/");
         to_return.push_str(&project);
         to_return.push_str("/versions/");
         to_return.push_str(&version);
@@ -35,7 +35,7 @@ impl platform::IPlatform for PaperAPI {
     }
 
     async fn is_error(&self, project: &String, version: &String, build: &String) -> Option<String> {
-        let mut link = String::from("https://papermc.io/api/v2/projects/");
+        let mut link = String::from("https://api.papermc.io/v2/projects/");
         link.push_str(&project);
         link.push_str("/versions/");
         link.push_str(&version);
@@ -66,7 +66,7 @@ impl platform::IPlatform for PaperAPI {
     }
 
     async fn get_latest_build(&self, project: &String, version: &String) -> Option<String> {
-        let mut link = String::from("https://papermc.io/api/v2/projects/");
+        let mut link = String::from("https://api.papermc.io/v2/projects/");
         link.push_str(&project);
         link.push_str("/versions/");
         link.push_str(&version);

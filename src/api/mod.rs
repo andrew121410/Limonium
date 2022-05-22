@@ -14,11 +14,11 @@ pub mod spigotmc;
 
 pub fn get_platform(the_project: &String) -> &dyn IPlatform {
     return match the_project.to_lowercase().as_str() {
-        "purpur" => &purpurmc::PurpurAPI as &dyn platform::IPlatform,
-        "pufferfish" => &pufferfish::PufferfishAPI as &dyn platform::IPlatform,
-        "patina" => &patina::PatinaAPI as &dyn platform::IPlatform,
-        "mirai" => &mirai::MiraiAPI as &dyn platform::IPlatform,
-        _ => &papermc::PaperAPI as &dyn platform::IPlatform,
+        "purpur" => &purpurmc::PurpurAPI as &dyn IPlatform,
+        "pufferfish" => &pufferfish::PufferfishAPI as &dyn IPlatform,
+        "patina" => &patina::PatinaAPI as &dyn IPlatform,
+        "mirai" => &mirai::MiraiAPI as &dyn IPlatform,
+        _ => &papermc::PaperAPI as &dyn IPlatform,
     };
 }
 
