@@ -36,34 +36,6 @@ impl platform::IPlatform for PufferfishAPI {
         return to_return;
     }
 
-    async fn is_error(&self, _project: &String, version: &String, build: &String) -> Option<String> {
-        let real_version = get_real_version(&version);
-
-        let mut link = String::from("https://ci.pufferfish.host/job/Pufferfish-");
-        link.push_str(&real_version.unwrap());
-        link.push_str("/");
-        link.push_str(&build);
-        link.push_str("/");
-
-        let x = reqwest::get(&link).await;
-
-        if x.is_err() {
-            Some(String::from("Website has an error"));
-        }
-
-        let text_result = x.unwrap().text().await;
-
-        if text_result.is_err() {
-            return Some(String::from("is_error -> text_result"));
-        }
-
-        if text_result.unwrap().contains("404") {
-            return Some(String::from("404 error"));
-        }
-
-        return None
-    }
-
     async fn get_latest_build(&self, _project: &String, _version: &String) -> Option<String> {
         return Some(String::from("lastSuccessfulBuild"));
     }

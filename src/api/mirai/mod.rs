@@ -27,11 +27,6 @@ impl platform::IPlatform for MiraiAPI {
         return jar_name;
     }
 
-    async fn is_error(&self, _project: &String, _version: &String, _build: &String) -> Option<String> {
-        // We can't check for an error like a 404 because Mirai use Github Releases
-        return None;
-    }
-
     async fn get_latest_build(&self, _project: &String, _version: &String) -> Option<String> {
         return Some(String::from("Not needed"));
     }

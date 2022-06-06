@@ -36,37 +36,6 @@ impl platform::IPlatform for PaperAPI {
         return to_return;
     }
 
-    async fn is_error(&self, project: &String, version: &String, build: &String) -> Option<String> {
-        let mut link = String::from("https://api.papermc.io/v2/projects/");
-        link.push_str(&project);
-        link.push_str("/versions/");
-        link.push_str(&version);
-        link.push_str("/builds/");
-        link.push_str(&build);
-
-        let x = reqwest::get(&link).await;
-
-        if x.is_err() {
-            Some(String::from("Website has an error"));
-        }
-
-        let text_result = x.unwrap().text().await;
-
-        if text_result.is_err() {
-            return Some(String::from("text_result.is_err()"));
-        }
-
-        let text = text_result.unwrap();
-
-        let json_value: Result<PaperBuildsJSON, _> = serde_json::from_str(&text);
-
-        if json_value.is_err() {
-            return Some(String::from("JSON Value has some issue"));
-        }
-
-        return None;
-    }
-
     async fn get_latest_build(&self, project: &String, version: &String) -> Option<String> {
         let mut link = String::from("https://api.papermc.io/v2/projects/");
         link.push_str(&project);

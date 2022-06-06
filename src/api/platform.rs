@@ -8,8 +8,6 @@ pub trait IPlatform: Sync {
 
     fn get_jar_name(&self, project: &String, version: &String, build: &String) -> String;
 
-    async fn is_error(&self, project: &String, version: &String, build: &String) -> Option<String>;
-
     async fn get_latest_build(&self, project: &String, version: &String) -> Option<String>;
 
     async fn get_jar_hash(&self, project: &String, version: &String, build: &String, ) -> Option<HashMap<String, String>>;

@@ -85,21 +85,14 @@ async fn main() {
 
         let start = Instant::now();
 
-        // Check for any problems before trying to download the .jar
-        let is_error = platform.is_error(&project, &version, &build).await;
-        if is_error.is_some() {
-            println!("{} {}", format!("Platform is_error returned:").red().bold(), format!("{}", is_error.unwrap()).yellow().bold());
-            process::exit(101);
-        }
-
         api::download_jar_to_temp_dir(&platform.get_download_link(&project, &version, &build)).await;
 
         // Verify hash of jar if possible
         let hash_optional_map = platform.get_jar_hash(&project, &version, &build).await;
         if hash_optional_map.is_some() {
             let hashmap = hash_optional_map.unwrap();
-            let hash_algorithm = hashmap.get("algorithm").expect("hash algorithm not specified");
-            let hash = hashmap.get("hash").expect("hash not specified");
+            let hash_algorithm = hashmap.get("algorithm").expect("Hash algorithm not specified");
+            let hash = hashmap.get("hash").expect("Hash not specified");
 
             if hash_algorithm.eq("sha256") {
                 let hash_of_file = digest_file(temp_dir().join("theServer.jar")).unwrap();
