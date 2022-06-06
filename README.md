@@ -22,7 +22,7 @@ Limonium uses the API's or Jenkins to download the .jars
 6. Spigot -> `./limonium spigot 1.18.2 latest` **NOT RECOMMENDED**\
 __If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run it__
 
-##### Proxies
+## Proxies
 
 1. Waterfall -> `./limonium waterfall 1.18 latest`
 
@@ -36,19 +36,19 @@ Extra arguments
 2. --o `The path of where the jar should go Example: --o /mc-servers/hub/`
 
 ```
-./limonium paper 1.17 latest
+./limonium paper 1.18.2 latest
 ```
 
 ```
-./limonium paper 1.17 48
+./limonium paper 1.18.2 48
 ```
 
 ```
-./limonium paper 1.17 latest --n Paper.jar
+./limonium paper 1.18.2 latest --n Paper.jar
 ```
 
 ```
-./limonium paper 1.17 latest --n Paper.jar --o /mc-servers/hub/
+./limonium paper 1.18.2 latest --n Paper.jar --o /mc-servers/hub/
 ```
 
 Other Arguments:
