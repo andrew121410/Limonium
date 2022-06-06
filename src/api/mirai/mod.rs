@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::string::String;
 
 use async_trait::async_trait;
@@ -33,5 +34,9 @@ impl platform::IPlatform for MiraiAPI {
 
     async fn get_latest_build(&self, _project: &String, _version: &String) -> Option<String> {
         return Some(String::from("Not needed"));
+    }
+
+    async fn get_jar_hash(&self, _project: &String, _version: &String, _build: &String) -> Option<HashMap<String, String>> {
+        return None;
     }
 }

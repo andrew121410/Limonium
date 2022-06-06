@@ -6,22 +6,20 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
-use std::{env, fs, process};
+use std::{env, process};
 use std::collections::HashMap;
-use std::env::current_dir;
-use std::fs::File;
-use std::os::linux::raw::stat;
-use std::path::Path;
-use std::process::Command;
+use std::env::temp_dir;
 use std::string::String;
 use std::time::Instant;
 
 use colored::Colorize;
-use self_update::update::{Release, ReleaseAsset};
+use sha256::digest_file;
 
 use crate::api::spigotmc::SpigotAPI;
+use crate::md5::get_md5sum;
 
 mod api;
+mod md5;
 
 #[tokio::main]
 async fn main() {
@@ -94,10 +92,41 @@ async fn main() {
             process::exit(101);
         }
 
-        api::download(&platform.get_download_link(&project, &version, &build), &path).await;
+        api::download_jar_to_temp_dir(&platform.get_download_link(&project, &version, &build)).await;
+
+        // Verify hash of jar if possible
+        let hash_optional_map = platform.get_jar_hash(&project, &version, &build).await;
+        if hash_optional_map.is_some() {
+            let hashmap = hash_optional_map.unwrap();
+            let hash_algorithm = hashmap.get("algorithm").expect("hash algorithm not specified");
+            let hash = hashmap.get("hash").expect("hash not specified");
+
+            if hash_algorithm.eq("sha256") {
+                let hash_of_file = digest_file(temp_dir().join("theServer.jar")).unwrap();
+
+                if hash_of_file.eq(hash) {
+                    println!("{}", format!("SHA256 hash matched perfectly!").green());
+                } else {
+                    println!("{}", format!("SHA256 hash didn't match... something went wrong").red().bold());
+                    process::exit(101);
+                }
+            } else if hash_algorithm.eq("md5") {
+                let hash_of_file = get_md5sum();
+
+                if hash_of_file.eq(hash) {
+                    println!("{}", format!("MD5 hash matched perfectly!").green());
+                } else {
+                    println!("{}", format!("MD5 hash didn't match... something went wrong").red().bold());
+                    process::exit(101);
+                }
+            }
+        } else {
+            println!("{}", format!("Not checking hash!").yellow().bold());
+        }
+
+        api::copy_jar_from_temp_dir_to_dest(&path);
 
         let duration = start.elapsed().as_millis().to_string();
-
         println!("{} {} {} {}", format!("Downloaded JAR:").green().bold(), format!("{}", &path.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
     }
 

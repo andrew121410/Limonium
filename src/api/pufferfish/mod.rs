@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::process::exit;
 use crate::api::platform;
 
@@ -65,6 +66,10 @@ impl platform::IPlatform for PufferfishAPI {
 
     async fn get_latest_build(&self, _project: &String, _version: &String) -> Option<String> {
         return Some(String::from("lastSuccessfulBuild"));
+    }
+
+    async fn get_jar_hash(&self, _project: &String, _version: &String, _build: &String) -> Option<HashMap<String, String>> {
+        return None;
     }
 }
 
