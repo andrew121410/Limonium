@@ -1,21 +1,22 @@
 use std::collections::HashMap;
 use std::process::exit;
-use crate::api::platform;
+use std::string::String;
 
 use async_trait::async_trait;
-use std::string::String;
+
+use crate::api::platform;
 
 // https://github.com/pufferfish-gg/Pufferfish
 pub struct PufferfishAPI;
+
 #[async_trait]
 impl platform::IPlatform for PufferfishAPI {
-
     fn get_download_link(&self, project: &String, version: &String, build: &String) -> String {
         let jar_name = PufferfishAPI::get_jar_name(&self, &project, &version, &build);
         let real_version = get_real_version(&version);
 
         if real_version.is_none() {
-            println!("PufferfishAPI.rs -> get_download_link -> real_version is none");
+            println!("Pufferfish: Invalid version: {}", version);
             exit(1)
         }
 
@@ -46,7 +47,9 @@ impl platform::IPlatform for PufferfishAPI {
 }
 
 pub fn get_real_version(version: &String) -> Option<String> {
-    if version.contains("1.18") {
+    if version.contains("1.19") {
+        return Some(String::from("1.19"));
+    } else if version.contains("1.18") {
         return Some(String::from("1.18"));
     } else if version.contains("1.17") {
         return Some(String::from("1.17"));

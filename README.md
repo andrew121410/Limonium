@@ -14,17 +14,17 @@ Limonium uses the API's or Jenkins to download the .jars
 
 ## Softwares
 
-1. Paper -> `./limonium paper 1.18.2 latest`
-2. Purpur -> `./limonium purpur 1.18.2 latest`
-3. Pufferfish -> `./limonium pufferfish 1.18.2 latest`
-4. Patina -> `./limonium patina 1.18.2 latest`
-5. Mirai -> `./limonium mirai 1.18.2 latest`
-6. Spigot -> `./limonium spigot 1.18.2 latest` **NOT RECOMMENDED**\
+1. Paper -> `./limonium paper 1.19 latest`
+2. Purpur -> `./limonium purpur 1.19 latest`
+3. Pufferfish -> `./limonium pufferfish 1.19 latest`
+4. Patina -> `./limonium patina 1.19 latest`
+5. Mirai -> `./limonium mirai 1.19 latest`
+6. Spigot -> `./limonium spigot 1.19 latest` **NOT RECOMMENDED**\
 __If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run it__
 
 ## Proxies
 
-1. Waterfall -> `./limonium waterfall 1.18 latest`
+1. Waterfall -> `./limonium waterfall 1.19 latest`
 
 ### Examples
 
@@ -36,19 +36,19 @@ Extra arguments
 2. --o `The path of where the jar should go Example: --o /mc-servers/hub/`
 
 ```
-./limonium paper 1.18.2 latest
+./limonium paper 1.19 latest
 ```
 
 ```
-./limonium paper 1.18.2 48
+./limonium paper 1.19 48
 ```
 
 ```
-./limonium paper 1.18.2 latest --n Paper.jar
+./limonium paper 1.19 latest --n Paper.jar
 ```
 
 ```
-./limonium paper 1.18.2 latest --n Paper.jar --o /mc-servers/hub/
+./limonium paper 1.19 latest --n Paper.jar --o /mc-servers/hub/
 ```
 
 Other Arguments:
