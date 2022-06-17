@@ -8,18 +8,15 @@ extern crate serde_json;
 
 use std::{env, process};
 use std::collections::HashMap;
-use std::env::temp_dir;
 use std::string::String;
 use std::time::Instant;
 
 use colored::Colorize;
-use sha256::digest_file;
 
 use crate::api::spigotmc::SpigotAPI;
-use crate::md5::get_md5sum;
 
 mod api;
-mod md5;
+mod hash;
 
 #[tokio::main]
 async fn main() {
@@ -85,7 +82,7 @@ async fn main() {
 
         let start = Instant::now();
 
-        api::download_jar_to_temp_dir(&platform.get_download_link(&project, &version, &build)).await;
+        let tmp_jar_name = api::download_jar_to_temp_dir(&platform.get_download_link(&project, &version, &build)).await;
 
         // Verify hash of jar if possible
         let hash_optional_map = platform.get_jar_hash(&project, &version, &build).await;
@@ -95,7 +92,7 @@ async fn main() {
             let hash = hashmap.get("hash").expect("Hash not specified");
 
             if hash_algorithm.eq("sha256") {
-                let hash_of_file = digest_file(temp_dir().join("theServer.jar")).unwrap();
+                let hash_of_file = hash::get_sha256sum(&tmp_jar_name);
 
                 if hash_of_file.eq(hash) {
                     println!("{}", format!("SHA256 hash matched perfectly!").green());
@@ -104,7 +101,7 @@ async fn main() {
                     process::exit(101);
                 }
             } else if hash_algorithm.eq("md5") {
-                let hash_of_file = get_md5sum();
+                let hash_of_file = hash::get_md5sum(&tmp_jar_name);
 
                 if hash_of_file.eq(hash) {
                     println!("{}", format!("MD5 hash matched perfectly!").green());
@@ -117,7 +114,7 @@ async fn main() {
             println!("{}", format!("Not checking hash!").yellow().bold());
         }
 
-        api::copy_jar_from_temp_dir_to_dest(&path);
+        api::copy_jar_from_temp_dir_to_dest(&tmp_jar_name, &path);
 
         let duration = start.elapsed().as_millis().to_string();
         println!("{} {} {} {}", format!("Downloaded JAR:").green().bold(), format!("{}", &path.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());

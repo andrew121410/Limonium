@@ -14,4 +14,4 @@ async-trait = "0.1.56"
 tokio = { version = "1.19.2", features = ["rt-multi-thread", "macros"] }
 colored = "2.0.0"
 self_update = { version = "0.30.0", features = ["archive-zip", "compression-zip-deflate"] }
-sha256 = "1.0.3"
+uuid = { version = "1.1.2", features = ["v4"] }
