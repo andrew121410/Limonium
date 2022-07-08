@@ -11,7 +11,6 @@ pub mod platform;
 pub mod papermc;
 pub mod purpurmc;
 pub mod pufferfish;
-pub mod patina;
 pub mod mirai;
 pub mod spigotmc;
 
@@ -19,7 +18,6 @@ pub fn get_platform(the_project: &String) -> &dyn IPlatform {
     return match the_project.to_lowercase().as_str() {
         "purpur" => &purpurmc::PurpurAPI as &dyn IPlatform,
         "pufferfish" => &pufferfish::PufferfishAPI as &dyn IPlatform,
-        "patina" => &patina::PatinaAPI as &dyn IPlatform,
         "mirai" => &mirai::MiraiAPI as &dyn IPlatform,
         _ => &papermc::PaperAPI as &dyn IPlatform,
     };
