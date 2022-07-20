@@ -3,6 +3,7 @@ use std::env::temp_dir;
 use std::fs::File;
 use std::io::Cursor;
 
+use reqwest::header;
 use uuid::Uuid;
 
 use crate::api::platform::IPlatform;
@@ -13,9 +14,11 @@ pub mod purpurmc;
 pub mod pufferfish;
 pub mod mirai;
 pub mod spigotmc;
+pub mod bloomhost;
 
 pub fn get_platform(the_project: &String) -> &dyn IPlatform {
     return match the_project.to_lowercase().as_str() {
+        "petal" => &bloomhost::PetalAPI as &dyn IPlatform,
         "purpur" => &purpurmc::PurpurAPI as &dyn IPlatform,
         "pufferfish" => &pufferfish::PufferfishAPI as &dyn IPlatform,
         "mirai" => &mirai::MiraiAPI as &dyn IPlatform,
@@ -35,7 +38,20 @@ pub async fn download_jar_to_temp_dir(link: &String) -> String {
     tmp_jar_name.push_str(&Uuid::new_v4().to_string());
     tmp_jar_name.push_str(".jar");
 
-    let response = reqwest::get(link).await.unwrap();
+    let mut headers = header::HeaderMap::new();
+    headers.insert(
+        header::USER_AGENT,
+        "rust-reqwest/limonium".parse().unwrap(),
+    );
+    headers.insert(
+        header::ACCEPT,
+        "application/octet-stream".parse().unwrap(),
+    );
+    let response = reqwest::Client::new()
+        .get(link)
+        .headers(headers)
+        .send().await.unwrap();
+
     let path = temp_dir().join(&tmp_jar_name);
     let mut file = File::create(path).unwrap();
     let mut content = Cursor::new(response.bytes().await.unwrap());

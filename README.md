@@ -16,8 +16,9 @@ Limonium uses platform specific download APIs or Jenkins to download the .jars
 1. Paper -> `./limonium paper 1.19 latest`
 2. Purpur -> `./limonium purpur 1.19 latest`
 3. Pufferfish -> `./limonium pufferfish 1.19 latest`
-4. Mirai -> `./limonium mirai 1.19 latest`
-5. Spigot -> `./limonium spigot 1.19 latest` **NOT RECOMMENDED**\
+4. Petal -> `./limonium petal 1.19 latest`
+5. Mirai -> `./limonium mirai 1.19 latest`
+6. Spigot -> `./limonium spigot 1.19 latest` **NOT RECOMMENDED**\
 __If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run it__
 
 ## Proxies
