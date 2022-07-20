@@ -22,7 +22,7 @@ jobs:
       - name: Get Version from Cargo.toml
         id: cargo_version
         run: |
-          THE_VERSION_STRING=$(cargo pkgid | cut -d# -f2 | cut -d: -f2)
+          THE_VERSION_STRING=$(cargo pkgid | cut -d@ -f2 | cut -d: -f2)
           echo "::set-output name=t_cargo_version::$THE_VERSION_STRING"
 
       - name: Zip Linux Binary
