@@ -1,10 +1,12 @@
 use std::collections::HashMap;
+use std::process::exit;
 use std::string::String;
 
 use async_trait::async_trait;
-use reqwest::header;
+use colored::Colorize;
 
 use crate::api::platform;
+use crate::githubutils::GithubUtils;
 
 // https://github.com/Bloom-host/Petal
 pub struct PetalAPI;
@@ -18,8 +20,8 @@ impl platform::IPlatform for PetalAPI {
             .repo_owner("Bloom-host")
             .repo_name("Petal")
             .target(&jar_name)
-            .bin_name(&jar_name)
-            .current_version("na")
+            .bin_name("na") // Not used, but required by the API
+            .current_version("na") // Not used, but required by the API
             .build()
             .expect("Building failed for petal");
 
@@ -33,27 +35,10 @@ impl platform::IPlatform for PetalAPI {
         return String::from("petal-1.19.jar");
     }
 
-    // Gets the latest tag from GitHub
-    async fn get_latest_build(&self, _project: &String, _version: &String) -> Option<String> {
-        let mut headers = header::HeaderMap::new();
-        headers.insert(
-            header::USER_AGENT,
-            "rust-reqwest/limonium".parse().unwrap(),
-        );
-        let response = reqwest::Client::new()
-            .get("https://api.github.com/repos/Bloom-host/Petal/tags")
-            .headers(headers)
-            .send().await.unwrap();
+    async fn get_latest_build(&self, _project: &String, version: &String) -> Option<String> {
+        check_if_compatible_version(&version);
 
-        let text = response.text().await.unwrap();
-        let tags: Vec<Tag> = serde_json::from_str(&text).expect("Failed to parse tags for petal");
-
-        let first_wrapped = tags.first();
-        if first_wrapped.is_some() {
-            let first = first_wrapped.unwrap();
-            return Some(first.name.clone().expect("Getting tag name failed"));
-        }
-        return None;
+        return GithubUtils::get_latest_tag("Bloom-host", "Petal").await;
     }
 
     async fn get_jar_hash(&self, _project: &String, _version: &String, _build: &String) -> Option<HashMap<String, String>> {
@@ -61,9 +46,10 @@ impl platform::IPlatform for PetalAPI {
     }
 }
 
-#[derive(Deserialize, Default)]
-struct Tag {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
-    name: Option<String>,
+fn check_if_compatible_version(version: &String) {
+    if !version.eq("1.19") {
+        println!("{}", format!("Version {} is not supported by Petal", version).red().bold());
+        exit(1);
+    }
 }
+

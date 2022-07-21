@@ -17,6 +17,7 @@ use crate::api::spigotmc::SpigotAPI;
 
 mod api;
 mod hash;
+mod githubutils;
 
 #[tokio::main]
 async fn main() {
