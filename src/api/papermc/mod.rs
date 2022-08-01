@@ -4,6 +4,7 @@ use std::string::String;
 use async_trait::async_trait;
 
 use crate::api::platform;
+use crate::hashutils::Hash;
 
 // https://github.com/PaperMC
 pub struct PaperAPI;
@@ -56,7 +57,7 @@ impl platform::IPlatform for PaperAPI {
         return Some(paper_json.builds.unwrap().iter().max().unwrap().to_string());
     }
 
-    async fn get_jar_hash(&self, project: &String, version: &String, build: &String) -> Option<HashMap<String, String>> {
+    async fn get_jar_hash(&self, project: &String, version: &String, build: &String) -> Option<Hash> {
         let mut link = String::from("https://api.papermc.io/v2/projects/");
         link.push_str(&project);
         link.push_str("/versions/");
@@ -71,11 +72,7 @@ impl platform::IPlatform for PaperAPI {
             let downloads = paper_build_info_json.downloads.unwrap();
             let sha256: &String = downloads.get("application").unwrap().get("sha256").unwrap();
 
-            let mut hashmap: HashMap<String, String> = HashMap::new();
-            hashmap.insert(String::from("algorithm"), String::from("sha256"));
-            hashmap.insert(String::from("hash"), sha256.clone());
-
-            return Some(hashmap);
+            return Some(Hash::new(String::from("sha256"), sha256.clone()));
         }
         return None;
     }

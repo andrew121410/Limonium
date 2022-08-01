@@ -1,10 +1,10 @@
-use std::collections::HashMap;
 use std::process::exit;
 use std::string::String;
 
 use async_trait::async_trait;
 
 use crate::api::platform;
+use crate::hashutils::Hash;
 
 // https://github.com/pufferfish-gg/Pufferfish
 pub struct PufferfishAPI;
@@ -41,7 +41,7 @@ impl platform::IPlatform for PufferfishAPI {
         return Some(String::from("lastSuccessfulBuild"));
     }
 
-    async fn get_jar_hash(&self, _project: &String, _version: &String, _build: &String) -> Option<HashMap<String, String>> {
+    async fn get_jar_hash(&self, _project: &String, _version: &String, _build: &String) -> Option<Hash> {
         return None;
     }
 }

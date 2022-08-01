@@ -16,7 +16,7 @@ use colored::Colorize;
 use crate::api::spigotmc::SpigotAPI;
 
 mod api;
-mod hash;
+mod hashutils;
 mod githubutils;
 
 #[tokio::main]
@@ -86,30 +86,16 @@ async fn main() {
         let tmp_jar_name = api::download_jar_to_temp_dir(&platform.get_download_link(&project, &version, &build)).await;
 
         // Verify hash of jar if possible
-        let hash_optional_map = platform.get_jar_hash(&project, &version, &build).await;
-        if hash_optional_map.is_some() {
-            let hashmap = hash_optional_map.unwrap();
-            let hash_algorithm = hashmap.get("algorithm").expect("Hash algorithm not specified");
-            let hash = hashmap.get("hash").expect("Hash not specified");
+        let hash_optional = platform.get_jar_hash(&project, &version, &build).await;
+        if hash_optional.is_some() {
+            let hash = hash_optional.unwrap();
 
-            if hash_algorithm.eq("sha256") {
-                let hash_of_file = hash::get_sha256sum(&tmp_jar_name);
-
-                if hash_of_file.eq(hash) {
-                    println!("{}", format!("SHA256 hash matched perfectly!").green());
-                } else {
-                    println!("{}", format!("SHA256 hash didn't match... something went wrong").red().bold());
-                    process::exit(101);
-                }
-            } else if hash_algorithm.eq("md5") {
-                let hash_of_file = hash::get_md5sum(&tmp_jar_name);
-
-                if hash_of_file.eq(hash) {
-                    println!("{}", format!("MD5 hash matched perfectly!").green());
-                } else {
-                    println!("{}", format!("MD5 hash didn't match... something went wrong").red().bold());
-                    process::exit(101);
-                }
+            if hash.validate_hash(&tmp_jar_name).unwrap() {
+                println!("{}", format!("Hash validation succeeded on jar!").green().bold());
+            } else {
+                // If the hash is invalid, exit
+                println!("{} {}", format!("Hash validation failed!").red().bold(), format!("{}", tmp_jar_name).yellow());
+                process::exit(102);
             }
         } else {
             println!("{}", format!("Not checking hash!").yellow().bold());

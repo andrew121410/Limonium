@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::process::exit;
 use std::string::String;
 
@@ -6,6 +5,7 @@ use async_trait::async_trait;
 use colored::Colorize;
 
 use crate::api::platform;
+use crate::hashutils::Hash;
 
 // https://github.com/Bloom-host/Petal
 pub struct PetalAPI;
@@ -34,15 +34,14 @@ impl platform::IPlatform for PetalAPI {
             .get_latest_tag().await;
     }
 
-    async fn get_jar_hash(&self, _project: &String, _version: &String, _build: &String) -> Option<HashMap<String, String>> {
+    async fn get_jar_hash(&self, _project: &String, _version: &String, _build: &String) -> Option<Hash> {
         return None;
     }
 }
 
 fn check_if_compatible_version(version: &String) {
-    if !version.eq("1.19") {
+    if !version.eq("1.19.1") {
         println!("{}", format!("Version {} is not supported by Petal", version).red().bold());
         exit(1);
     }
 }
-

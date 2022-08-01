@@ -1,9 +1,9 @@
-use std::collections::HashMap;
 use std::string::String;
 
 use async_trait::async_trait;
 
 use crate::api::platform;
+use crate::hashutils::Hash;
 
 // https://github.com/PurpurMC/Purpur
 pub struct PurpurAPI;
@@ -33,7 +33,7 @@ impl platform::IPlatform for PurpurAPI {
         return Some(String::from("latest"));
     }
 
-    async fn get_jar_hash(&self, _project: &String, version: &String, build: &String) -> Option<HashMap<String, String>> {
+    async fn get_jar_hash(&self, _project: &String, version: &String, build: &String) -> Option<Hash> {
         let mut link = String::from("https://api.purpurmc.org/v2/purpur/");
         link.push_str(&version);
         link.push_str("/");
@@ -43,10 +43,7 @@ impl platform::IPlatform for PurpurAPI {
         let purpur_build_info_json: PurpurBuildInfo = serde_json::from_str(text.as_str()).unwrap();
 
         if purpur_build_info_json.md5.is_some() {
-            let mut hashmap: HashMap<String, String> = HashMap::new();
-            hashmap.insert(String::from("algorithm"), String::from("md5"));
-            hashmap.insert(String::from("hash"), purpur_build_info_json.md5.unwrap());
-            return Some(hashmap);
+            return Some(Hash::new(String::from("md5"), purpur_build_info_json.md5.unwrap()));
         }
         return None;
     }

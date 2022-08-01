@@ -24,3 +24,31 @@ pub fn get_md5sum(jar_name: &String) -> String {
     let string_vector: Vec<&str> = string_output.split(" ").collect();
     return string_vector.into_iter().nth(0).unwrap().to_string();
 }
+
+pub struct Hash {
+    pub algorithm: String,
+    pub hash: String,
+}
+
+impl Hash {
+    pub fn new(algorithm: String, hash: String) -> Self {
+         Self {
+            algorithm,
+            hash,
+        }
+    }
+
+    pub fn validate_hash(&self, jar_name: &String) -> Option<bool> {
+        return match self.algorithm.as_str() {
+            "sha256" => {
+                Some(self.hash == get_sha256sum(&jar_name))
+            }
+            "md5" => {
+                Some(self.hash == get_md5sum(&jar_name))
+            }
+            _ => {
+                None
+            }
+        }
+    }
+}

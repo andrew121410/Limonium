@@ -1,10 +1,11 @@
-use std::collections::HashMap;
 use std::process::exit;
 use std::string::String;
 
 use async_trait::async_trait;
+use colored::Colorize;
 
 use crate::api::platform;
+use crate::hashutils::Hash;
 
 // https://github.com/etil2jz/Mirai
 pub struct MiraiAPI;
@@ -15,14 +16,9 @@ impl platform::IPlatform for MiraiAPI {
         let jar_name = MiraiAPI::get_jar_name(&self, &project, &version, &build);
         let real_version = get_real_version(&version);
 
-        if real_version.is_none() {
-            println!("Mirai: Invalid version: {}", version);
-            exit(1)
-        }
-
         // Example https://ci.codemc.io/job/etil2jz/job/Mirai-1.19/lastSuccessfulBuild/artifact/build/libs/mirai-paperclip-1.19.1-R0.1-SNAPSHOT-reobf.jar
         let mut to_return = String::from("https://ci.codemc.io/job/etil2jz/job/Mirai-");
-        to_return.push_str(&real_version.unwrap());
+        to_return.push_str(&real_version);
         to_return.push_str("/");
         to_return.push_str(&build);
         to_return.push_str("/artifact/build/libs/");
@@ -41,14 +37,15 @@ impl platform::IPlatform for MiraiAPI {
         return Some(String::from("lastSuccessfulBuild"));
     }
 
-    async fn get_jar_hash(&self, _project: &String, _version: &String, _build: &String) -> Option<HashMap<String, String>> {
+    async fn get_jar_hash(&self, _project: &String, _version: &String, _build: &String) -> Option<Hash> {
         return None;
     }
 }
 
-pub fn get_real_version(version: &String) -> Option<String> {
-    if version.contains("1.19") {
-        return Some(String::from("1.19"));
+pub fn get_real_version(version: &String) -> String {
+    if version.eq("1.19.1") {
+        return String::from("1.19");
     }
-    return None;
+    println!("{}", format!("Version {} is not supported by Mirai", version).red().bold());
+    exit(1);
 }
