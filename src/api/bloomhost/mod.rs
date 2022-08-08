@@ -40,7 +40,7 @@ impl platform::IPlatform for PetalAPI {
 }
 
 fn check_if_compatible_version(version: &String) {
-    if !version.eq("1.19.1") {
+    if !version.eq("1.19.2") {
         println!("{}", format!("Version {} is not supported by Petal", version).red().bold());
         exit(1);
     }

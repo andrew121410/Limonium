@@ -43,7 +43,7 @@ impl platform::IPlatform for MiraiAPI {
 }
 
 pub fn get_real_version(version: &String) -> String {
-    if version.eq("1.19.1") {
+    if version.eq("1.19.2") {
         return String::from("1.19");
     }
     println!("{}", format!("Version {} is not supported by Mirai", version).red().bold());
