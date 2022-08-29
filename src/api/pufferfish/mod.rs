@@ -20,7 +20,7 @@ impl platform::IPlatform for PufferfishAPI {
             exit(1)
         }
 
-        // Example https://ci.pufferfish.host/job/Pufferfish-1.18/63/artifact/build/libs/pufferfish-paperclip-1.18.2-R0.1-SNAPSHOT-reobf.jar
+        // Example https://ci.pufferfish.host/job/Pufferfish-1.19/lastSuccessfulBuild/artifact/build/libs/pufferfish-paperclip-1.19.2-R0.1-SNAPSHOT-reobf.jar
         let mut to_return = String::from("https://ci.pufferfish.host/job/Pufferfish-");
         to_return.push_str(&real_version.unwrap());
         to_return.push_str("/");
