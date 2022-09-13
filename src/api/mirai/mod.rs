@@ -16,7 +16,7 @@ impl platform::IPlatform for MiraiAPI {
         let jar_name = MiraiAPI::get_jar_name(&self, &project, &version, &build);
         let real_version = get_real_version(&version);
 
-        // Example https://ci.codemc.io/job/etil2jz/job/Mirai-1.19/6/artifact/build/libs/mirai-paperclip-1.19.2-R0.1-SNAPSHOT-reobf.jar
+        // Example https://ci.codemc.io/job/etil2jz/job/Mirai-1.19/lastSuccessfulBuild/artifact/build/libs/mirai-paperclip-1.19.2-R0.1-SNAPSHOT-reobf.jar
         let mut to_return = String::from("https://ci.codemc.io/job/etil2jz/job/Mirai-");
         to_return.push_str(&real_version);
         to_return.push_str("/");
