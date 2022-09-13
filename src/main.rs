@@ -91,10 +91,10 @@ async fn main() {
             let hash = hash_optional.unwrap();
 
             if hash.validate_hash(&tmp_jar_name).unwrap() {
-                println!("{}", format!("Hash validation succeeded on jar!").green().bold());
+                println!("{} {}", format!("{}", &hash.algorithm.to_uppercase()), format!("hash validation succeeded on jar!").green().bold());
             } else {
-                // If the hash is invalid, exit
-                println!("{} {}", format!("Hash validation failed!").red().bold(), format!("{}", tmp_jar_name).yellow());
+                // If the hash didn't match then exit
+                println!("{} {} {}", format!("{}", &hash.algorithm.to_uppercase()), format!("hash validation failed!").red().bold(), format!("{}", tmp_jar_name).yellow());
                 process::exit(102);
             }
         } else {
