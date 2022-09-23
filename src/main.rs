@@ -23,17 +23,12 @@ mod githubutils;
 async fn main() {
     let args: Vec<String> = env::args().collect();
 
-    if args.len() < 4 {
-        println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Example:").yellow(), format!("./limonium paper 1.19 latest").green());
+    if args.len() < 3 {
+        println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Example:").yellow(), format!("./limonium paper 1.19.2").green());
         process::exit(101);
     }
 
-    let project = args[1].to_lowercase();
-    let version = args[2].to_string();
-    let mut build = args[3].to_string();
-
-    let other_args = Vec::from_iter(&args[4..args.len()]);
-
+    let other_args = Vec::from_iter(&args[3..args.len()]);
     let mut other_args_map: HashMap<String, String> = HashMap::new();
     let mut i = 0;
     while i < other_args.len() {
@@ -60,6 +55,9 @@ async fn main() {
         path.push_str(&other_args_map[&String::from("--n")]);
     }
 
+    let project = args[1].to_lowercase();
+    let version = args[2].to_string();
+
     // Spigot is special because it's dumb
     if project.eq_ignore_ascii_case("spigot") {
         if path.eq("") {
@@ -72,10 +70,7 @@ async fn main() {
         SpigotAPI::run_build_tools(&version, &path);
     } else {
         let platform = api::get_platform(&project);
-
-        if build.eq_ignore_ascii_case("latest") {
-            build = platform.get_latest_build(&project, &version).await.expect("Getting the latest build failed?");
-        }
+        let build = platform.get_latest_build(&project, &version).await.expect("Getting the latest build failed?");
 
         if path.eq("") {
             path.push_str(platform.get_jar_name(&project, &version, &build).as_str());

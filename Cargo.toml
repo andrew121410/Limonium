@@ -1,17 +1,17 @@
 [package]
 name = "limonium"
-version = "1.0.13"
+version = "1.0.14"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-reqwest = "0.11.11"
-serde = "1.0.144"
-serde_derive = "1.0.144"
+reqwest = "0.11.12"
+serde = "1.0.145"
+serde_derive = "1.0.145"
 serde_json = "1.0.85"
 async-trait = "0.1.57"
 tokio = { version = "1.21.1", features = ["rt-multi-thread", "macros"] }
 colored = "2.0.0"
-self_update = { version = "0.31.0", features = ["archive-zip", "compression-zip-deflate"] }
+self_update = { version = "0.32.0", features = ["archive-zip", "compression-zip-deflate"] }
 uuid = { version = "1.1.2", features = ["v4"] }
