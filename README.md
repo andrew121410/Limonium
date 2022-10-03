@@ -22,14 +22,15 @@ __If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run 
 
 ## Proxies
 
-1. [Waterfall](https://github.com/PaperMC/Waterfall) -> `./limonium waterfall 1.19.2`
+1. [Waterfall](https://github.com/PaperMC/Waterfall) -> `./limonium waterfall 1.19`
 
 ## Examples
 
-*Usage: &lt;project_id&gt; &lt;version&gt; &lt;build&gt;*
+*Usage: &lt;project_id&gt; &lt;version&gt;*
 
 Extra arguments
 1. --o `The path of where the jar should go Example: --o /mc-servers/hub/Paper.jar`
+2. --self-update `Updates limonium if there is a new version available`
 
 ```
 ./limonium paper 1.19.2
@@ -42,10 +43,6 @@ Extra arguments
 ```
 ./limonium paper 1.19.2 --o ./mc-servers/hub/Paper.jar
 ```
-
-Other Arguments:
-`--self-update` this will update Limonium if there's a new Limonium version available.\
-*I have a lot of Minecraft Servers so this is helpful for me because I'm really lazy*
 
 ## Why Rust
 
