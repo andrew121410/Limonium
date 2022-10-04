@@ -28,31 +28,30 @@ async fn main() {
         process::exit(101);
     }
 
-    let other_args = Vec::from_iter(&args[3..args.len()]);
-    let mut other_args_map: HashMap<String, String> = HashMap::new();
+    let mut args_map: HashMap<String, String> = HashMap::new();
     let mut i = 0;
-    while i < other_args.len() {
-        let current = other_args[i];
+    while i < args.len() {
+        let current = args[i].clone();
 
         match current.to_lowercase().as_str() {
             "--o" | "--n" => {
-                other_args_map.insert(current.clone(), other_args[i + 1].clone());
+                args_map.insert(current, args[i + 1].clone());
                 i += 2;
             }
             _ => {
-                other_args_map.insert(current.clone(), String::from(""));
+                args_map.insert(current, String::from(""));
                 i += 1;
             }
         }
     }
 
+    // Handle path arguments
     let mut path: String = String::from("");
-    if other_args_map.contains_key(&String::from("--o")) {
-        path.push_str(&other_args_map[&String::from("--o")]);
+    if args_map.contains_key(&String::from("--o")) {
+        path.push_str(&args_map[&String::from("--o")]);
     }
-
-    if other_args_map.contains_key(&String::from("--n")) {
-        path.push_str(&other_args_map[&String::from("--n")]);
+    if args_map.contains_key(&String::from("--n")) {
+        path.push_str(&args_map[&String::from("--n")]);
     }
 
     let project = args[1].to_lowercase();
@@ -102,7 +101,7 @@ async fn main() {
         println!("{} {} {} {}", format!("Downloaded JAR:").green().bold(), format!("{}", &path.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
     }
 
-    if other_args_map.contains_key(&String::from("--self-update")) {
+    if args_map.contains_key(&String::from("--self-update")) {
         tokio::task::spawn_blocking(move || {
             if let Err(e) = update() {
                 println!("[ERROR] {}", e);
