@@ -7,11 +7,11 @@ edition = "2021"
 
 [dependencies]
 reqwest = "0.11.12"
-serde = "1.0.145"
-serde_derive = "1.0.145"
-serde_json = "1.0.85"
-async-trait = "0.1.57"
+serde = "1.0.147"
+serde_derive = "1.0.147"
+serde_json = "1.0.87"
+async-trait = "0.1.58"
 tokio = { version = "1.21.2", features = ["rt-multi-thread", "macros"] }
 colored = "2.0.0"
 self_update = { version = "0.32.0", features = ["archive-zip", "compression-zip-deflate"] }
-uuid = { version = "1.1.2", features = ["v4"] }
+uuid = { version = "1.2.1", features = ["v4"] }
