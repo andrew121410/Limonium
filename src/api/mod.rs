@@ -26,6 +26,20 @@ pub fn get_platform(the_project: &String) -> &dyn IPlatform {
     };
 }
 
+pub fn is_valid_platform(the_project: &String) -> bool {
+    return match the_project.to_lowercase().as_str() {
+        "spigot" => true,
+        "petal" => true,
+        "purpur" => true,
+        "pufferfish" => true,
+        "mirai" => true,
+        "paper" => true,
+        "waterfall" => true,
+        "velocity" => true,
+        _ => false,
+    };
+}
+
 // pub async fn download(link: &String, path: &String) {
 //     let response = reqwest::get(link).await.unwrap();
 //     let mut file = File::create(&path).unwrap();

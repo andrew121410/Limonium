@@ -57,6 +57,11 @@ async fn main() {
     let project = args[1].to_lowercase();
     let version = args[2].to_string();
 
+    if !api::is_valid_platform(&project) {
+        println!("{} {} {} {}", format!("Something went wrong!").red().bold(), format!("Project").yellow(), format!("{}", &project).red(), format!("is not valid!").yellow());
+        process::exit(101);
+    }
+
     // Spigot is special because it's dumb
     if project.eq_ignore_ascii_case("spigot") {
         if path.eq("") {
