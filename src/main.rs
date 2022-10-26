@@ -14,6 +14,7 @@ use std::time::Instant;
 use colored::Colorize;
 
 use crate::api::spigotmc::SpigotAPI;
+use crate::hashutils::Hash;
 
 mod api;
 mod hashutils;
@@ -25,7 +26,7 @@ async fn main() {
 
     if args.len() < 3 {
         println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Example:").yellow(), format!("./limonium paper 1.19.2").green());
-        process::exit(101);
+        process::exit(102);
     }
 
     let mut args_map: HashMap<String, String> = HashMap::new();
@@ -59,7 +60,7 @@ async fn main() {
 
     if !api::is_valid_platform(&project) {
         println!("{} {} {} {}", format!("Something went wrong!").red().bold(), format!("Project").yellow(), format!("{}", &project).red(), format!("is not valid!").yellow());
-        process::exit(101);
+        process::exit(102);
     }
 
     // Spigot is special because it's dumb
@@ -87,13 +88,23 @@ async fn main() {
         // Verify hash of jar if possible
         let hash_optional = platform.get_jar_hash(&project, &version, &build).await;
         if hash_optional.is_some() {
-            let hash = hash_optional.unwrap();
+            let hash: Hash = hash_optional.unwrap();
 
             if hash.validate_hash(&tmp_jar_name).unwrap() {
                 println!("{} {}", format!("{}", &hash.algorithm.to_uppercase()), format!("hash validation succeeded on jar!").green().bold());
             } else {
                 // If the hash didn't match then exit
                 println!("{} {} {}", format!("{}", &hash.algorithm.to_uppercase()), format!("hash validation failed!").red().bold(), format!("{}", tmp_jar_name).yellow());
+
+                // Print the difference between the hashes
+                let expected_hash = &hash.hash;
+                let hash_of_tmp_jar = hash.get_hash_from_tmp_jar(&tmp_jar_name).unwrap();
+                println!("{} {} {}", format!("Expected").yellow(), format!("{}", expected_hash).green(), format!("but got").yellow());
+                println!("{} {}", format!("{}", hash_of_tmp_jar).red(), format!("instead!").yellow());
+                println!();
+                println!();
+                println!("{}", format!("Aborting...").red().bold());
+
                 process::exit(102);
             }
         } else {

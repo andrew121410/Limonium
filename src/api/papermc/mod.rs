@@ -78,7 +78,7 @@ impl platform::IPlatform for PaperAPI {
     }
 }
 
-// Example https://api.papermc.io/v2/projects/paper/versions/1.18.2
+// Example https://api.papermc.io/v2/projects/paper/versions/1.19.2
 #[derive(Deserialize, Default)]
 struct PaperBuildsJSON {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -90,7 +90,7 @@ struct PaperBuildsJSON {
     builds: Option<Vec<i64>>,
 }
 
-// Example https://api.papermc.io/v2/projects/paper/versions/1.18.2/builds/375
+// Example https://api.papermc.io/v2/projects/paper/versions/1.19.2/builds/237
 #[derive(Deserialize, Default)]
 struct PaperBuildInfo {
     #[serde(skip_serializing_if = "Option::is_none")]

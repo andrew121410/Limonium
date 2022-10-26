@@ -1,6 +1,7 @@
 use std::env::temp_dir;
 use std::process::Command;
 
+// Gets the sha256 hash of the jar in the temp directory
 pub fn get_sha256sum(jar_name: &String) -> String {
     let output = Command::new("sha256sum")
         .arg(&jar_name)
@@ -13,6 +14,7 @@ pub fn get_sha256sum(jar_name: &String) -> String {
     return string_vector.into_iter().nth(0).unwrap().to_string();
 }
 
+// Gets the md5 hash of the jar in the temp directory
 pub fn get_md5sum(jar_name: &String) -> String {
     let output = Command::new("md5sum")
         .arg(&jar_name)
@@ -45,6 +47,20 @@ impl Hash {
             }
             "md5" => {
                 Some(self.hash == get_md5sum(&jar_name))
+            }
+            _ => {
+                None
+            }
+        }
+    }
+
+    pub fn get_hash_from_tmp_jar(&self, jar_name: &String) -> Option<String> {
+        return match self.algorithm.as_str() {
+            "sha256" => {
+                Some(get_sha256sum(&jar_name))
+            }
+            "md5" => {
+                Some(get_md5sum(&jar_name))
             }
             _ => {
                 None
