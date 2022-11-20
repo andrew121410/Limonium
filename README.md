@@ -30,6 +30,7 @@ __If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run 
 
 Extra arguments
 1. --o `The path of where the jar should go Example: --o /mc-servers/hub/Paper.jar`
+2. --server-jars-com `When this argument is used it will download the jar from` [ServerJars.com](https://serverjars.com/) `instead`
 2. --self-update `Updates limonium if there is a new version available`
 
 ```
