@@ -13,7 +13,7 @@ pub async fn download_jar(project: &String, version: &String, path: &mut String)
     // Verify the project is actually a thing
     let map = get_all_types().await;
     if !map.contains_key(project.clone().as_str()) {
-        println!("ServerJars.com -> Project {} does not exist!", &project);
+        println!("{} {} {}", format!("ServerJars.com -> Project").red(), format!("{}", &project).yellow(), format!("does not exist!").red());
         process::exit(102);
     }
     let server_jar = map.get(project.clone().as_str()).unwrap();
@@ -22,8 +22,10 @@ pub async fn download_jar(project: &String, version: &String, path: &mut String)
     download_link.push_str(&server_jar.typea);
     download_link.push_str("/");
     download_link.push_str(&project);
-    download_link.push_str("/");
-    download_link.push_str(&version);
+    if !version.eq("latest") {
+        download_link.push_str("/");
+        download_link.push_str(&version);
+    }
 
     let tmp_jar_name = api::download_jar_to_temp_dir(&download_link).await;
 
@@ -31,11 +33,21 @@ pub async fn download_jar(project: &String, version: &String, path: &mut String)
     jar_details_url.push_str(&server_jar.typea);
     jar_details_url.push_str("/");
     jar_details_url.push_str(&project);
-    jar_details_url.push_str("/");
-    jar_details_url.push_str(&version);
+    if !version.eq("latest") {
+        jar_details_url.push_str("/");
+        jar_details_url.push_str(&version);
+    }
 
     let jar_details_text = reqwest::get(&jar_details_url).await.unwrap().text().await.unwrap();
-    let jar_details: FetchDetails = serde_json::from_str(jar_details_text.as_str()).unwrap();
+    let jar_details: FetchDetails = match serde_json::from_str(jar_details_text.as_str()) {
+        Ok(v) => v,
+        Err(_e) => {
+            println!("{}", format!("ServersJars.com -> Failed to parse JSON (Most likely the version you requested doesn't exist)").red());
+            println!("{} {} {}", format!("FYI: You can use").yellow(), format!("latest").green(), format!("as a version to get the latest version").yellow());
+            println!("{} {} {} {}", format!("Example:").blue().bold(), format!("./limonium paper").purple(), format!("latest").green(), format!("--server-jars-com").purple());
+            process::exit(102);
+        }
+    };
 
     // Verify the hash (all md5)
     let hash: Hash = Hash {
@@ -44,7 +56,7 @@ pub async fn download_jar(project: &String, version: &String, path: &mut String)
     };
     let hash_verified = hash.validate_hash(&tmp_jar_name).unwrap();
     if !hash_verified {
-        println!("ServerJars.com -> Hash verification failed!");
+        println!("{}", format!("ServerJars.com -> Hash verification failed!").red());
         process::exit(102);
     }
 
