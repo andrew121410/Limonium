@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use colored::Colorize;
 
-use crate::api;
+use crate::{api, hashutils};
 use crate::hashutils::Hash;
 
 pub async fn download_jar(project: &String, version: &String, path: &mut String) {
@@ -54,11 +54,7 @@ pub async fn download_jar(project: &String, version: &String, path: &mut String)
         algorithm: "md5".to_string(),
         hash: jar_details.response.md5.to_string(),
     };
-    let hash_verified = hash.validate_hash(&tmp_jar_name).unwrap();
-    if !hash_verified {
-        println!("{}", format!("ServerJars.com -> Hash verification failed!").red());
-        process::exit(102);
-    }
+    hashutils::validate_the_hash(&hash, &tmp_jar_name);
 
     // If the path is empty then use the default
     if path.is_empty() {
@@ -69,7 +65,7 @@ pub async fn download_jar(project: &String, version: &String, path: &mut String)
     api::copy_jar_from_temp_dir_to_dest(&tmp_jar_name, &path);
 
     let duration = start.elapsed().as_millis().to_string();
-    println!("{} {}", format!("ServerJars.com -> Successfully downloaded").green(), format!("{}", &project).blue().bold());
+    println!("{} {} {}", format!("ServerJars.com -> Successfully downloaded").green(), format!("{}", &project).blue().bold(), format!("from ServerJars.com").green());
     println!("{} {} {} {}", format!("Downloaded JAR:").green().bold(), format!("{}", &path.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
 }
 

@@ -1,5 +1,28 @@
 use std::env::temp_dir;
+use std::process;
 use std::process::Command;
+use colored::Colorize;
+
+pub fn validate_the_hash(hash: &Hash, tmp_jar_name: &String) -> bool {
+    if hash.validate_hash(&tmp_jar_name).unwrap() {
+        println!("{} {}", format!("{}", &hash.algorithm.to_uppercase()), format!("hash validation succeeded on jar!").green().bold());
+        return true;
+    } else {
+        // If the hash didn't match then exit
+        println!("{} {} {}", format!("{}", &hash.algorithm.to_uppercase()), format!("hash validation failed!").red().bold(), format!("{}", tmp_jar_name).yellow());
+
+        // Print the difference between the hashes
+        let expected_hash = &hash.hash;
+        let hash_of_tmp_jar = hash.get_hash_from_tmp_jar(&tmp_jar_name).unwrap();
+        println!("{} {} {}", format!("Expected").yellow(), format!("{}", expected_hash).green(), format!("but got").yellow());
+        println!("{} {}", format!("{}", hash_of_tmp_jar).red(), format!("instead!").yellow());
+        println!();
+        println!();
+        println!("{}", format!("Aborting...").red().bold());
+
+        process::exit(102);
+    }
+}
 
 // Gets the sha256 hash of the jar in the temp directory
 pub fn get_sha256sum(jar_name: &String) -> String {
