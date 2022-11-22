@@ -59,8 +59,8 @@ async fn main() {
     let project = args[1].to_lowercase();
     let version = args[2].to_string();
 
-    // Handle downloading from ServerJars.com ONLY if --server-jars-com is passed
-    if args_map.contains_key(&"--server-jars-com".to_string()) {
+    // Handle downloading from ServerJars.com ONLY if --serverjars.com is passed
+    if args_map.contains_key(&String::from("--serverjars.com")) {
         server_jars_com::download_jar(&project, &version, &mut path).await;
         return; // Don't continue
     }

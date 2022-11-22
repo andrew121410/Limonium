@@ -12,17 +12,23 @@ Limonium uses platform specific download APIs or Jenkins to download the .jars
 
 ## Softwares
 
-1. [Paper](https://github.com/PaperMC/Paper) -> `./limonium paper 1.19.2`
-2. [Purpur](https://github.com/PurpurMC/Purpur) -> `./limonium purpur 1.19.2`
-3. [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) -> `./limonium pufferfish 1.19.2`
-4. [Petal](https://github.com/Bloom-host/Petal) -> `./limonium petal 1.19.2`
-5. [Mirai](https://github.com/etil2jz/Mirai) -> `./limonium mirai 1.19.2` **NOT RECOMMENDED**
-6. Spigot -> `./limonium spigot 1.19.2` **NOT RECOMMENDED**\
+> 1. [Paper](https://github.com/PaperMC/Paper) -> `./limonium paper 1.19.2`
+> 2. [Purpur](https://github.com/PurpurMC/Purpur) -> `./limonium purpur 1.19.2`
+> 3. [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) -> `./limonium pufferfish 1.19.2`
+> 4. [Petal](https://github.com/Bloom-host/Petal) -> `./limonium petal 1.19.2` (Not recommended)
+> 5. [Mirai](https://github.com/etil2jz/Mirai) -> `./limonium mirai 1.19.2` (Not recommended)
+> 6. Spigot -> `./limonium spigot 1.19.2` (Not recommended)\
 __If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run it__
 
 ## Proxies
 
-1. [Waterfall](https://github.com/PaperMC/Waterfall) -> `./limonium waterfall 1.19`
+> 1. [Waterfall](https://github.com/PaperMC/Waterfall) -> `./limonium waterfall 1.19`
+
+## Important
+
+Limonium is not affiliated with any of the projects listed. It is just a tool to make it easier to download them.
+
+_Note: When using `-serverjars.com` argument some choices may not work as they may not be added to serverjars.com_
 
 ## Examples
 
@@ -30,7 +36,7 @@ __If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run 
 
 Extra arguments
 1. --o `The path of where the jar should go Example: --o /mc-servers/hub/Paper.jar`
-2. --server-jars-com `When this argument is used it will download the jar from` [ServerJars.com](https://serverjars.com/) `instead`
+2. --serverjars.com `When this argument is used it will download the jar from` [ServerJars.com](https://serverjars.com/) `instead`
 2. --self-update `Updates limonium if there is a new version available`
 
 ```
@@ -45,6 +51,6 @@ Extra arguments
 ./limonium paper 1.19.2 --o ./mc-servers/hub/Paper.jar
 ```
 
-## Why Rust
+## Building
 
-Why? I wanted to learn a new language, so I chose Rust. Doing something small like this in a new language can help you get comfortable with a language.
+`cargo build -r`
