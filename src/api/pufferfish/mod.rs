@@ -2,11 +2,13 @@ use std::process::exit;
 use std::string::String;
 
 use async_trait::async_trait;
+use serde::de::Unexpected::Str;
 
 use crate::api::platform;
 use crate::hashutils::Hash;
 
 // https://github.com/pufferfish-gg/Pufferfish
+// https://ci.pufferfish.host/
 pub struct PufferfishAPI;
 
 #[async_trait]
@@ -17,6 +19,12 @@ impl platform::IPlatform for PufferfishAPI {
 
         if real_version.is_none() {
             println!("Pufferfish: Invalid version: {}", version);
+            let supported_versions = get_supported_versions();
+            println!();
+            println!("Supported versions:");
+            for version in supported_versions {
+                println!("  {}", version);
+            }
             exit(1)
         }
 
@@ -47,12 +55,17 @@ impl platform::IPlatform for PufferfishAPI {
 }
 
 pub fn get_real_version(version: &String) -> Option<String> {
-    if version.contains("1.19") {
+    if version.contains("1.19.3") {
         return Some(String::from("1.19"));
-    } else if version.contains("1.18") {
+    } else if version.contains("1.18.2") {
         return Some(String::from("1.18"));
-    } else if version.contains("1.17") {
-        return Some(String::from("1.17"));
     }
-    return None;
+    None
+}
+
+pub fn get_supported_versions() -> Vec<String> {
+    return vec![
+        String::from("1.19.3"),
+        String::from("1.18.2"),
+    ];
 }
