@@ -8,13 +8,13 @@ extern crate serde_json;
 
 use std::{env, process};
 use std::collections::HashMap;
+use std::env::temp_dir;
 use std::string::String;
 use std::time::Instant;
 
 use colored::Colorize;
 
 use crate::api::spigotmc::SpigotAPI;
-use crate::hashutils::Hash;
 
 mod api;
 mod hashutils;
@@ -23,6 +23,9 @@ mod server_jars_com;
 
 #[tokio::main]
 async fn main() {
+    let current_dir_path_buffer = env::current_dir().unwrap();
+    let current_path = current_dir_path_buffer.as_path();
+
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 3 {
@@ -84,18 +87,37 @@ async fn main() {
         let platform = api::get_platform(&project);
         let build = platform.get_latest_build(&project, &version).await.expect("Getting the latest build failed?");
 
+        // Set the path if it's empty
         if path.eq("") {
             path.push_str(platform.get_jar_name(&project, &version, &build).as_str());
         }
 
+        // Start elapsed time
         let start = Instant::now();
+
+        // Get the hash of the jar from a API
+        let hash_optional = platform.get_jar_hash(&project, &version, &build).await;
+
+        // Verify if we need to download the jar by checking the hash of the current installed jar
+        if hash_optional.is_some() {
+            let hash = hash_optional.as_ref().unwrap();
+
+            if current_path.join(&path).exists() {
+                let does_match = hashutils::validate_the_hash(&hash, &current_path, &path, false);
+                if does_match {
+                    // Don't download the jar if the hash is the same
+                    println!("{} {} {}", format!("You are already up to date!").green().bold(), format!("Path:").yellow(), format!("{}", &path).blue().bold());
+                    return;
+                }
+            }
+        }
 
         let tmp_jar_name = api::download_jar_to_temp_dir(&platform.get_download_link(&project, &version, &build)).await;
 
-        // Verify hash of jar if possible
-        let hash_optional = platform.get_jar_hash(&project, &version, &build).await;
+        // Verify the hash of the downloaded jar in the temp directory
         if hash_optional.is_some() {
-            hashutils::validate_the_hash(&hash_optional.unwrap(), &tmp_jar_name);
+            let hash = &hash_optional.unwrap();
+            hashutils::validate_the_hash(&hash, &temp_dir(), &tmp_jar_name, true);
         } else {
             println!("{}", format!("Not checking hash!").yellow().bold());
         }

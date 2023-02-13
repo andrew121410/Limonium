@@ -1,5 +1,5 @@
+use std::{env, process};
 use std::collections::HashMap;
-use std::process;
 use std::time::Instant;
 
 use colored::Colorize;
@@ -54,7 +54,10 @@ pub async fn download_jar(project: &String, version: &String, path: &mut String)
         algorithm: "md5".to_string(),
         hash: jar_details.response.md5.to_string(),
     };
-    hashutils::validate_the_hash(&hash, &tmp_jar_name);
+
+    let current_dir_pathbuf = env::current_dir().unwrap();
+    let current_path = current_dir_pathbuf.as_path();
+    hashutils::validate_the_hash(&hash, &current_path, &tmp_jar_name, true);
 
     // If the path is empty then use the default
     if path.is_empty() {

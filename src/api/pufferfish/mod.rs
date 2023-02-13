@@ -2,7 +2,6 @@ use std::process::exit;
 use std::string::String;
 
 use async_trait::async_trait;
-use serde::de::Unexpected::Str;
 
 use crate::api::platform;
 use crate::hashutils::Hash;

@@ -46,7 +46,7 @@ impl Repo {
             .expect(format!("Building failed for {}/{}", &self.user, &self.repo).as_str());
 
         let latest_release = status.get_release_version(&tag).expect(format!("Getting release version failed for {}/{}", &self.user, &self.repo).as_str());
-        let release_asset = latest_release.asset_for(&status.target()).expect(format!("Getting release asset failed for {}/{}", &self.user, &self.repo).as_str());
+        let release_asset = latest_release.asset_for(&status.target(), None).expect(format!("Getting release asset failed for {}/{}", &self.user, &self.repo).as_str());
 
         return release_asset.download_url;
     }
