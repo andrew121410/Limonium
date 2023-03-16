@@ -20,6 +20,7 @@ mod api;
 mod hashutils;
 mod githubutils;
 mod server_jars_com;
+mod backup;
 
 #[tokio::main]
 async fn main() {
@@ -29,7 +30,7 @@ async fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 3 {
-        println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Example:").yellow(), format!("./limonium paper 1.19.2").green());
+        println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Example:").yellow(), format!("./limonium paper 1.19.4").green());
         process::exit(102);
     }
 
@@ -43,11 +44,68 @@ async fn main() {
                 args_map.insert(current, args[i + 1].clone());
                 i += 2;
             }
+            // Get --backup
+            "--backup" => {
+                // Check if the next 3 arguments exist
+                if args.len() < i + 4 {
+                    println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Example:").yellow(), format!("./limonium --backup survival world/ backups/").green());
+                    process::exit(102);
+                }
+
+                let first_arg = args[i + 1].clone(); // name
+                let second_arg = args[i + 2].clone(); // folder to backup
+                let third_arg = args[i + 3].clone(); // folder to backup to
+
+                // Combine the two arguments
+                let mut new_arg = String::from("");
+                new_arg.push_str(&first_arg);
+                new_arg.push_str(" ");
+                new_arg.push_str(&second_arg);
+                new_arg.push_str(" ");
+                new_arg.push_str(&third_arg);
+
+                args_map.insert(current, new_arg);
+                i += 4;
+            }
             _ => {
                 args_map.insert(current, String::from(""));
                 i += 1;
             }
         }
+    }
+
+    // Handle backup if --backup is passed
+    if args_map.contains_key(&String::from("--backup")) {
+        let backup_arg = args_map[&String::from("--backup")].clone();
+
+        let mut split = backup_arg.split(" ");
+        let name = split.next().unwrap();
+        let to_backup = split.next().unwrap();
+        let backup_folder = split.next().unwrap();
+
+        let to_backup_pathbuf = current_path.join(to_backup);
+        let to_backup_folder_pathbuf = current_path.join(backup_folder);
+
+        let backup = backup::Backup::new(name.to_string(), to_backup_pathbuf, to_backup_folder_pathbuf);
+
+        let time = Instant::now();
+
+        // If error show error
+        let the_backup = backup.backup_tar_gz();
+        if the_backup.is_err() {
+            println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Error:").yellow(), format!("{}", the_backup.err().unwrap()).red());
+            process::exit(102);
+        }
+
+        let time_elapsed_seconds = time.elapsed().as_secs();
+        if time_elapsed_seconds > 65 {
+            let time_elapsed_minutes = time_elapsed_seconds / 60;
+            println!("{} {} {}", format!("Backup completed!").green().bold(), format!("Time elapsed:").yellow(), format!("{} minutes", time_elapsed_minutes).green());
+        } else {
+            println!("{} {} {}", format!("Backup completed!").green().bold(), format!("Time elapsed:").yellow(), format!("{} seconds", time_elapsed_seconds).green());
+        }
+
+        return;
     }
 
     // Handle path arguments

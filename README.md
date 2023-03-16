@@ -1,14 +1,8 @@
 # Limonium
 
-## _An easy way to download Spigot forks_
+### Limonium is a tiny Minecraft Server management tool.
 
 Limonium uses platform specific download APIs or Jenkins to download the .jars
-
-## Features
-
-- You can tell it what specific project you want
-- You can tell it what specific version you want
-- You can tell it where to save it
 
 ## Softwares
 
@@ -35,7 +29,8 @@ _Note: When using `-serverjars.com` argument some choices may not work as they m
 Extra arguments
 1. --o `The path of where the jar should go Example: --o /mc-servers/hub/Paper.jar`
 2. --serverjars.com `When this argument is used it will download the jar from` [ServerJars.com](https://serverjars.com/) `instead`
-2. --self-update `Updates limonium if there is a new version available`
+3. --backup `Easy way to backup your server. Example: --backup survival . /survival-backups/`
+4. --self-update `Updates limonium if there is a new version available`
 
 ```
 ./limonium paper 1.19.3
