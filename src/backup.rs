@@ -3,25 +3,37 @@ use std::io::{Error, ErrorKind, Write};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
+pub enum BackupFormat {
+    TarGz,
+    Zip,
+}
+
 pub struct Backup {
     name: String,
     server_directory: PathBuf,
     backup_directory: PathBuf,
+    backup_format: BackupFormat,
 }
 
 impl Backup {
-    pub fn new(name: String, server_directory: PathBuf, backup_directory: PathBuf) -> Self {
+    pub fn new(name: String, server_directory: PathBuf, backup_directory: PathBuf, backup_format: BackupFormat) -> Self {
         Backup {
             name,
             server_directory,
             backup_directory,
+            backup_format,
         }
     }
 
-    pub fn backup_tar_gz(&self) -> Result<(), Error> {
+    pub fn backup(&self) -> Result<(), Error> {
         let timestamp = chrono::Local::now().format("%-m-%-d-%Y");
 
-        let backup_path = self.backup_directory.join(format!("{}-{}.tar.gz", &self.name, timestamp));
+        let extension = match self.backup_format {
+            BackupFormat::TarGz => "tar.gz",
+            BackupFormat::Zip => "zip",
+        };
+
+        let backup_path = self.backup_directory.join(format!("{}-{}.{}", &self.name, timestamp, extension));
         let hash_path = self.backup_directory.join(format!("{}-{}_hash.txt", &self.name, timestamp));
 
         if !self.backup_directory.exists() {
@@ -29,14 +41,23 @@ impl Backup {
             println!("The backup directory did not exist, so it was created at {}", &self.backup_directory.display());
         }
 
-        // Create a gzip-compressed tar archive of the Minecraft server files
-        let mut tar_cmd = Command::new("tar");
-        tar_cmd.arg("-czf").arg(&backup_path);
-        tar_cmd.arg("-C").arg(&self.server_directory);
-        tar_cmd.arg(".");
-        let tar_output = tar_cmd.output()?;
-        if !tar_output.status.success() {
-            return Err(Error::new(ErrorKind::Other, format!("Failed to create backup archive of Minecraft server files: {}", String::from_utf8_lossy(&tar_output.stderr))));
+        // Create compressed tar or zip archive of the Minecraft server files
+        let mut cmd: Command = Command::new("tar");
+        match self.backup_format {
+            BackupFormat::TarGz => {
+                cmd.arg("-czf").arg(&backup_path);
+                cmd.arg(&self.server_directory);
+            }
+            BackupFormat::Zip => {
+                cmd = Command::new("zip");
+                cmd.arg("-r").arg(&backup_path);
+                cmd.arg(&self.server_directory);
+            }
+        };
+
+        let cmd_output = cmd.output()?;
+        if !cmd_output.status.success() {
+            return Err(Error::new(ErrorKind::Other, format!("Failed to create backup archive of Minecraft server files: {}", String::from_utf8_lossy(&cmd_output.stderr))));
         }
 
         // Compute the sha256 hash of the backup archive
@@ -54,16 +75,29 @@ impl Backup {
         // Create a new gzip-compressed tar archive containing the backup archive and the hash file
         let mut combined_backup_path = backup_path.clone();
         let how_many_backups_of_today_date = self.get_how_many_backups_of_today_date()?;
-        combined_backup_path.set_file_name(format!("{}-{}-{}-bundle.tar.gz", &self.name, timestamp, how_many_backups_of_today_date));
+        combined_backup_path.set_file_name(format!("{}-{}-{}-bundle.{}", &self.name, timestamp, how_many_backups_of_today_date, extension));
 
-        let mut tar_cmd = Command::new("tar");
-        tar_cmd.arg("-czf").arg(&combined_backup_path);
-        tar_cmd.arg("-C").arg(&self.backup_directory);
-        tar_cmd.arg(&backup_path.file_name().unwrap());
-        tar_cmd.arg(&hash_path.file_name().unwrap());
-        let tar_output = tar_cmd.output()?;
-        if !tar_output.status.success() {
-            return Err(Error::new(ErrorKind::Other, "Failed to create combined backup archive of Minecraft server files and hash file"));
+        cmd = Command::new("tar");
+        match self.backup_format {
+            BackupFormat::TarGz => {
+                cmd.arg("-czf").arg(&combined_backup_path);
+                cmd.arg("-C").arg(&self.backup_directory);
+                cmd.arg(&backup_path.file_name().unwrap());
+                cmd.arg(&hash_path.file_name().unwrap());
+            }
+            BackupFormat::Zip => {
+                cmd = Command::new("zip");
+                cmd.current_dir(&self.backup_directory);
+
+                cmd.arg("-r").arg(&combined_backup_path);
+                cmd.arg(&backup_path);
+                cmd.arg(&hash_path);
+            }
+        }
+
+        let cmd_output = cmd.output()?;
+        if !cmd_output.status.success() {
+            return Err(Error::new(ErrorKind::Other, format!("Failed to create combined backup archive of Minecraft server files and hash file: {}", String::from_utf8_lossy(&cmd_output.stderr))));
         }
 
         // Delete the temporary backup archive and hash file

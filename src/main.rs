@@ -15,6 +15,7 @@ use std::time::Instant;
 use colored::Colorize;
 
 use crate::api::spigotmc::SpigotAPI;
+use crate::backup::BackupFormat;
 
 mod api;
 mod hashutils;
@@ -74,10 +75,23 @@ async fn main() {
         }
     }
 
+    // Handle updating first
+    // Handle update if --self-update is passed
+    if args_map.contains_key(&String::from("--self-update")) {
+        tokio::task::spawn_blocking(move || {
+            if let Err(e) = update() {
+                println!("[ERROR] {}", e);
+                process::exit(1);
+            }
+        }).await.expect("Something went wrong at self update?");
+        return;
+    }
+
     // Handle backup if --backup is passed
     if args_map.contains_key(&String::from("--backup")) {
         let backup_arg = args_map[&String::from("--backup")].clone();
 
+        // Split the backup argument
         let mut split = backup_arg.split(" ");
         let name = split.next().unwrap();
         let to_backup = split.next().unwrap();
@@ -86,12 +100,18 @@ async fn main() {
         let to_backup_pathbuf = current_path.join(to_backup);
         let to_backup_folder_pathbuf = current_path.join(backup_folder);
 
-        let backup = backup::Backup::new(name.to_string(), to_backup_pathbuf, to_backup_folder_pathbuf);
+        let mut backup_format: BackupFormat = BackupFormat::TarGz;
+        // Check if --zip or -zip is passed
+        if args_map.contains_key(&String::from("--zip")) || args_map.contains_key(&String::from("-zip")) {
+            backup_format = BackupFormat::Zip;
+        }
+
+        let backup = backup::Backup::new(name.to_string(), to_backup_pathbuf, to_backup_folder_pathbuf, backup_format);
 
         let time = Instant::now();
 
         // If error show error
-        let the_backup = backup.backup_tar_gz();
+        let the_backup = backup.backup();
         if the_backup.is_err() {
             println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Error:").yellow(), format!("{}", the_backup.err().unwrap()).red());
             process::exit(102);
@@ -131,7 +151,7 @@ async fn main() {
         process::exit(102);
     }
 
-    // Spigot is special because it's dumb
+    // Spigot is special, because it's dumb
     if project.eq_ignore_ascii_case("spigot") {
         if path.eq("") {
             path.push_str("./spigot-");
@@ -141,59 +161,51 @@ async fn main() {
 
         SpigotAPI::download_build_tools();
         SpigotAPI::run_build_tools(&version, &path);
+        return; // Don't continue
+    }
+
+    let platform = api::get_platform(&project);
+    let build = platform.get_latest_build(&project, &version).await.expect("Getting the latest build failed?");
+
+    // Set the path if it's empty
+    if path.eq("") {
+        path.push_str(platform.get_jar_name(&project, &version, &build).as_str());
+    }
+
+    // Start elapsed time
+    let start = Instant::now();
+
+    // Get the hash of the jar from a API
+    let hash_optional = platform.get_jar_hash(&project, &version, &build).await;
+
+    // Verify if we need to download the jar by checking the hash of the current installed jar
+    if hash_optional.is_some() {
+        let hash = hash_optional.as_ref().unwrap();
+
+        if current_path.join(&path).exists() {
+            let does_match = hashutils::validate_the_hash(&hash, &current_path, &path, false);
+            if does_match {
+                // Don't download the jar if the hash is the same
+                println!("{} {} {}", format!("You are already up to date!").green().bold(), format!("Path:").yellow(), format!("{}", &path).blue().bold());
+                return;
+            }
+        }
+    }
+
+    let tmp_jar_name = api::download_jar_to_temp_dir(&platform.get_download_link(&project, &version, &build)).await;
+
+    // Verify the hash of the downloaded jar in the temp directory
+    if hash_optional.is_some() {
+        let hash = &hash_optional.unwrap();
+        hashutils::validate_the_hash(&hash, &temp_dir(), &tmp_jar_name, true);
     } else {
-        let platform = api::get_platform(&project);
-        let build = platform.get_latest_build(&project, &version).await.expect("Getting the latest build failed?");
-
-        // Set the path if it's empty
-        if path.eq("") {
-            path.push_str(platform.get_jar_name(&project, &version, &build).as_str());
-        }
-
-        // Start elapsed time
-        let start = Instant::now();
-
-        // Get the hash of the jar from a API
-        let hash_optional = platform.get_jar_hash(&project, &version, &build).await;
-
-        // Verify if we need to download the jar by checking the hash of the current installed jar
-        if hash_optional.is_some() {
-            let hash = hash_optional.as_ref().unwrap();
-
-            if current_path.join(&path).exists() {
-                let does_match = hashutils::validate_the_hash(&hash, &current_path, &path, false);
-                if does_match {
-                    // Don't download the jar if the hash is the same
-                    println!("{} {} {}", format!("You are already up to date!").green().bold(), format!("Path:").yellow(), format!("{}", &path).blue().bold());
-                    return;
-                }
-            }
-        }
-
-        let tmp_jar_name = api::download_jar_to_temp_dir(&platform.get_download_link(&project, &version, &build)).await;
-
-        // Verify the hash of the downloaded jar in the temp directory
-        if hash_optional.is_some() {
-            let hash = &hash_optional.unwrap();
-            hashutils::validate_the_hash(&hash, &temp_dir(), &tmp_jar_name, true);
-        } else {
-            println!("{}", format!("Not checking hash!").yellow().bold());
-        }
-
-        api::copy_jar_from_temp_dir_to_dest(&tmp_jar_name, &path);
-
-        let duration = start.elapsed().as_millis().to_string();
-        println!("{} {} {} {}", format!("Downloaded JAR:").green().bold(), format!("{}", &path.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
+        println!("{}", format!("Not checking hash!").yellow().bold());
     }
 
-    if args_map.contains_key(&String::from("--self-update")) {
-        tokio::task::spawn_blocking(move || {
-            if let Err(e) = update() {
-                println!("[ERROR] {}", e);
-                ::std::process::exit(1);
-            }
-        }).await.expect("Something went wrong at self update?");
-    }
+    api::copy_jar_from_temp_dir_to_dest(&tmp_jar_name, &path);
+
+    let duration = start.elapsed().as_millis().to_string();
+    println!("{} {} {} {}", format!("Downloaded JAR:").green().bold(), format!("{}", &path.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
 }
 
 fn update() -> Result<(), Box<dyn ::std::error::Error>> {
