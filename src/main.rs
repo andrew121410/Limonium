@@ -97,7 +97,6 @@ async fn main() {
         let to_backup = split.next().unwrap();
         let backup_folder = split.next().unwrap();
 
-        let to_backup_pathbuf = current_path.join(to_backup);
         let to_backup_folder_pathbuf = current_path.join(backup_folder);
 
         let mut backup_format: BackupFormat = BackupFormat::TarGz;
@@ -106,7 +105,7 @@ async fn main() {
             backup_format = BackupFormat::Zip;
         }
 
-        let backup = backup::Backup::new(name.to_string(), to_backup_pathbuf, to_backup_folder_pathbuf, backup_format);
+        let backup = backup::Backup::new(name.to_string(), to_backup.to_string(), to_backup_folder_pathbuf, backup_format);
 
         let time = Instant::now();
 

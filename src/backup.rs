@@ -1,7 +1,10 @@
+use std::env::current_dir;
 use std::fs;
 use std::io::{Error, ErrorKind, Write};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+
+use colored::Colorize;
 
 pub enum BackupFormat {
     TarGz,
@@ -10,16 +13,16 @@ pub enum BackupFormat {
 
 pub struct Backup {
     name: String,
-    server_directory: PathBuf,
+    directory_to_backup: String,
     backup_directory: PathBuf,
     backup_format: BackupFormat,
 }
 
 impl Backup {
-    pub fn new(name: String, server_directory: PathBuf, backup_directory: PathBuf, backup_format: BackupFormat) -> Self {
+    pub fn new(name: String, directory_to_backup: String, backup_directory: PathBuf, backup_format: BackupFormat) -> Self {
         Backup {
             name,
-            server_directory,
+            directory_to_backup,
             backup_directory,
             backup_format,
         }
@@ -33,25 +36,57 @@ impl Backup {
             BackupFormat::Zip => "zip",
         };
 
-        let backup_path = self.backup_directory.join(format!("{}-{}.{}", &self.name, timestamp, extension));
-        let hash_path = self.backup_directory.join(format!("{}-{}_hash.txt", &self.name, timestamp));
+        match self.backup_format {
+            BackupFormat::TarGz => {
+                if !self.does_tar_command_exist() {
+                    return Err(Error::new(ErrorKind::Other, "The tar command does not exist. Please install it and try again."));
+                }
+            }
+            BackupFormat::Zip => {
+                if !self.does_zip_command_exist() {
+                    return Err(Error::new(ErrorKind::Other, "The zip command does not exist. Please install it and try again."));
+                }
+            }
+        }
 
+        // Create the backup directory if it does not exist
         if !self.backup_directory.exists() {
             fs::create_dir_all(&self.backup_directory)?;
             println!("The backup directory did not exist, so it was created at {}", &self.backup_directory.display());
         }
+
+        let backup_path = self.backup_directory.join(format!("{}-{}.{}", &self.name, timestamp, extension));
+        let hash_path = self.backup_directory.join(format!("{}-{}_hash.txt", &self.name, timestamp));
+
+        println!("{}", format!("Please wait while the backup is being created...").yellow());
 
         // Create compressed tar or zip archive of the Minecraft server files
         let mut cmd: Command = Command::new("tar");
         match self.backup_format {
             BackupFormat::TarGz => {
                 cmd.arg("-czf").arg(&backup_path);
-                cmd.arg(&self.server_directory);
+
+                // You may backup multiple folders by splitting them with a : (colon)
+                // Example: "world:world_nether:world_the_end"
+                let folders_to_backup = self.directory_to_backup.split(":");
+                println!("folders_to_backup: {:?}", folders_to_backup);
+
+                for folder in folders_to_backup {
+                    cmd.arg(&folder);
+                }
             }
             BackupFormat::Zip => {
                 cmd = Command::new("zip");
                 cmd.arg("-r").arg(&backup_path);
-                cmd.arg(&self.server_directory);
+
+                // You may backup multiple folders by splitting them with a : (colon)
+                // Example: "world:world_nether:world_the_end"
+                let folders_to_backup = self.directory_to_backup.split(":");
+                println!("folders_to_backup: {:?}", folders_to_backup);
+
+                for folder in folders_to_backup {
+                    cmd.arg(&folder);
+                }
             }
         };
 
@@ -125,5 +160,27 @@ impl Backup {
             }
         }
         Ok(count - 1)
+    }
+
+    fn does_tar_command_exist(&self) -> bool {
+        let output = Command::new("tar").arg("--version").output();
+
+        if output.is_err() {
+            return false;
+        }
+
+        let the_output = output.unwrap();
+        the_output.status.success()
+    }
+
+    fn does_zip_command_exist(&self) -> bool {
+        let output = Command::new("zip").arg("--version").output();
+
+        if output.is_err() {
+            return false;
+        }
+
+        let the_output = output.unwrap();
+        the_output.status.success()
     }
 }
