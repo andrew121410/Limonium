@@ -21,7 +21,7 @@ impl Backup {
     pub fn backup_tar_gz(&self) -> Result<(), Error> {
         let timestamp = chrono::Local::now().format("%-m-%-d-%Y");
 
-        let backup_path = self.backup_directory.join(format!("{}-{}-temp.tar.gz", &self.name, timestamp));
+        let backup_path = self.backup_directory.join(format!("{}-{}.tar.gz", &self.name, timestamp));
         let hash_path = self.backup_directory.join(format!("{}-{}_hash.txt", &self.name, timestamp));
 
         if !self.backup_directory.exists() {
@@ -54,7 +54,7 @@ impl Backup {
         // Create a new gzip-compressed tar archive containing the backup archive and the hash file
         let mut combined_backup_path = backup_path.clone();
         let how_many_backups_of_today_date = self.get_how_many_backups_of_today_date()?;
-        combined_backup_path.set_file_name(format!("{}-{}-{}.tar.gz", &self.name, timestamp, how_many_backups_of_today_date));
+        combined_backup_path.set_file_name(format!("{}-{}-{}-bundle.tar.gz", &self.name, timestamp, how_many_backups_of_today_date));
 
         let mut tar_cmd = Command::new("tar");
         tar_cmd.arg("-czf").arg(&combined_backup_path);
