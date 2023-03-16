@@ -36,7 +36,7 @@ impl Backup {
         tar_cmd.arg(".");
         let tar_output = tar_cmd.output()?;
         if !tar_output.status.success() {
-            return Err(Error::new(ErrorKind::Other, "Failed to create backup archive of Minecraft server files"));
+            return Err(Error::new(ErrorKind::Other, format!("Failed to create backup archive of Minecraft server files: {}", String::from_utf8_lossy(&tar_output.stderr))));
         }
 
         // Compute the sha256 hash of the backup archive
