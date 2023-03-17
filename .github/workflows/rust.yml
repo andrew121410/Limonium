@@ -29,6 +29,12 @@ jobs:
         uses: vimtor/action-zip@v1
         with:
           files: /target/release/limonium
+          dest: /target/release/limonium-x86_64-unknown-linux-gnu.zip
+
+      - name: Zip Linux Binary (OLD)
+        uses: vimtor/action-zip@v1
+        with:
+          files: /target/release/limonium
           dest: /target/release/limonium-linux.zip
 
       - name: Deploy Release With Artifact
@@ -38,4 +44,5 @@ jobs:
           automatic_release_tag: "${{ steps.cargo_version.outputs.t_cargo_version }}"
           prerelease: false
           files: |
+            target/release/limonium-x86_64-unknown-linux-gnu.zip
             target/release/limonium-linux.zip

@@ -78,13 +78,9 @@ async fn main() {
     // Handle updating first
     // Handle update if --self-update is passed
     if args_map.contains_key(&String::from("--self-update")) {
-        tokio::task::spawn_blocking(move || {
-            if let Err(e) = update() {
-                println!("[ERROR] {}", e);
-                process::exit(1);
-            }
-        }).await.expect("Something went wrong at self update?");
-        return;
+        if self_update() {
+            process::exit(0); // Exit if updated
+        }
     }
 
     // Handle backup if --backup is passed
@@ -214,23 +210,24 @@ async fn main() {
     println!("{} {} {} {}", format!("Downloaded JAR:").green().bold(), format!("{}", &path.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
 }
 
-fn update() -> Result<(), Box<dyn ::std::error::Error>> {
+fn self_update() -> bool {
     println!("Current Version: {}", cargo_crate_version!());
     let status = self_update::backends::github::Update::configure()
         .repo_owner("andrew121410")
         .repo_name("limonium")
-        .target("limonium-linux.zip")
+        .target("limonium-x86_64-unknown-linux-gnu.zip")
         .bin_name("limonium")
         .no_confirm(true)
         .show_download_progress(false)
         .show_output(false)
         .current_version(cargo_crate_version!())
-        .build()?
-        .update()?;
-    if status.updated() {
+        .build().expect("Failed to build update")
+        .update().expect("Failed to update");
+    return if status.updated() {
         println!("Updated Limonium from {} to {}", cargo_crate_version!(), &status.version());
+        true
     } else {
-        println!("Already up to date!");
-    }
-    Ok(())
+        println!("Limonium is already up to date!");
+        false
+    };
 }
