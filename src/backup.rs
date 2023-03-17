@@ -70,7 +70,6 @@ impl Backup {
                 // Example: "logs:plugins/dynmap"
                 if let Some(exclude) = &self.exclude {
                     let exclude = exclude.split(":");
-                    println!("exclude: {:?}", exclude);
 
                     for exclude in exclude {
                         cmd.arg(format!("--exclude={}", exclude));
@@ -82,7 +81,6 @@ impl Backup {
                 // You may backup multiple folders by splitting them with a : (colon)
                 // Example: "world:world_nether:world_the_end"
                 let folders_to_backup = self.directory_to_backup.split(":");
-                println!("folders_to_backup: {:?}", folders_to_backup);
 
                 for folder in folders_to_backup {
                     cmd.arg(&folder);
@@ -95,7 +93,6 @@ impl Backup {
                 // You may backup multiple folders by splitting them with a : (colon)
                 // Example: "world:world_nether:world_the_end"
                 let folders_to_backup = self.directory_to_backup.split(":");
-                println!("folders_to_backup: {:?}", folders_to_backup);
 
                 for folder in folders_to_backup {
                     cmd.arg(&folder);
@@ -105,7 +102,6 @@ impl Backup {
                 // Example: "logs:plugins/dynmap"
                 if let Some(exclude) = &self.exclude {
                     let exclude = exclude.split(":");
-                    println!("exclude: {:?}", exclude);
 
                     for exclude in exclude {
                         cmd.arg(format!("-x {}", exclude));
