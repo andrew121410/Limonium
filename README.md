@@ -28,11 +28,13 @@ _Note: When using `-serverjars.com` argument some choices may not work as they m
 
 *Usage: &lt;project_id&gt; &lt;version&gt;*
 
-Extra arguments
+Arguments
 1. --o `The path of where the jar should go Example: --o /mc-servers/hub/Paper.jar`
 2. --serverjars.com `When this argument is used it will download the jar from` [ServerJars.com](https://serverjars.com/) `instead`
 3. --backup `Easy way to backup your server. Example: --backup survival . ../survival-backups/`
-4. --self-update `Updates limonium if there is a new version available`
+4. --zip `Uses zip instead of tar.gz for backups. Example: --zip --backup survival . ../survival-backups/`
+5. --exclude `Excludes files from the backup. Example: --backup survival . ../survival-backups/ --exclude logs:plugins/dynmap"`
+6. --self-update `Updates limonium if there is a new version available`
 
 ```
 ./limonium paper 1.19.3

@@ -16,15 +16,17 @@ pub struct Backup {
     directory_to_backup: String,
     backup_directory: PathBuf,
     backup_format: BackupFormat,
+    exclude: Option<String>,
 }
 
 impl Backup {
-    pub fn new(name: String, directory_to_backup: String, backup_directory: PathBuf, backup_format: BackupFormat) -> Self {
+    pub fn new(name: String, directory_to_backup: String, backup_directory: PathBuf, backup_format: BackupFormat, exclude: Option<String>) -> Self {
         Backup {
             name,
             directory_to_backup,
             backup_directory,
             backup_format,
+            exclude,
         }
     }
 
@@ -64,6 +66,17 @@ impl Backup {
         let mut cmd: Command = Command::new("tar");
         match self.backup_format {
             BackupFormat::TarGz => {
+                // You may exclude files and folders by splitting them with a : (colon)
+                // Example: "logs:plugins/dynmap"
+                if let Some(exclude) = &self.exclude {
+                    let exclude = exclude.split(":");
+                    println!("exclude: {:?}", exclude);
+
+                    for exclude in exclude {
+                        cmd.arg(format!("--exclude={}", exclude));
+                    }
+                }
+
                 cmd.arg("-czf").arg(&backup_path);
 
                 // You may backup multiple folders by splitting them with a : (colon)
@@ -87,6 +100,17 @@ impl Backup {
                 for folder in folders_to_backup {
                     cmd.arg(&folder);
                 }
+
+                // You may exclude files and folders by splitting them with a : (colon)
+                // Example: "logs:plugins/dynmap"
+                if let Some(exclude) = &self.exclude {
+                    let exclude = exclude.split(":");
+                    println!("exclude: {:?}", exclude);
+
+                    for exclude in exclude {
+                        cmd.arg(format!("-x {}", exclude));
+                    }
+                }
             }
         };
 
@@ -107,10 +131,9 @@ impl Backup {
         let mut hash_file = fs::File::create(&hash_path)?;
         hash_file.write_all(&hash_output.stdout)?;
 
-        // Create a new gzip-compressed tar archive containing the backup archive and the hash file
-        let mut combined_backup_path = backup_path.clone();
+        // Combine the backup archive and the hash into a single archive
         let how_many_backups_of_today_date = self.get_how_many_backups_of_today_date()?;
-        combined_backup_path.set_file_name(format!("{}-{}-{}-bundle.{}", &self.name, timestamp, how_many_backups_of_today_date, extension));
+        let mut combined_backup_path = self.backup_directory.join(format!("{}-{}-{}-bundle.{}", &self.name, timestamp, how_many_backups_of_today_date, extension));
 
         cmd = Command::new("tar");
         match self.backup_format {
@@ -125,8 +148,8 @@ impl Backup {
                 cmd.current_dir(&self.backup_directory);
 
                 cmd.arg("-r").arg(&combined_backup_path);
-                cmd.arg(&backup_path);
-                cmd.arg(&hash_path);
+                cmd.arg(&backup_path.file_name().unwrap());
+                cmd.arg(&hash_path.file_name().unwrap());
             }
         }
 

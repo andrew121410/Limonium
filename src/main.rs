@@ -41,7 +41,7 @@ async fn main() {
         let current = args[i].clone();
 
         match current.to_lowercase().as_str() {
-            "--o" | "--n" => {
+            "--o" | "--n" | "--exclude" => {
                 args_map.insert(current, args[i + 1].clone());
                 i += 2;
             }
@@ -105,7 +105,14 @@ async fn main() {
             backup_format = BackupFormat::Zip;
         }
 
-        let backup = backup::Backup::new(name.to_string(), to_backup.to_string(), to_backup_folder_pathbuf, backup_format);
+        let exclude: Option<&String> = args_map.get(&String::from("--exclude"));
+        // To lazy to mess with lifetimes
+        let exclude_owned: Option<String> = match exclude {
+            Some(exclude) => Some(exclude.to_string()),
+            None => None
+        };
+
+        let backup = backup::Backup::new(name.to_string(), to_backup.to_string(), to_backup_folder_pathbuf, backup_format, exclude_owned);
 
         let time = Instant::now();
 
