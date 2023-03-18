@@ -1,10 +1,13 @@
 # Limonium
 
-### Limonium is a tiny Minecraft Server management tool.
+## Limonium is a tiny Minecraft Server management tool.
 
 It can update your server jar, and backup your server.
 
-Limonium uses platform specific download APIs or Jenkins to download the .jars
+The core feature of Limonium, and why it was created, was to update Paper (that's it) \
+The other feature(s?) like the backup feature was an afterthought.
+
+Limonium uses platform specific download APIs(Paper, Purpur) or Jenkins to download the .jars
 
 ## Softwares
 
