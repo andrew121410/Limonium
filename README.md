@@ -69,6 +69,9 @@ Unless you use the --zip argument then it will create a zip file.
 ./limonium --backup survival world:world_nether:world_the_end:plugins ../survival-backups/ --exclude plugins/dynmap/
 ```
 
+## Why is this simple thing in Rust?
+Well, I wanted to learn the Rust programming language, but I didn't know what to make, so I thought of something simple.
+
 ## Building
 
 `cargo build -r`
