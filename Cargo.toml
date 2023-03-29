@@ -10,7 +10,7 @@ reqwest = "0.11.14"
 serde = "1.0.154"
 serde_derive = "1.0.154"
 serde_json = "1.0.94"
-async-trait = "0.1.66"
+async-trait = "0.1.68"
 tokio = { version = "1.26.0", features = ["rt-multi-thread", "macros"] }
 colored = "2.0.0"
 self_update = { version = "0.36.0", features = ["archive-zip", "compression-zip-deflate"] }
