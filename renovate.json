@@ -5,6 +5,7 @@
   ],
   "packageRules": [
     {
+      "matchUpdateTypes": ["major", "minor"],
       "groupName": "dependency-updates",
       "groupSlug": "dependency-updates",
       "commitMessageTopic": "dependency-updates",
