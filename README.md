@@ -58,9 +58,12 @@ _Note: When using `--serverjars.com` argument some choices may not work as they 
 
 ## Backup Function
 
+The backup function will back up the folders you specify, and compress them and put them in the backup directory.
+By default, it will use tar.gz, unless specified otherwise.
+
 ### Optional Backup Arguments
-1. --zip `Uses zip instead of tar.gz for backups. Example: --zip --backup survival . ../survival-backups/`
-2. --exclude `Excludes files from the backup. Example: --backup survival . ../survival-backups/ --exclude logs:plugins/dynmap"`
+1. --zip `Uses zip instead of tar.gz for backups.`
+2. --exclude `Excludes files from the backup`
 
 ### Backup Usage
 
