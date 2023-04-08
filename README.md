@@ -21,6 +21,7 @@ Limonium uses platform specific download APIs(Paper, Purpur) or Jenkins to downl
 1. [Paper](https://github.com/PaperMC/Paper) -> `./limonium downlaod paper 1.19.4`
 2. [Purpur](https://github.com/PurpurMC/Purpur) -> `./limonium downlaod purpur 1.19.4`
 3. [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) -> `./limonium downlaod pufferfish 1.19.4`
+4. [Geyser](https://github.com/GeyserMc/Geyser) -> `./limonium downlaod geyser 2.1.0` (default is geyser-standalone)
 6. [Spigot](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/browse) -> `./limonium download spigot 1.19.4` (Not recommended)\
 __If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run it__
 
@@ -39,6 +40,7 @@ _Note: When using `--serverjars.com` argument some choices may not work as they 
 ### Optional Download Arguments
 1. --o `The path of where the jar should go Example: --o /mc-servers/hub/Paper.jar`
 2. --serverjars.com `When this argument is used it will download the jar from` [ServerJars.com](https://serverjars.com/) `instead`
+3. --c `The channel so for geyser the default channel is "standalone" but can be changed to (spigot, bungeecord, velocity, fabric, sponge)`
 
 ### Download Usage
 

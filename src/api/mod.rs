@@ -1,23 +1,27 @@
-use reqwest::header;
 use std::{fs, io};
 use std::env::temp_dir;
 use std::fs::File;
 use std::io::Cursor;
+
+use reqwest::header;
 use uuid::Uuid;
 
 use crate::api::platform::IPlatform;
 
+mod bibliothek;
 pub mod platform;
 pub mod papermc;
 pub mod purpurmc;
 pub mod pufferfish;
 pub mod spigotmc;
+pub mod geysermc;
 
 pub fn get_platform(the_project: &String) -> &dyn IPlatform {
     return match the_project.to_lowercase().as_str() {
         "purpur" => &purpurmc::PurpurAPI as &dyn IPlatform,
         "pufferfish" => &pufferfish::PufferfishAPI as &dyn IPlatform,
-        _ => &papermc::PaperAPI as &dyn IPlatform,
+        "geyser" => &geysermc::GeyserAPI {} as &dyn IPlatform,
+        _ => &papermc::PaperAPI {} as &dyn IPlatform,
     };
 }
 
@@ -29,6 +33,7 @@ pub fn is_valid_platform(the_project: &String) -> bool {
         "paper" => true,
         "waterfall" => true,
         "velocity" => true,
+        "geyser" => true,
         _ => false,
     };
 }

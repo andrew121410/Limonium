@@ -9,6 +9,9 @@ extern crate serde_json;
 use std::{env, process};
 use std::collections::HashMap;
 use std::env::temp_dir;
+use std::os::linux::raw::stat;
+use std::ptr::null;
+use std::rc::Rc;
 use std::string::String;
 use std::time::Instant;
 
@@ -24,6 +27,8 @@ mod hashutils;
 mod githubutils;
 mod server_jars_com;
 mod backup;
+
+static mut SUB_COMMAND_ARG_MATCHES: Option<Rc<ArgMatches>> = None;
 
 fn show_example() {
     println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Example:").yellow(), format!("./limonium download paper 1.19.4").green());
@@ -66,6 +71,12 @@ async fn main() {
                 .help("Downloads the server from serverjars.com")
                 .long("serverjars.com")
                 .action(ArgAction::SetTrue)
+                .required(false))
+            .arg(clap::Arg::new("channel")
+                .help("Choose the server to download [Example for Paper the default is \"application\" the choices are (application, mojang-mappings)]")
+                .short('c')
+                .aliases(["c"])
+                .action(ArgAction::Set)
                 .required(false)))
         .subcommand(clap::Command::new("backup")
             .about("Backs up the server")
@@ -95,7 +106,7 @@ async fn main() {
                 .default_value("tar.gz")
                 .value_parser(["zip", "tar.gz"])));
 
-    let command_matches = matches_commands.get_matches();
+    let command_matches: ArgMatches = matches_commands.get_matches();
 
     // Handle self-update
     if command_matches.get_flag("self-update") {
@@ -107,9 +118,11 @@ async fn main() {
 
     match command_matches.subcommand() {
         Some(("download", download_matches)) => {
+            unsafe { SUB_COMMAND_ARG_MATCHES = Some(Rc::new(download_matches.clone())); } // @TODO: Dumb find a better way to do this
             handle_download(&download_matches).await;
         }
         Some(("backup", backup_matches)) => {
+            unsafe { SUB_COMMAND_ARG_MATCHES = Some(Rc::new(backup_matches.clone())); } // @TODO: Dumb find a better way to do this
             handle_backup(&backup_matches);
         }
         _ => {
