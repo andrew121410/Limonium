@@ -39,12 +39,21 @@ impl platform::IPlatform for GeyserAPI {
 
         let mut versions: Vec<String> = json.versions.unwrap();
 
+        // See if we don't include snapshot versions
+        unsafe {
+            let args: &Rc<ArgMatches> = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
+            let dont_include_snapshot_versions: bool = args.get_flag("latest-dont-include-snapshot-versions");
+            if dont_include_snapshot_versions {
+                versions.retain(|x| !x.contains("-SNAPSHOT"));
+            }
+        }
+
         // Sort versions
-        number_utils::sort_versions_one_decimal_and_two_decimal_lowest_to_highest(&mut versions);
+        number_utils::sort_versions(&mut versions);
 
         let latest_version: String = versions.last().unwrap().to_string();
-        println!("{} {}", "Latest version:".green(), latest_version);
 
+        println!("{} {}", "Latest version:".green(), latest_version);
         Some(latest_version.to_string())
     }
 
