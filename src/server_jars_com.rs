@@ -1,4 +1,4 @@
-use std::{env, process};
+use std::{process};
 use std::collections::HashMap;
 use std::env::temp_dir;
 use std::time::Instant;

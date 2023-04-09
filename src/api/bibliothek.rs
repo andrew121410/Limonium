@@ -1,15 +1,15 @@
 use std::collections::HashMap;
-use std::fmt::format;
+
 use std::process;
 use std::rc::Rc;
 use std::string::String;
 
 use clap::ArgMatches;
-use clap::builder::Str;
+
 use colored::Colorize;
 
-use crate::{main, number_utils, SUB_COMMAND_ARG_MATCHES};
-use crate::api::platform;
+use crate::{number_utils, SUB_COMMAND_ARG_MATCHES};
+
 use crate::hashutils::Hash;
 
 // https://github.com/PaperMC/bibliothek

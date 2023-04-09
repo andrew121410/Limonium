@@ -1,8 +1,8 @@
-use std::env::current_dir;
+
 use std::fs;
 use std::io::{Error, ErrorKind, Write};
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
+use std::process::{Command};
 
 use colored::Colorize;
 
@@ -129,7 +129,7 @@ impl Backup {
 
         // Combine the backup archive and the hash into a single archive
         let how_many_backups_of_today_date = self.get_how_many_backups_of_today_date()?;
-        let mut combined_backup_path = self.backup_directory.join(format!("{}-{}-{}-bundle.{}", &self.name, timestamp, how_many_backups_of_today_date, extension));
+        let combined_backup_path = self.backup_directory.join(format!("{}-{}-{}-bundle.{}", &self.name, timestamp, how_many_backups_of_today_date, extension));
 
         cmd = Command::new("tar");
         match self.backup_format {

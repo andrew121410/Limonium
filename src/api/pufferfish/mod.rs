@@ -52,7 +52,7 @@ impl platform::IPlatform for PufferfishAPI {
         return None;
     }
 
-    async fn get_latest_version(&self, project: &String) -> Option<String> {
+    async fn get_latest_version(&self, _project: &String) -> Option<String> {
         None
     }
 }

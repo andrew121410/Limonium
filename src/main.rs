@@ -7,16 +7,16 @@ extern crate serde_derive;
 extern crate serde_json;
 
 use std::{env, process};
-use std::collections::HashMap;
+
 use std::env::temp_dir;
-use std::os::linux::raw::stat;
-use std::ptr::null;
+
+
 use std::rc::Rc;
 use std::string::String;
 use std::time::Instant;
 
 use clap::{ArgAction, ArgMatches};
-use clap::builder::Str;
+
 use colored::Colorize;
 
 use crate::api::spigotmc::SpigotAPI;
@@ -156,7 +156,7 @@ async fn handle_download(download_matches: &ArgMatches) {
         process::exit(102);
     }
 
-    let mut temp = String::from("");
+    let temp = String::from("");
     let mut path_string = download_matches.get_one::<String>("path").unwrap_or(&temp).to_string();
 
     // Handle serverjars.com flag
@@ -253,7 +253,7 @@ fn handle_backup(backup_matches: &ArgMatches) {
     let to_backup = backup_matches.get_one::<String>("to_backup").unwrap();
     let backup_folder = backup_matches.get_one::<String>("backup_folder").unwrap();
     let format = backup_matches.get_one::<String>("format").unwrap();
-    let mut exclude: Option<&String> = backup_matches.get_one::<String>("exclude");
+    let exclude: Option<&String> = backup_matches.get_one::<String>("exclude");
 
     // Lazy to mess with lifetimes so I'm just going to do this Lol..
     let mut exclude_ours: Option<String> = None;
