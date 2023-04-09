@@ -5,9 +5,10 @@ use std::rc::Rc;
 use std::string::String;
 
 use clap::ArgMatches;
+use clap::builder::Str;
 use colored::Colorize;
 
-use crate::{main, SUB_COMMAND_ARG_MATCHES};
+use crate::{main, number_utils, SUB_COMMAND_ARG_MATCHES};
 use crate::api::platform;
 use crate::hashutils::Hash;
 
@@ -19,6 +20,38 @@ pub struct BibliothekAPI {
 }
 
 impl BibliothekAPI {
+    pub async fn get_latest_version(&self, project: &String) -> Option<String> {
+        let mut link = String::from(&self.url.to_string());
+        link.push_str("/v2/projects/");
+        link.push_str(&project);
+
+        let text = reqwest::get(&link).await.unwrap().text().await.unwrap();
+        let json: BibliothekProjectJSON = serde_json::from_str(text.as_str()).unwrap();
+
+        if json.error.is_some() {
+            println!("{} {}", "Error:".red(), json.error.unwrap());
+            return None;
+        }
+
+        if json.versions.is_none() {
+            println!("{} {}", "Error:".red(), "No versions found");
+            return None;
+        }
+
+        let mut versions: Vec<String> = json.versions.unwrap();
+
+        // Paper for some reason has "1.13-pre-7" lol
+        versions.retain(|x| !x.contains("-pre"));
+
+        // Sort versions
+        number_utils::sort_versions_one_decimal_and_two_decimal_lowest_to_highest(&mut versions);
+
+        let latest_version: String = versions.last().unwrap().to_string();
+        println!("{} {}", "Latest version:".green(), latest_version);
+
+        Some(latest_version.to_string())
+    }
+
     pub fn get_download_link(&self, project: &String, version: &String, build: &String) -> String {
         let jar_name = BibliothekAPI::get_jar_name(&self, &project, &version, &build);
 
@@ -112,6 +145,18 @@ impl BibliothekAPI {
         }
         return None;
     }
+}
+
+// https://api.papermc.io/v2/projects/paper
+#[derive(Deserialize, Default)]
+struct BibliothekProjectJSON {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    error: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    versions: Option<Vec<String>>,
 }
 
 // https://api.papermc.io/v2/projects/paper/versions/1.19.2

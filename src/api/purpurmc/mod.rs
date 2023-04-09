@@ -47,6 +47,10 @@ impl platform::IPlatform for PurpurAPI {
         }
         return None;
     }
+
+    async fn get_latest_version(&self, project: &String) -> Option<String> {
+        None
+    }
 }
 
 // Example https://api.purpurmc.org/v2/purpur/1.18.2/latest

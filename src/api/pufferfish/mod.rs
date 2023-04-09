@@ -51,6 +51,10 @@ impl platform::IPlatform for PufferfishAPI {
     async fn get_jar_hash(&self, _project: &String, _version: &String, _build: &String) -> Option<Hash> {
         return None;
     }
+
+    async fn get_latest_version(&self, project: &String) -> Option<String> {
+        None
+    }
 }
 
 pub fn get_real_version(version: &String) -> Option<String> {

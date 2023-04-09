@@ -32,5 +32,9 @@ impl platform::IPlatform for PaperAPI {
     async fn get_jar_hash(&self, project: &String, version: &String, build: &String) -> Option<Hash> {
         PAPER_BIBLIOTHEK.get_jar_hash(&project, &version, &build).await
     }
+
+    async fn get_latest_version(&self, project: &String) -> Option<String> {
+        PAPER_BIBLIOTHEK.get_latest_version(&project).await
+    }
 }
 

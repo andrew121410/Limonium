@@ -27,6 +27,7 @@ mod hashutils;
 mod githubutils;
 mod server_jars_com;
 mod backup;
+mod number_utils;
 
 static mut SUB_COMMAND_ARG_MATCHES: Option<Rc<ArgMatches>> = None;
 
@@ -77,6 +78,11 @@ async fn main() {
                 .short('c')
                 .aliases(["c"])
                 .action(ArgAction::Set)
+                .required(false))
+            .arg(clap::Arg::new("latest-use-at-your-own-risk")
+                .help("Downloads the latest version of the server (use at your own risk)")
+                .long("latest-use-at-your-own-risk")
+                .action(ArgAction::SetTrue)
                 .required(false)))
         .subcommand(clap::Command::new("backup")
             .about("Backs up the server")
@@ -137,7 +143,18 @@ async fn handle_download(download_matches: &ArgMatches) {
     let current_path = current_dir_path_buffer.as_path();
 
     let software = download_matches.get_one::<String>("software").unwrap();
-    let version = download_matches.get_one::<String>("version").unwrap();
+    let mut version: String = download_matches.get_one::<String>("version").unwrap().clone();
+
+
+    let latest_use_at_your_own_risk = download_matches.get_flag("latest-use-at-your-own-risk");
+    // Test to see if version is "latest
+    if version.eq_ignore_ascii_case("latest") && !latest_use_at_your_own_risk {
+        println!("{} {} {} {}", format!("Something went wrong!").red().bold(), format!("Using").yellow(), format!("latest").red(), format!("is not recommended!").yellow());
+        println!("{} {}", format!("Use").yellow(), format!("--latest-use-at-your-own-risk").red());
+        print!("");
+        println!("{}", format!("This is because you don't want your Minecraft Server randomly getting updated to a new Minecraft version without you knowing!").yellow());
+        process::exit(102);
+    }
 
     let mut temp = String::from("");
     let mut path_string = download_matches.get_one::<String>("path").unwrap_or(&temp).to_string();
@@ -170,6 +187,21 @@ async fn handle_download(download_matches: &ArgMatches) {
     }
 
     let platform = api::get_platform(&software);
+
+    // Get the latest version if the version is "latest" (use at your own risk)
+    if version.eq_ignore_ascii_case("latest") {
+        let latest_version: Option<String> = platform.get_latest_version(&software).await;
+
+        if latest_version.is_none() {
+            println!("{} {}", format!("Something went wrong!").red().bold(), format!("Couldn't get the latest version!").yellow());
+            println!("{}", format!("This is most likely because the platform doesn't support getting the latest version!").yellow());
+
+            process::exit(102);
+        }
+
+        version = latest_version.unwrap();
+    }
+
     let build = platform.get_latest_build(&software, &version).await.expect("Getting the latest build failed?");
 
     // Set the path if it's empty
