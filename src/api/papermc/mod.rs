@@ -4,11 +4,11 @@ use std::rc::Rc;
 use std::string::String;
 
 use async_trait::async_trait;
-use clap::{arg, ArgMatches};
+use clap::{ArgMatches};
 use colored::Colorize;
 
 use crate::{number_utils, SUB_COMMAND_ARG_MATCHES};
-use crate::api::{papermc, platform};
+use crate::api::{platform};
 use crate::hashutils::Hash;
 
 // https://github.com/PaperMC
