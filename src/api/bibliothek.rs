@@ -75,8 +75,6 @@ impl BibliothekAPI {
             to_return.push_str(&jar_name);
         }
 
-        println!("{} {}", "Download link:".green(), to_return);
-
         return to_return;
     }
 

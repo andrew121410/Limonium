@@ -7,16 +7,12 @@ extern crate serde_derive;
 extern crate serde_json;
 
 use std::{env, process};
-
 use std::env::temp_dir;
-
-
 use std::rc::Rc;
 use std::string::String;
 use std::time::Instant;
 
 use clap::{ArgAction, ArgMatches};
-
 use colored::Colorize;
 
 use crate::api::spigotmc::SpigotAPI;
