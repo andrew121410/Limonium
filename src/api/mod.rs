@@ -8,7 +8,6 @@ use uuid::Uuid;
 
 use crate::api::platform::IPlatform;
 
-mod bibliothek;
 pub mod platform;
 pub mod papermc;
 pub mod purpurmc;
