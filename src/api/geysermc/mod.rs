@@ -14,7 +14,7 @@ use crate::hashutils::Hash;
 // https://github.com/GeyserMC/
 pub struct GeyserAPI {}
 
-static GEYSER_API_ENDPOINT: &'static str = "https://api.papermc.io";
+static GEYSER_API_ENDPOINT: &'static str = "https://download.geysermc.org";
 static DEFAULT_GEYSER_CHANNEL: &'static str = "standalone";
 
 #[async_trait]
