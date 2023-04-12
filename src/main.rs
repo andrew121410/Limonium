@@ -8,7 +8,6 @@ extern crate serde_json;
 
 use std::{env, process};
 use std::env::temp_dir;
-use std::rc::Rc;
 use std::string::String;
 use std::time::Instant;
 
@@ -25,7 +24,7 @@ mod server_jars_com;
 mod backup;
 mod number_utils;
 
-static mut SUB_COMMAND_ARG_MATCHES: Option<Rc<ArgMatches>> = None;
+static mut SUB_COMMAND_ARG_MATCHES: Option<ArgMatches> = None;
 
 fn show_example() {
     println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Example:").yellow(), format!("./limonium download paper 1.19.4").green());
@@ -125,11 +124,11 @@ async fn main() {
 
     match command_matches.subcommand() {
         Some(("download", download_matches)) => {
-            unsafe { SUB_COMMAND_ARG_MATCHES = Some(Rc::new(download_matches.clone())); } // @TODO: Dumb find a better way to do this
+            unsafe { SUB_COMMAND_ARG_MATCHES = Some(download_matches.clone()); }
             handle_download(&download_matches).await;
         }
         Some(("backup", backup_matches)) => {
-            unsafe { SUB_COMMAND_ARG_MATCHES = Some(Rc::new(backup_matches.clone())); } // @TODO: Dumb find a better way to do this
+            unsafe { SUB_COMMAND_ARG_MATCHES = Some(backup_matches.clone()); }
             handle_backup(&backup_matches);
         }
         _ => {

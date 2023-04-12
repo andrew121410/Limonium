@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::process;
-use std::rc::Rc;
 use std::string::String;
 
 use async_trait::async_trait;
@@ -44,7 +43,7 @@ impl platform::IPlatform for PaperAPI {
 
         // See if we don't include snapshot versions
         unsafe {
-            let args: &Rc<ArgMatches> = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
+            let args: &ArgMatches = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
             let dont_include_snapshot_versions: bool = args.get_flag("latest-dont-include-snapshot-versions");
             if dont_include_snapshot_versions {
                 versions.retain(|x| !x.contains("-SNAPSHOT"));
@@ -125,7 +124,7 @@ impl platform::IPlatform for PaperAPI {
             if paper_build_info_json.downloads.is_some() {
                 let downloads = paper_build_info_json.downloads.unwrap();
 
-                let args: &Rc<ArgMatches> = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
+                let args: &ArgMatches = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
                 let default_channel = &DEFAULT_PAPER_CHANNEL.to_string();
                 let channel = args.get_one::<String>("channel").unwrap_or(default_channel);
 
