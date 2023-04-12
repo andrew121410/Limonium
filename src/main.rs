@@ -70,7 +70,7 @@ async fn main() {
                 .action(ArgAction::SetTrue)
                 .required(false))
             .arg(clap::Arg::new("channel")
-                .help("Choose the server to download [Example for Paper the default is \"application\" the choices are (application, mojang-mappings)]")
+                .help("Choose the server to download [Example for Geyser the default is \"standalone\" the choices are (spigot, bungeecord, standalone, velocity, ...)]")
                 .short('c')
                 .aliases(["c"])
                 .action(ArgAction::Set)
