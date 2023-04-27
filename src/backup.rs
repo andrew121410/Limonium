@@ -1,14 +1,28 @@
-
+use std::fmt::format;
 use std::fs;
-use std::io::{Error, ErrorKind, Write};
-use std::path::PathBuf;
-use std::process::{Command};
+use std::io::{Error, ErrorKind, Read, Write};
+use std::os::unix::fs::PermissionsExt;
+use std::os::unix::raw::off_t;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
+use clap::ArgMatches;
+use clap::builder::Str;
 use colored::Colorize;
+use openssh::Stdio;
+use openssh_sftp_client::Sftp;
+
+use crate::{main, SUB_COMMAND_ARG_MATCHES};
 
 pub enum BackupFormat {
     TarGz,
     Zip,
+}
+
+pub struct Backup_Result {
+    pub file_name: String,
+    pub file_path: PathBuf,
+    pub sha256_hash: String,
 }
 
 pub struct Backup {
@@ -30,7 +44,7 @@ impl Backup {
         }
     }
 
-    pub fn backup(&self) -> Result<(), Error> {
+    pub fn backup(&self) -> Result<Backup_Result, Error> {
         let timestamp = chrono::Local::now().format("%-m-%-d-%Y");
 
         let extension = match self.backup_format {
@@ -158,7 +172,108 @@ impl Backup {
         fs::remove_file(&backup_path).expect("Failed to delete temporary backup archive");
         fs::remove_file(&hash_path).expect("Failed to delete temporary hash file");
 
-        Ok(())
+        // Create hash of combined backup archive
+        let mut hash_cmd = Command::new("sha256sum");
+        hash_cmd.arg(&combined_backup_path);
+        let hash_output = hash_cmd.output()?;
+        if !hash_output.status.success() {
+            return Err(Error::new(ErrorKind::Other, "Failed to compute hash of combined backup archive"));
+        }
+
+        let combined_backup_hash = String::from_utf8_lossy(&hash_output.stdout).split(" ").collect::<Vec<&str>>()[0].to_string();
+        let backup_result = Backup_Result {
+            file_name: combined_backup_path.file_name().unwrap().to_str().unwrap().to_string(),
+            file_path: combined_backup_path,
+            sha256_hash: combined_backup_hash,
+        };
+
+        Ok(backup_result)
+    }
+
+    pub async fn upload_sftp(&self, user: String, host: String, key_file: Option<&Path>, path: &PathBuf, file_name: String, remote_dir: String, local_hash: String) {
+        let mut session_builder = openssh::SessionBuilder::default();
+
+        if key_file.is_some() {
+            session_builder.keyfile(key_file.unwrap());
+            println!("Using key file: {}", key_file.unwrap().display());
+
+            // Check if right permissions are set on the key file
+            let metadata = fs::metadata(key_file.unwrap()).unwrap();
+            let permissions = metadata.permissions();
+            if permissions.mode() != 33152 { // chmod 600
+                println!("{}", format!("The key file must have the permissions 600 (rw-------). Please run \"chmod 600 {}\" to set the correct permissions.", key_file.unwrap().display()).red());
+                return;
+            }
+        }
+
+        session_builder.user(user);
+
+        let session_result = session_builder.connect(&host).await;
+        if session_result.is_err() {
+            println!("{}", format!("Failed to connect to {}: {}", host, session_result.err().unwrap()).red());
+            return;
+        }
+
+        let real_session = session_result.unwrap();
+
+        let mut child = real_session
+            .subsystem("sftp")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .await
+            .unwrap();
+
+        let sftp = Sftp::new(
+            child.stdin().take().unwrap(),
+            child.stdout().take().unwrap(),
+            Default::default(), )
+            .await
+            .unwrap();
+
+        let mut fs = sftp.fs();
+
+        let remote_create_dir_result = fs.create_dir(Path::new(&remote_dir)).await;
+        if remote_create_dir_result.is_err() {
+            // Ignore error the directory probably already exists
+        }
+
+        let remote_file_result = sftp.create(Path::new(&remote_dir).join(&file_name)).await;
+
+        if remote_file_result.is_err() {
+            println!("{}", format!("Failed to create remote file: {}", remote_file_result.err().unwrap()).red());
+            return;
+        }
+
+        let mut remote_file = remote_file_result.unwrap();
+        let mut local_file = fs::File::open(path).unwrap();
+
+        // Split the file into chunks to upload
+        let mut buffer = [0; 1024];
+        loop {
+            // Read a chunk from the local file
+            let bytes_read = local_file.read(&mut buffer).unwrap();
+            if bytes_read == 0 {
+                break;
+            }
+            // Write the chunk to the remote file
+            remote_file.write(&buffer[..bytes_read]).await.unwrap();
+        }
+
+        // Verify that the file was uploaded correctly (check the hash)
+        let mut command = real_session.command("sha256sum".to_string());
+        command.arg(format!("{}/{}", remote_dir, file_name));
+        let output = command.output().await.unwrap();
+        let output_string = String::from_utf8_lossy(&output.stdout);
+        let remote_hash = output_string.split(" ").collect::<Vec<&str>>()[0].to_string();
+
+        if remote_hash != local_hash {
+            println!("{}", format!("Failed to upload backup archive to SFTP server: The hash of the local file ({}) does not match the hash of the remote file ({})", local_hash, remote_hash).red());
+            return;
+        }
+
+        println!("{}", format!("Hash of local file matches hash of remote file").green());
+        println!("{}", format!("Successfully uploaded backup archive to SFTP server").green());
     }
 
     fn get_how_many_backups_of_today_date(&self) -> Result<i64, Error> {

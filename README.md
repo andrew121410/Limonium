@@ -68,6 +68,7 @@ By default, it will use tar.gz, unless specified otherwise.
 ### Optional Backup Arguments
 1. --zip `Uses zip instead of tar.gz for backups.`
 2. --exclude `Excludes files from the backup`
+3. --sftp `Uploads the backup to a SFTP server Example: --sftp "user@host path/to/key /remote/path"` (Note: To use key from regular key file just say "default" instead of providing key path. **Password Authentication is not supported.**)
 
 ### Backup Usage
 
@@ -82,9 +83,6 @@ By default, it will use tar.gz, unless specified otherwise.
 ```
 ./limonium backup survival world:world_nether:world_the_end:plugins ../survival-backups/ --exclude plugins/dynmap/
 ```
-
-## Why is this simple thing in Rust?
-Well, I wanted to learn the Rust programming language, but I didn't know what to make, so I thought of something simple.
 
 ## Building
 

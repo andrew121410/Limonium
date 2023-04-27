@@ -8,6 +8,7 @@ extern crate serde_json;
 
 use std::{env, process};
 use std::env::temp_dir;
+use std::path::Path;
 use std::string::String;
 use std::time::Instant;
 
@@ -110,7 +111,12 @@ async fn main() {
                 .action(ArgAction::Set)
                 .required(false)
                 .default_value("tar.gz")
-                .value_parser(["zip", "tar.gz"])));
+                .value_parser(["zip", "tar.gz"]))
+            .arg(clap::Arg::new("sftp")
+                .help("The SFTP server to backup to")
+                .long("sftp")
+                .action(ArgAction::Set)
+                .required(false)));
 
     let command_matches: ArgMatches = matches_commands.get_matches();
 
@@ -129,7 +135,7 @@ async fn main() {
         }
         Some(("backup", backup_matches)) => {
             unsafe { SUB_COMMAND_ARG_MATCHES = Some(backup_matches.clone()); }
-            handle_backup(&backup_matches);
+            handle_backup(&backup_matches).await;
         }
         _ => {
             show_example();
@@ -245,7 +251,7 @@ async fn handle_download(download_matches: &ArgMatches) {
     println!("{} {} {} {}", format!("Downloaded JAR:").green().bold(), format!("{}", &path_string.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
 }
 
-fn handle_backup(backup_matches: &ArgMatches) {
+async fn handle_backup(backup_matches: &ArgMatches) {
     let current_dir_path_buffer = env::current_dir().unwrap();
     let current_path = current_dir_path_buffer.as_path();
 
@@ -279,6 +285,30 @@ fn handle_backup(backup_matches: &ArgMatches) {
     if the_backup.is_err() {
         println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Error:").yellow(), format!("{}", the_backup.err().unwrap()).red());
         process::exit(102);
+    }
+
+    let backup_result = the_backup.unwrap();
+
+    // Handle uploading to SFTP if SFTP is specified
+    let sftp_option = backup_matches.get_one::<String>("sftp");
+    if sftp_option.is_some() {
+        let sftp_args = sftp_option.unwrap();
+        let sftp_args_vector = sftp_args.split(" ").collect::<Vec<&str>>();
+
+        let sftp_user = sftp_args_vector[0].split("@").collect::<Vec<&str>>()[0];
+        let sftp_host = sftp_args_vector[0].split("@").collect::<Vec<&str>>()[1];
+
+        let sftp_key_file_string = sftp_args_vector[1];
+        let sftp_remote_dir = sftp_args_vector[2];
+
+        let sftp_key_file: Option<&Path> = if sftp_key_file_string.eq("default") {
+            None
+        } else {
+            Some(Path::new(sftp_key_file_string))
+        };
+
+
+        backup.upload_sftp(sftp_user.to_string(), sftp_host.to_string(), sftp_key_file, &backup_result.file_path, backup_result.file_name, sftp_remote_dir.to_string(), (&backup_result.sha256_hash).to_string()).await;
     }
 
     let time_elapsed_seconds = time.elapsed().as_secs();
