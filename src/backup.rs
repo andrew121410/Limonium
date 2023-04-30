@@ -198,7 +198,7 @@ impl Backup {
         Ok(backup_result)
     }
 
-    pub async fn upload_sftp(&self, user: String, host: String, key_file: Option<&Path>, path: &PathBuf, file_name: String, remote_dir: String, local_hash: String) {
+    pub async fn upload_sftp(&self, user: String, host: String, key_file: Option<&Path>, path: &PathBuf, file_name: String, remote_dir: String, local_hash: String) -> Result<(), Error> {
         let mut session_builder = openssh::SessionBuilder::default();
 
         if key_file.is_some() {
@@ -210,7 +210,7 @@ impl Backup {
             let permissions = metadata.permissions();
             if permissions.mode() != 33152 { // chmod 600
                 println!("{}", format!("The key file must have the permissions 600 (rw-------). Please run \"chmod 600 {}\" to set the correct permissions.", key_file.unwrap().display()).red());
-                return;
+                return Err(Error::new(ErrorKind::Other, "Wrong permissions on key file"));
             }
         }
 
@@ -219,7 +219,7 @@ impl Backup {
         let session_result = session_builder.connect(&host).await;
         if session_result.is_err() {
             println!("{}", format!("Failed to connect to {}: {}", host, session_result.err().unwrap()).red());
-            return;
+            return Err(Error::new(ErrorKind::Other, "Failed to connect to host"));
         }
 
         let real_session = session_result.unwrap();
@@ -250,7 +250,7 @@ impl Backup {
 
         if remote_file_result.is_err() {
             println!("{}", format!("Failed to create remote file: {}", remote_file_result.err().unwrap()).red());
-            return;
+            return Err(Error::new(ErrorKind::Other, "Failed to create remote file"));
         }
 
         let mut remote_file = remote_file_result.unwrap();
@@ -291,11 +291,12 @@ impl Backup {
 
         if remote_hash != local_hash {
             println!("{}", format!("Failed to upload backup archive to SFTP server: The hash of the local file ({}) does not match the hash of the remote file ({})", local_hash, remote_hash).red());
-            return;
+            return Err(Error::new(ErrorKind::Other, "Local and remote hash do not match"));
         }
 
         println!("{}", format!("Hash of local file matches hash of remote file").green());
         println!("{}", format!("Successfully uploaded backup archive to SFTP server").green());
+        Ok(())
     }
 
     fn get_how_many_backups_of_today_date(&self) -> Result<i64, Error> {

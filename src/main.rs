@@ -12,7 +12,7 @@ use std::path::Path;
 use std::string::String;
 use std::time::Instant;
 
-use clap::{ArgAction, ArgMatches};
+use clap::{ArgAction, ArgMatches, Error};
 use colored::Colorize;
 
 use crate::api::spigotmc::SpigotAPI;
@@ -309,8 +309,12 @@ async fn handle_backup(backup_matches: &ArgMatches) {
             Some(Path::new(sftp_key_file_string))
         };
 
+        let result = backup.upload_sftp(sftp_user.to_string(), sftp_host.to_string(), sftp_key_file, &backup_result.file_path, backup_result.file_name, sftp_remote_dir.to_string(), (&backup_result.sha256_hash).to_string()).await;
 
-        backup.upload_sftp(sftp_user.to_string(), sftp_host.to_string(), sftp_key_file, &backup_result.file_path, backup_result.file_name, sftp_remote_dir.to_string(), (&backup_result.sha256_hash).to_string()).await;
+        if result.is_err() {
+            println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Error:").yellow(), format!("{}", result.err().unwrap()).red());
+            process::exit(102);
+        }
     }
 
     let time_elapsed_seconds = time.elapsed().as_secs();
