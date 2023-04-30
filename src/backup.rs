@@ -1,18 +1,12 @@
-use std::fmt::format;
 use std::fs;
 use std::io::{Error, ErrorKind, Read, Write};
 use std::os::unix::fs::PermissionsExt;
-use std::os::unix::raw::off_t;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use clap::ArgMatches;
-use clap::builder::Str;
 use colored::Colorize;
 use openssh::Stdio;
 use openssh_sftp_client::Sftp;
-
-use crate::{main, SUB_COMMAND_ARG_MATCHES};
 
 pub enum BackupFormat {
     TarGz,
@@ -249,7 +243,7 @@ impl Backup {
         let mut local_file = fs::File::open(path).unwrap();
 
         // Split the file into chunks to upload
-        let mut buffer = [0; 1024];
+        let mut buffer = [0; 1024000];
         loop {
             // Read a chunk from the local file
             let bytes_read = local_file.read(&mut buffer).unwrap();

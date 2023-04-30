@@ -292,6 +292,8 @@ async fn handle_backup(backup_matches: &ArgMatches) {
     // Handle uploading to SFTP if SFTP is specified
     let sftp_option = backup_matches.get_one::<String>("sftp");
     if sftp_option.is_some() {
+        println!("{} {}", format!("Uploading to SFTP!").green().bold(), format!("This may take a while depending on the size of the backup!").yellow());
+
         let sftp_args = sftp_option.unwrap();
         let sftp_args_vector = sftp_args.split(" ").collect::<Vec<&str>>();
 
