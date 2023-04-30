@@ -243,7 +243,7 @@ impl Backup {
         let mut local_file = fs::File::open(path).unwrap();
 
         // Split the file into chunks to upload
-        let mut buffer = [0; 1024000];
+        let mut buffer = [0; 1024000]; // 1 MB
         loop {
             // Read a chunk from the local file
             let bytes_read = local_file.read(&mut buffer).unwrap();
@@ -251,7 +251,7 @@ impl Backup {
                 break;
             }
             // Write the chunk to the remote file
-            remote_file.write(&buffer[..bytes_read]).await.unwrap();
+            remote_file.write_all(&buffer[..bytes_read]).await.unwrap();
         }
 
         // Verify that the file was uploaded correctly (check the hash)
