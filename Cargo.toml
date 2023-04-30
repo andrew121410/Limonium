@@ -19,4 +19,5 @@ chrono = "0.4.24"
 clap = "4.2.4"
 openssh-sftp-client = "0.12.2"
 openssh = "0.9.9"
+indicatif = "0.17.3"
 #webhook = "2.1.2" // discord webhook support (coming soon)

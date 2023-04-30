@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use colored::Colorize;
+use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use openssh::Stdio;
 use openssh_sftp_client::Sftp;
 
@@ -255,6 +256,12 @@ impl Backup {
         let mut remote_file = remote_file_result.unwrap();
         let mut local_file = fs::File::open(path).unwrap();
 
+        // Progress bar in mb
+        let progress_bar = ProgressBar::new(local_file.metadata().unwrap().len());
+        progress_bar.set_style(ProgressStyle::default_bar()
+            .template("{msg:>12.cyan.bold} {bytes}/{total_bytes} ({bytes_per_sec}, {eta})").unwrap());
+        progress_bar.set_message("Uploading");
+
         // Split the file into chunks to upload
         const CHUNK_SIZE: usize = 1024 * 1024 * 3; // 3 MB
         let mut buffer = vec![0; CHUNK_SIZE];
@@ -267,8 +274,13 @@ impl Backup {
             // Write the chunk to the remote file
             remote_file.write_all(&buffer[..bytes_read]).await.unwrap();
 
+            // Update the progress bar
+            progress_bar.inc(bytes_read as u64);
+
             buffer = vec![0; CHUNK_SIZE]; // Reallocate the buffer (why doesn't buffer.clear() work?)
         }
+
+        progress_bar.finish_and_clear();
 
         // Verify that the file was uploaded correctly (check the hash)
         let mut command = real_session.command("sha256sum".to_string());
