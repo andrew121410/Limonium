@@ -181,6 +181,19 @@ impl Backup {
             sha256_hash: combined_backup_hash,
         };
 
+        // Display the result of the backup
+        println!("{} {}", format!("Local backup finished!").bright_green(), format!("Details below:").yellow());
+        println!("{} {}", format!("Backup file:").green(), format!("{}", &backup_result.file_name).bright_yellow());
+        println!("{}", format!("Backup (sha256) hash: {}", &backup_result.sha256_hash).green());
+        // Size show in MB, but if higher than 1GB show in GB
+        if backup_result.file_path.metadata().unwrap().len() > 1073741824 {
+            let size = backup_result.file_path.metadata().unwrap().len() as f64 / 1073741824.0;
+            println!("{} {} {}", format!("Backup size:").green(), format!("{:.2}", size).bright_yellow(), format!("GB").bright_cyan());
+        } else {
+            let size = backup_result.file_path.metadata().unwrap().len() as f64 / 1048576.0;
+            println!("{} {} {}", format!("Backup size:").green(), format!("{:.2}", size).bright_yellow(), format!("MB").bright_cyan());
+        }
+
         Ok(backup_result)
     }
 
@@ -243,7 +256,8 @@ impl Backup {
         let mut local_file = fs::File::open(path).unwrap();
 
         // Split the file into chunks to upload
-        let mut buffer = [0; 1024000]; // 1 MB
+        const CHUNK_SIZE: usize = 1024 * 1024 * 3; // 3 MB
+        let mut buffer = vec![0; CHUNK_SIZE];
         loop {
             // Read a chunk from the local file
             let bytes_read = local_file.read(&mut buffer).unwrap();
@@ -252,6 +266,8 @@ impl Backup {
             }
             // Write the chunk to the remote file
             remote_file.write_all(&buffer[..bytes_read]).await.unwrap();
+
+            buffer = vec![0; CHUNK_SIZE]; // Reallocate the buffer (why doesn't buffer.clear() work?)
         }
 
         // Verify that the file was uploaded correctly (check the hash)
