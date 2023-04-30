@@ -1,6 +1,6 @@
 [package]
 name = "limonium"
-version = "2.0.6"
+version = "2.0.7"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -20,4 +20,3 @@ clap = "4.2.4"
 openssh-sftp-client = "0.12.2"
 openssh = "0.9.9"
 indicatif = "0.17.3"
-#webhook = "2.1.2" // discord webhook support (coming soon)
