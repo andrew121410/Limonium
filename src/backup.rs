@@ -198,7 +198,7 @@ impl Backup {
         Ok(backup_result)
     }
 
-    pub async fn upload_sftp(&self, user: String, host: String, key_file: Option<&Path>, path: &PathBuf, file_name: String, remote_dir: String, local_hash: String) -> Result<(), Error> {
+    pub async fn upload_sftp(&self, user: String, host: String, port: Option<u16>, key_file: Option<&Path>, path: &PathBuf, file_name: String, remote_dir: String, local_hash: String) -> Result<(), Error> {
         let mut session_builder = openssh::SessionBuilder::default();
 
         if key_file.is_some() {
@@ -215,6 +215,10 @@ impl Backup {
         }
 
         session_builder.user(user);
+
+        if port.is_some() {
+            session_builder.port(port.unwrap());
+        }
 
         let session_result = session_builder.connect(&host).await;
         if session_result.is_err() {

@@ -68,7 +68,8 @@ By default, it will use tar.gz, unless specified otherwise.
 ### Optional Backup Arguments
 1. --zip `Uses zip instead of tar.gz for backups.`
 2. --exclude `Excludes files from the backup`
-3. --sftp `Uploads the backup to a SFTP server Example: --sftp "user@host path/to/key /remote/path"` (Note: To use key from regular key file just say "default" instead of providing key path. **Password Authentication is not supported.**)
+3. --sftp `Uploads the backup to a SFTP server. Example 1: --sftp user@host:22 /remote/path Example 2: --sftp "user@host:22 path/to/key /remote/path"` (**Password Authentication is not supported.**)
+4. --delete-after-upload `Deletes the backup after uploading it to the SFTP server.`
 
 ### Backup Usage
 

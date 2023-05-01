@@ -6,7 +6,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
-use std::{env, process};
+use std::{env, fs, process};
 use std::env::temp_dir;
 use std::path::Path;
 use std::string::String;
@@ -116,6 +116,11 @@ async fn main() {
                 .help("The SFTP server to backup to")
                 .long("sftp")
                 .action(ArgAction::Set)
+                .required(false))
+            .arg(clap::Arg::new("delete-after-upload")
+                .help("Deletes the backup after uploading it")
+                .long("delete-after-upload")
+                .action(ArgAction::SetTrue)
                 .required(false)));
 
     let command_matches: ArgMatches = matches_commands.get_matches();
@@ -296,24 +301,46 @@ async fn handle_backup(backup_matches: &ArgMatches) {
 
         let sftp_args = sftp_option.unwrap();
         let sftp_args_vector = sftp_args.split(" ").collect::<Vec<&str>>();
+        let sftp_user_and_host_vector = sftp_args_vector[0].split("@").collect::<Vec<&str>>();
 
-        let sftp_user = sftp_args_vector[0].split("@").collect::<Vec<&str>>()[0];
-        let sftp_host = sftp_args_vector[0].split("@").collect::<Vec<&str>>()[1];
+        // --sftp user@host:optional_port key_file remote_dir
 
-        let sftp_key_file_string = sftp_args_vector[1];
-        let sftp_remote_dir = sftp_args_vector[2];
+        let sftp_user = sftp_user_and_host_vector[0];
+        let mut sftp_host = sftp_user_and_host_vector[1];
 
-        let sftp_key_file: Option<&Path> = if sftp_key_file_string.eq("default") {
-            None
-        } else {
-            Some(Path::new(sftp_key_file_string))
-        };
+        // Check if port is specified
+        let mut sftp_port: Option<u16> = None;
+        if sftp_host.contains(":") {
+            let sftp_host_vector = sftp_host.split(":").collect::<Vec<&str>>();
+            sftp_host = sftp_host_vector[0];
+            sftp_port = Some(sftp_host_vector[1].parse::<u16>().unwrap());
+        }
 
-        let result = backup.upload_sftp(sftp_user.to_string(), sftp_host.to_string(), sftp_key_file, &backup_result.file_path, backup_result.file_name, sftp_remote_dir.to_string(), (&backup_result.sha256_hash).to_string()).await;
+        // If sftp_args_vector length is 3, then we have a key file
+        let mut sftp_key_file: Option<&Path> = None;
+        if sftp_args_vector.len() == 3 {
+            sftp_key_file = Some(Path::new(sftp_args_vector[1]));
+        }
+
+        let sftp_remote_dir = sftp_args_vector[sftp_args_vector.len() - 1];
+
+        let result = backup.upload_sftp(sftp_user.to_string(), sftp_host.to_string(), sftp_port, sftp_key_file, &backup_result.file_path, backup_result.file_name, sftp_remote_dir.to_string(), (&backup_result.sha256_hash).to_string()).await;
 
         if result.is_err() {
             println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Error:").yellow(), format!("{}", result.err().unwrap()).red());
             process::exit(102);
+        }
+
+        // Handle deleting the file after upload if specified
+        let delete_after_upload = backup_matches.get_flag("delete-after-upload");
+        if delete_after_upload {
+            let file_to_delete = backup_result.file_path;
+            let result = fs::remove_file(file_to_delete);
+            println!("{} {}", format!("Deleting file after upload!").green().bold(), format!("File:").yellow());
+            if result.is_err() {
+                println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Error:").yellow(), format!("{}", result.err().unwrap()).red());
+                process::exit(102);
+            }
         }
     }
 
