@@ -393,19 +393,15 @@ async fn handle_log_search(log_search: &ArgMatches) {
     let lines_before_option = log_search.get_one::<u64>("lines-before");
     let lines_after_option = log_search.get_one::<u64>("lines-after");
 
+    println!("{} {}", format!("Searching logs!").green().bold(), format!("This may take a while depending on the size of the logs!").yellow());
+
     let log_search: LogSearch = LogSearch::new(days_back.clone(), to_search.to_string());
     if lines_before_option.is_none() && lines_after_option.is_none() {
-        // Print using Simple Search
-        println!("{}", format!("Using Simple Search!").green().bold());
-        println!("{} {}", format!("Searching logs!").green().bold(), format!("This may take a while depending on the size of the logs!").yellow());
-        log_search.simple().await;
+        log_search.context(0, 0);
     } else if lines_before_option.is_some() && lines_after_option.is_some() {
         let lines_before = lines_before_option.unwrap();
         let lines_after = lines_after_option.unwrap();
 
-        // Print using Context Search
-        println!("{}", format!("Using Context Search!").green().bold());
-        println!("{} {}", format!("Searching logs!").green().bold(), format!("This may take a while depending on the size of the logs!").yellow());
         log_search.context(lines_before.clone(), lines_after.clone());
     }
 }

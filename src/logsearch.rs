@@ -6,6 +6,8 @@ use std::path::PathBuf;
 use std::process::Command;
 use std::time::{Duration, SystemTime};
 
+use colored::Colorize;
+
 pub struct LogSearch {
     days_back: u64,
     to_search: String,
@@ -17,10 +19,6 @@ impl LogSearch {
             days_back,
             to_search,
         }
-    }
-
-    pub async fn simple(&self) {
-        // @TODO: Implement this function
     }
 
     pub fn context(&self, lines_before: u64, lines_after: u64) {
@@ -102,7 +100,7 @@ impl LogSearch {
 
                 // Print the context for the matching line, if any
                 if !context.is_empty() {
-                    println!("Matching line found in {}:", log_filename);
+                    println!("{}", format!("Found matching line in {}", log_filename).bright_magenta());
                     for (line_number, line) in context {
                         println!("{}: {}", line_number + 1, line);
                     }
@@ -116,6 +114,11 @@ impl LogSearch {
             current_time -= Duration::from_secs(24 * 60 * 60);
             file_index = 1;
         }
+
+        // Delete the temporary directory
+        fs::remove_dir_all(temp_dir).unwrap_or_else(|e| {
+            eprintln!("Error deleting directory: {}", e);
+        });
     }
 
     // Helper function to format a SystemTime value as a date string
