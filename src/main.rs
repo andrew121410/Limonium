@@ -9,7 +9,7 @@ extern crate serde_json;
 use std::{env, fs, process};
 use std::env::temp_dir;
 use std::ops::Index;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::string::String;
 use std::time::Instant;
 
@@ -127,6 +127,7 @@ async fn main() {
                 .action(ArgAction::SetTrue)
                 .required(false)))
         .subcommand(clap::Command::new("log")
+            .about("Searches the server logs folder for a string")
             .arg(clap::Arg::new("days-back")
                 .help("The amount of days back to search")
                 .value_parser(clap::value_parser!(u64))
@@ -151,7 +152,15 @@ async fn main() {
                 .requires("lines-before")
                 .action(ArgAction::Set)
                 .required(false)
-                .index(4)));
+                .index(4))
+            .arg(clap::Arg::new("path")
+                .help("The path to the log folder")
+                .short('p')
+                .long("path")
+                .aliases(["p"])
+                .action(ArgAction::Set)
+                .required(false)
+                .default_value("./logs")));
 
     let command_matches: ArgMatches = matches_commands.get_matches();
 
@@ -392,10 +401,12 @@ async fn handle_log_search(log_search: &ArgMatches) {
     let to_search = log_search.get_one::<String>("search").unwrap();
     let lines_before_option = log_search.get_one::<u64>("lines-before");
     let lines_after_option = log_search.get_one::<u64>("lines-after");
+    let path = log_search.get_one::<String>("path").unwrap();
 
     println!("{} {}", format!("Searching logs!").green().bold(), format!("This may take a while depending on the size of the logs!").yellow());
 
-    let log_search: LogSearch = LogSearch::new(days_back.clone(), to_search.to_string());
+    let logs_folder: PathBuf = PathBuf::from(path);
+    let log_search: LogSearch = LogSearch::new(days_back.clone(), to_search.to_string(), logs_folder);
     if lines_before_option.is_none() && lines_after_option.is_none() {
         log_search.context(0, 0);
     } else if lines_before_option.is_some() && lines_after_option.is_some() {

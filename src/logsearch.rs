@@ -11,24 +11,25 @@ use colored::Colorize;
 pub struct LogSearch {
     days_back: u64,
     to_search: String,
+    logs_dir: PathBuf,
 }
 
 impl LogSearch {
-    pub fn new(days_back: u64, to_search: String) -> LogSearch {
+    pub fn new(days_back: u64, to_search: String, logs_dir: PathBuf) -> LogSearch {
         LogSearch {
             days_back,
             to_search,
+            logs_dir,
         }
     }
 
     pub fn context(&self, lines_before: u64, lines_after: u64) {
         // Create a temporary directory inside the "logs" folder to hold the log files
-        let temp_dir = match fs::create_dir("logs/temp") {
-            Ok(_) => PathBuf::from("logs/temp"),
-            Err(e) => {
-                PathBuf::from("logs/temp")
-            }
-        };
+        let temp_dir = self.logs_dir.join("temp");
+        fs::create_dir(&temp_dir).unwrap_or_else(|e| {
+            eprintln!("Error creating directory: {}", e);
+            std::process::exit(1);
+        });
 
         // Get the current date and time
         let now = SystemTime::now();
@@ -44,15 +45,13 @@ impl LogSearch {
 
             // Loop over all the log files for this day
             loop {
-                let logs_dir = PathBuf::from("logs");
                 let log_filename = format!("{}-{}.log", date_string, file_index);
-                let log_path = logs_dir.join(&log_filename);
+                let log_path = self.logs_dir.join(&log_filename);
 
                 let gz_filename = format!("{}-{}.log.gz", date_string, file_index);
-                let gz_path = logs_dir.join(&gz_filename);
+                let gz_path = self.logs_dir.join(&gz_filename);
 
                 if !gz_path.exists() {
-                    println!("This file does not exist: {:?}", gz_path);
                     break;
                 }
 
