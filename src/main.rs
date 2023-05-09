@@ -8,15 +8,18 @@ extern crate serde_json;
 
 use std::{env, fs, process};
 use std::env::temp_dir;
+use std::ops::Index;
 use std::path::Path;
 use std::string::String;
 use std::time::Instant;
 
 use clap::{ArgAction, ArgMatches, Error};
+use clap::builder::TypedValueParser;
 use colored::Colorize;
 
 use crate::api::spigotmc::SpigotAPI;
 use crate::backup::BackupFormat;
+use crate::logsearch::LogSearch;
 
 mod api;
 mod hashutils;
@@ -24,6 +27,7 @@ mod githubutils;
 mod server_jars_com;
 mod backup;
 mod number_utils;
+mod logsearch;
 
 static mut SUB_COMMAND_ARG_MATCHES: Option<ArgMatches> = None;
 
@@ -121,7 +125,33 @@ async fn main() {
                 .help("Deletes the backup after uploading it")
                 .long("delete-after-upload")
                 .action(ArgAction::SetTrue)
-                .required(false)));
+                .required(false)))
+        .subcommand(clap::Command::new("log")
+            .arg(clap::Arg::new("days-back")
+                .help("The amount of days back to search")
+                .value_parser(clap::value_parser!(u64))
+                .action(ArgAction::Set)
+                .required(true)
+                .index(1))
+            .arg(clap::Arg::new("search")
+                .help("The string to search for")
+                .action(ArgAction::Set)
+                .required(true)
+                .index(2))
+            .arg(clap::Arg::new("lines-before")
+                .help("The amount of lines before the search to show")
+                .value_parser(clap::value_parser!(u64))
+                .requires("lines-after")
+                .action(ArgAction::Set)
+                .required(false)
+                .index(3))
+            .arg(clap::Arg::new("lines-after")
+                .help("The amount of lines after the search to show")
+                .value_parser(clap::value_parser!(u64))
+                .requires("lines-before")
+                .action(ArgAction::Set)
+                .required(false)
+                .index(4)));
 
     let command_matches: ArgMatches = matches_commands.get_matches();
 
@@ -141,6 +171,10 @@ async fn main() {
         Some(("backup", backup_matches)) => {
             unsafe { SUB_COMMAND_ARG_MATCHES = Some(backup_matches.clone()); }
             handle_backup(&backup_matches).await;
+        }
+        Some(("log", log_matches)) => {
+            unsafe { SUB_COMMAND_ARG_MATCHES = Some(log_matches.clone()); }
+            handle_log_search(&log_matches).await;
         }
         _ => {
             show_example();
@@ -350,6 +384,29 @@ async fn handle_backup(backup_matches: &ArgMatches) {
         println!("{} {} {}", format!("Backup completed!").green().bold(), format!("Time elapsed:").yellow(), format!("{} minutes", time_elapsed_minutes).green());
     } else {
         println!("{} {} {}", format!("Backup completed!").green().bold(), format!("Time elapsed:").yellow(), format!("{} seconds", time_elapsed_seconds).green());
+    }
+}
+
+async fn handle_log_search(log_search: &ArgMatches) {
+    let days_back = log_search.get_one::<u64>("days-back").unwrap();
+    let to_search = log_search.get_one::<String>("search").unwrap();
+    let lines_before_option = log_search.get_one::<u64>("lines-before");
+    let lines_after_option = log_search.get_one::<u64>("lines-after");
+
+    let log_search: LogSearch = LogSearch::new(days_back.clone(), to_search.to_string());
+    if lines_before_option.is_none() && lines_after_option.is_none() {
+        // Print using Simple Search
+        println!("{}", format!("Using Simple Search!").green().bold());
+        println!("{} {}", format!("Searching logs!").green().bold(), format!("This may take a while depending on the size of the logs!").yellow());
+        log_search.simple().await;
+    } else if lines_before_option.is_some() && lines_after_option.is_some() {
+        let lines_before = lines_before_option.unwrap();
+        let lines_after = lines_after_option.unwrap();
+
+        // Print using Context Search
+        println!("{}", format!("Using Context Search!").green().bold());
+        println!("{} {}", format!("Searching logs!").green().bold(), format!("This may take a while depending on the size of the logs!").yellow());
+        log_search.context(lines_before.clone(), lines_after.clone());
     }
 }
 
