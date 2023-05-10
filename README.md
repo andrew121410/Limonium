@@ -2,10 +2,10 @@
 
 ## Limonium is a tiny Minecraft Server management tool.
 
-It can update your server jar, and backup your server.
-
-The core feature of Limonium, and why it was created, was to update Paper (that's it) \
-The other feature(s?) like the backup feature was an afterthought.
+Features:
+- Can download Minecraft Server .jars (I use it for updating the server jars)
+- Can backup your Minecraft Server
+- Can search in logs for specific text
 
 Limonium uses platform specific download APIs(Paper, Purpur) or Jenkins to download the .jars
 
@@ -84,6 +84,33 @@ By default, it will use tar.gz, unless specified otherwise.
 ```
 ./limonium backup survival world:world_nether:world_the_end:plugins ../survival-backups/ --exclude plugins/dynmap/
 ```
+
+## Log Function
+
+The log function will search the logs for the text you specify.
+
+### Optional Log Arguments
+1. --path `The path to the logs.` (default is ./logs/)
+
+### Log Usage
+
+*Usage: &lt;days-back&gt; &lt;to-search&gt; &lt;lines-before&gt; &lt;lines-after&gt;*
+
+```
+./limonium log 10 "andrew121410"
+```
+```
+./limonium log 10 "andrew121410" --path /mc-servers/hub/logs/
+```
+```
+./limonium log 10 "andrew121410" 5 6
+```
+```
+./limonium log 10 "andrew121410" 5 6 --path /mc-servers/hub/logs/
+```
+
+The above examples will search the logs for "andrew121410" in the last 10 days.
+The 5 and 6 are the lines before and after the text you are searching for. So it will show 5 lines before and 6 lines after. So you will be able to see the more context.
 
 ## Building
 
