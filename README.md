@@ -110,7 +110,7 @@ The log function will search the logs for the text you specify.
 ```
 
 The above examples will search the logs for "andrew121410" in the last 10 days.
-The 5 and 6 are the lines before and after the text you are searching for. So it will show 5 lines before and 6 lines after. So you will be able to see the more context.
+The 5 and 6 are the lines before and after the text you are searching for. So it will show 5 lines before and 6 lines after. So you will be able to see more context.
 
 ## Building
 
