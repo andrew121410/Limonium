@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::env::temp_dir;
 use std::fs;
 use std::fs::{File, OpenOptions};
@@ -72,6 +73,9 @@ impl LogSearch {
                 let reader = BufReader::new(file_to_read);
                 let mut matching_line_number = 0;
                 let mut context = vec![];
+                let mut added_lines_before = HashSet::new();
+                let mut added_lines_after = HashSet::new();
+                // Loop over all the lines in the file
                 for (line_number, line) in reader.lines().enumerate() {
                     if let Ok(line) = line {
                         // Check if the line contains the keyword
@@ -90,9 +94,12 @@ impl LogSearch {
                                 // Start from the matching line number and go backwards
                                 for line_number2 in (matching_line_number - lines_before as usize..matching_line_number).rev() {
                                     if let Some(Ok(line)) = reader2.by_ref().lines().nth(line_number2) {
-                                        let duplicate = temp_context.iter().any(|(_, existing_line)| *existing_line == line);
-                                        if !duplicate {
+                                        // Check if the line has already been added to the context
+                                        if !added_lines_before.contains(&line) {
                                             temp_context.push((line_number2, line.clone()));
+
+                                            // Add the line to the set of added lines
+                                            added_lines_before.insert(line.clone());
                                         }
                                     } else {
                                         break;
@@ -111,7 +118,13 @@ impl LogSearch {
 
                             // Add the lines after the matching line to the context
                         } else if !context.is_empty() && line_number <= matching_line_number + lines_after as usize {
-                            context.push((line_number, line.clone()));
+                            // Check if the line has already been added to the context
+                            if !added_lines_after.contains(&line) {
+                                context.push((line_number, line.clone()));
+
+                                // Add the line to the set of added lines
+                                added_lines_after.insert(line.clone());
+                            }
                         }
                     }
                 }
