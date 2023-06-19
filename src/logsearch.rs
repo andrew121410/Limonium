@@ -1,9 +1,9 @@
 use std::env::temp_dir;
 use std::fs;
-use std::fs::File;
-use std::io::{BufRead, BufReader};
-use std::path::PathBuf;
-use std::process::Command;
+use std::fs::{File, OpenOptions};
+use std::io::{BufRead, BufReader, Write};
+use std::path::{Path, PathBuf};
+use std::process::{Command, exit, Stdio};
 use std::time::{Duration, SystemTime};
 
 use colored::Colorize;
@@ -25,8 +25,8 @@ impl LogSearch {
 
     pub fn context(&self, lines_before: u64, lines_after: u64) {
         // Create a temporary directory inside the "logs" folder to hold the log files
-        let temp_dir = self.logs_dir.join("temp");
-        fs::create_dir(&temp_dir).unwrap_or_else(|e| {
+        let temp_dir_in_logs_folder = self.logs_dir.join("temp");
+        fs::create_dir(&temp_dir_in_logs_folder).unwrap_or_else(|e| {
             eprintln!("Error creating directory: {}", e);
             std::process::exit(1);
         });
@@ -34,12 +34,11 @@ impl LogSearch {
         // Get the current date and time
         let now = SystemTime::now();
 
-        // Calculate the date and time 4 days ago
-        let four_days_ago = now - Duration::from_secs(self.days_back * 24 * 60 * 60);
+        let days_back = now - Duration::from_secs(self.days_back * 24 * 60 * 60);
 
         // Loop over all the days within the search range
         let mut current_time = now;
-        while current_time > four_days_ago {
+        while current_time > days_back {
             let date_string = self.date_string(current_time);
             let mut file_index = 1;
 
@@ -55,7 +54,7 @@ impl LogSearch {
                     break;
                 }
 
-                fs::copy(&gz_path, temp_dir.join(&gz_filename)).unwrap_or_else(|e| {
+                fs::copy(&gz_path, temp_dir_in_logs_folder.join(&gz_filename)).unwrap_or_else(|e| {
                     eprintln!("Error copying file: {}", e);
                     std::process::exit(1);
                 });
@@ -63,11 +62,11 @@ impl LogSearch {
                 // uncompress the file using the gzip -d command
                 let output = Command::new("gzip")
                     .arg("-d")
-                    .arg(temp_dir.join(&gz_filename))
+                    .arg(temp_dir_in_logs_folder.join(&gz_filename))
                     .output()
                     .expect("failed to execute process");
 
-                let file_to_read = File::open(temp_dir.join(&log_filename)).unwrap();
+                let file_to_read = File::open(temp_dir_in_logs_folder.join(&log_filename)).unwrap();
 
                 // Read the file line by line
                 let reader = BufReader::new(file_to_read);
@@ -83,7 +82,7 @@ impl LogSearch {
                             // Add the matching line to the context
                             context.push((line_number, line.clone()));
                         } else if !context.is_empty()
-                            && line_number >= matching_line_number.checked_sub(lines_before as usize).unwrap_or(0)
+                            && line_number >= matching_line_number.saturating_sub(lines_before as usize)
                             && line_number <= matching_line_number + lines_after as usize
                         {
                             // Add the line to the context if it's within the range of lines to print
@@ -97,12 +96,9 @@ impl LogSearch {
                     }
                 }
 
-                // Print the context for the matching line, if any
+                // Write the context to a file if there is any
                 if !context.is_empty() {
-                    println!("{}", format!("Found matching line in {}", log_filename).bright_magenta());
-                    for (line_number, line) in context {
-                        println!("{}: {}", line_number + 1, line);
-                    }
+                    self.write_context_to_file(&context, log_filename.clone());
                 }
 
                 // Move to the next log file for this day
@@ -115,9 +111,49 @@ impl LogSearch {
         }
 
         // Delete the temporary directory
-        fs::remove_dir_all(temp_dir).unwrap_or_else(|e| {
+        fs::remove_dir_all(temp_dir_in_logs_folder).unwrap_or_else(|e| {
             eprintln!("Error deleting directory: {}", e);
         });
+
+        // Open the file in nano
+        self.open_in_nano();
+
+        println!("Deleting limonium-log-search.txt...");
+        // Delete the text file in the temporary directory
+        fs::remove_file(temp_dir().join("limonium-log-search.txt")).unwrap_or_else(|e| {
+            eprintln!("Error deleting file: {}", e);
+        });
+    }
+
+    fn write_context_to_file(&self, context: &[(usize, String)], log_filename: String) {
+        let file_path = temp_dir().join("limonium-log-search.txt");
+
+        let mut file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&file_path)
+            .unwrap();
+
+        writeln!(file, "NEW LOG FILE: {} (lines from this log file showed BELOW until next log file)", log_filename).unwrap();
+        for (line_number, line) in context {
+            writeln!(file, "{}: {}", line_number + 1, line).expect("Error writing to file");
+        }
+    }
+
+    fn open_in_nano(&self) {
+        let file_path = temp_dir().join("limonium-log-search.txt");
+        let mut output = Command::new("nano")
+            .arg(file_path)
+            .stdin(Stdio::inherit())
+            .spawn()
+            .expect("failed to execute process");
+
+        let status = output.wait().expect("failed to wait for process");
+
+        if !status.success() {
+            eprintln!("Error opening file in nano");
+            exit(1);
+        }
     }
 
     // Helper function to format a SystemTime value as a date string
