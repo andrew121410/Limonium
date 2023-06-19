@@ -58,7 +58,9 @@ impl platform::IPlatform for PufferfishAPI {
 }
 
 pub fn get_real_version(version: &String) -> Option<String> {
-    if version.contains("1.19.4") {
+    if version.contains("1.20.1") {
+        return Some(String::from("1.20"));
+    } else if version.contains("1.19.4") {
         return Some(String::from("1.19"));
     } else if version.contains("1.18.2") {
         return Some(String::from("1.18"));
@@ -68,6 +70,7 @@ pub fn get_real_version(version: &String) -> Option<String> {
 
 pub fn get_supported_versions() -> Vec<String> {
     return vec![
+        String::from("1.20.1"),
         String::from("1.19.4"),
         String::from("1.18.2"),
     ];
