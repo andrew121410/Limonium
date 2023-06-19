@@ -1,7 +1,7 @@
 use std::env::temp_dir;
 use std::fs;
 use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, exit, Stdio};
 use std::time::{Duration, SystemTime};
@@ -79,19 +79,39 @@ impl LogSearch {
                             // Save the line number of the matching line
                             matching_line_number = line_number;
 
+                            // Add the lines before the matching line to the context
+                            if lines_before >= 1 {
+                                let mut reader2 = BufReader::new(File::open(
+                                    temp_dir_in_logs_folder.join(&log_filename),
+                                ).unwrap());
+
+                                let mut temp_context = vec![];
+
+                                // Start from the matching line number and go backwards
+                                for line_number2 in (matching_line_number - lines_before as usize..matching_line_number).rev() {
+                                    if let Some(Ok(line)) = reader2.by_ref().lines().nth(line_number2) {
+                                        let duplicate = temp_context.iter().any(|(_, existing_line)| *existing_line == line);
+                                        if !duplicate {
+                                            temp_context.push((line_number2, line.clone()));
+                                        }
+                                    } else {
+                                        break;
+                                    }
+                                }
+
+                                // Reverse the context so that it's in the correct order
+                                temp_context.reverse();
+
+                                // Add the context to the main context
+                                context.extend(temp_context);
+                            }
+
                             // Add the matching line to the context
                             context.push((line_number, line.clone()));
-                        } else if !context.is_empty()
-                            && line_number >= matching_line_number.saturating_sub(lines_before as usize)
-                            && line_number <= matching_line_number + lines_after as usize
-                        {
-                            // Add the line to the context if it's within the range of lines to print
-                            context.push((line_number, line.clone()));
 
-                            // Remove the oldest line from the context if it's too long
-                            if context.len() > (lines_before + lines_after + 1) as usize {
-                                context.remove(0);
-                            }
+                            // Add the lines after the matching line to the context
+                        } else if !context.is_empty() && line_number <= matching_line_number + lines_after as usize {
+                            context.push((line_number, line.clone()));
                         }
                     }
                 }
