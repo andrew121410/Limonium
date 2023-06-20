@@ -3,10 +3,12 @@ use std::env::temp_dir;
 use std::fs::File;
 use std::io::Cursor;
 
+use clap::ArgMatches;
 use reqwest::header;
 use uuid::Uuid;
 
 use crate::api::platform::IPlatform;
+use crate::SUB_COMMAND_ARG_MATCHES;
 
 pub mod platform;
 pub mod papermc;
@@ -14,12 +16,14 @@ pub mod purpurmc;
 pub mod pufferfish;
 pub mod spigotmc;
 pub mod geysermc;
+mod viaversion;
 
 pub fn get_platform(the_project: &String) -> &dyn IPlatform {
     return match the_project.to_lowercase().as_str() {
         "purpur" => &purpurmc::PurpurAPI as &dyn IPlatform,
         "pufferfish" => &pufferfish::PufferfishAPI as &dyn IPlatform,
         "geyser" => &geysermc::GeyserAPI {} as &dyn IPlatform,
+        "viaversion" | "viabackwards" => &viaversion::ViaVersionAPI {} as &dyn IPlatform,
         _ => &papermc::PaperAPI {} as &dyn IPlatform,
     };
 }
@@ -33,6 +37,8 @@ pub fn is_valid_platform(the_project: &String) -> bool {
         "waterfall" => true,
         "velocity" => true,
         "geyser" => true,
+        "viaversion" => true,
+        "viabackwards" => true,
         _ => false,
     };
 }
@@ -71,4 +77,12 @@ pub async fn download_jar_to_temp_dir(link: &String) -> String {
 
 pub fn copy_jar_from_temp_dir_to_dest(tmp_jar_name: &String, final_path: &String) {
     fs::copy(temp_dir().join(&tmp_jar_name), &final_path).expect("Failed copying jar from temp directory to final path");
+}
+
+pub fn get_channel_or_fallback(fallback: &String) -> String {
+    unsafe {
+        let args: &ArgMatches = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
+        let channel = args.get_one::<String>("channel").unwrap_or(&fallback);
+        return channel.to_string();
+    }
 }
