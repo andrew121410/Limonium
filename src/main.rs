@@ -283,7 +283,17 @@ async fn handle_download(download_matches: &ArgMatches) {
         }
     }
 
-    let tmp_jar_name = api::download_jar_to_temp_dir(&platform.get_download_link(&software, &version, &build)).await;
+    let download_link = platform.get_download_link(&software, &version, &build);
+    let mut tmp_jar_name = String::from("");
+
+    // Check if the platform has a custom download functionality
+    let custom_download_function_result = platform.custom_download_functionality(&software, &version, &build, &download_link).await;
+    if custom_download_function_result.is_some() {
+        tmp_jar_name = custom_download_function_result.unwrap();
+    } else {
+        // If there's no custom download functionality, download the jar to the temp directory
+        tmp_jar_name = api::download_jar_to_temp_dir(&download_link).await;
+    }
 
     // Verify the hash of the downloaded jar in the temp directory
     if hash_optional.is_some() {

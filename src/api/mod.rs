@@ -37,17 +37,15 @@ pub fn is_valid_platform(the_project: &String) -> bool {
     };
 }
 
-// pub async fn download(link: &String, path: &String) {
-//     let response = reqwest::get(link).await.unwrap();
-//     let mut file = File::create(&path).unwrap();
-//     let mut content = Cursor::new(response.bytes().await.unwrap());
-//     io::copy(&mut content, &mut file).unwrap();
-// }
-
-pub async fn download_jar_to_temp_dir(link: &String) -> String {
+pub fn random_file_name(fileExtension: &String) -> String {
     let mut tmp_jar_name = String::from("limonium-");
     tmp_jar_name.push_str(&Uuid::new_v4().to_string());
-    tmp_jar_name.push_str(".jar");
+    tmp_jar_name.push_str(fileExtension);
+    return tmp_jar_name;
+}
+
+pub async fn download_jar_to_temp_dir(link: &String) -> String {
+    let mut tmp_jar_name = random_file_name(&".jar".to_string());
 
     let mut headers = header::HeaderMap::new();
     headers.insert(

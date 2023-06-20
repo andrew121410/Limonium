@@ -141,6 +141,10 @@ impl platform::IPlatform for GeyserAPI {
         }
         return None;
     }
+
+    async fn custom_download_functionality(&self, project: &String, version: &String, build: &String, link: &String) -> Option<String> {
+        None
+    }
 }
 
 // https://download.geysermc.org/v2/projects/geyser

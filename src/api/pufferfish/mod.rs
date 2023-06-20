@@ -55,6 +55,10 @@ impl platform::IPlatform for PufferfishAPI {
     async fn get_latest_version(&self, _project: &String) -> Option<String> {
         None
     }
+
+    async fn custom_download_functionality(&self, project: &String, version: &String, build: &String, link: &String) -> Option<String> {
+        None
+    }
 }
 
 pub fn get_real_version(version: &String) -> Option<String> {

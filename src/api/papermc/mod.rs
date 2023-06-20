@@ -140,6 +140,10 @@ impl platform::IPlatform for PaperAPI {
         }
         return None;
     }
+
+    async fn custom_download_functionality(&self, project: &String, version: &String, build: &String, link: &String) -> Option<String> {
+        None
+    }
 }
 
 // https://api.papermc.io/v2/projects/paper
