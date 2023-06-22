@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 use std::string::String;
 use std::time::Instant;
 
-use clap::{ArgAction, ArgMatches, Error};
+use clap::{ArgAction, ArgMatches};
 use clap::builder::TypedValueParser;
 use colored::Colorize;
 

@@ -1,11 +1,11 @@
-use std::{env, fs};
-use std::env::temp_dir;
-use std::path::{Path, PathBuf};
-use std::process::{Command, exit};
+
+
+
+use std::process::{exit};
 
 use async_trait::async_trait;
 use colored::Colorize;
-use regex::Regex;
+
 
 use crate::api;
 use crate::api::platform;
@@ -17,15 +17,15 @@ pub struct ViaVersionAPI {}
 
 #[async_trait]
 impl platform::IPlatform for ViaVersionAPI {
-    async fn get_latest_version(&self, project: &String) -> Option<String> {
+    async fn get_latest_version(&self, _project: &String) -> Option<String> {
         Some("".to_string())
     }
 
-    async fn get_latest_build(&self, project: &String, version: &String) -> Option<String> {
+    async fn get_latest_build(&self, _project: &String, _version: &String) -> Option<String> {
         Some("".to_string())
     }
 
-    fn get_download_link(&self, project: &String, version: &String, build: &String) -> String {
+    fn get_download_link(&self, project: &String, _version: &String, _build: &String) -> String {
         let mut fallback_channel = "".to_string();
         if project.eq_ignore_ascii_case("viaversion") {
             fallback_channel = "viaversion".to_string();
@@ -42,12 +42,12 @@ impl platform::IPlatform for ViaVersionAPI {
         }
 
         // Get the download link for the .zip file
-        let mut link = get_zip_download_link(&project, &channel_selected);
+        let link = get_zip_download_link(&project, &channel_selected);
 
         return link;
     }
 
-    fn get_jar_name(&self, project: &String, version: &String, build: &String) -> String {
+    fn get_jar_name(&self, project: &String, _version: &String, _build: &String) -> String {
         if project.eq_ignore_ascii_case("ViaVersion") {
             return "ViaVersion.jar".to_string();
         } else if project.eq_ignore_ascii_case("ViaBackwards") {
@@ -58,7 +58,7 @@ impl platform::IPlatform for ViaVersionAPI {
         exit(1);
     }
 
-    async fn get_jar_hash(&self, project: &String, version: &String, build: &String) -> Option<Hash> {
+    async fn get_jar_hash(&self, _project: &String, _version: &String, _build: &String) -> Option<Hash> {
         None
     }
 

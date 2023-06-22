@@ -2,8 +2,8 @@ use std::collections::HashSet;
 use std::env::temp_dir;
 use std::fs;
 use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader, Read, Seek, SeekFrom, Write};
-use std::path::{Path, PathBuf};
+use std::io::{BufRead, BufReader, Read, Write};
+use std::path::{PathBuf};
 use std::process::{Command, exit, Stdio};
 use std::time::{Duration, SystemTime};
 
@@ -46,7 +46,7 @@ impl LogSearch {
             // Loop over all the log files for this day
             loop {
                 let log_filename = format!("{}-{}.log", date_string, file_index);
-                let log_path = self.logs_dir.join(&log_filename);
+                let _log_path = self.logs_dir.join(&log_filename);
 
                 let gz_filename = format!("{}-{}.log.gz", date_string, file_index);
                 let gz_path = self.logs_dir.join(&gz_filename);
@@ -61,7 +61,7 @@ impl LogSearch {
                 });
 
                 // uncompress the file using the gzip -d command
-                let output = Command::new("gzip")
+                let _output = Command::new("gzip")
                     .arg("-d")
                     .arg(temp_dir_in_logs_folder.join(&gz_filename))
                     .output()
@@ -191,7 +191,7 @@ impl LogSearch {
 
     // Helper function to format a SystemTime value as a date string
     fn date_string(&self, time: SystemTime) -> String {
-        use chrono::{Datelike, DateTime, TimeZone, Utc};
+        use chrono::{DateTime, Utc};
 
         let date_time = DateTime::<Utc>::from(time);
         date_time.format("%Y-%m-%d").to_string()

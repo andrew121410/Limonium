@@ -142,7 +142,7 @@ impl platform::IPlatform for GeyserAPI {
         return None;
     }
 
-    async fn custom_download_functionality(&self, project: &String, version: &String, build: &String, link: &String) -> Option<String> {
+    async fn custom_download_functionality(&self, _project: &String, _version: &String, _build: &String, _link: &String) -> Option<String> {
         None
     }
 }

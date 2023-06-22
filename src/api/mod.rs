@@ -55,7 +55,7 @@ pub fn random_file_name(fileExtension: &String) -> String {
 }
 
 pub async fn download_jar_to_temp_dir(link: &String) -> String {
-    let mut tmp_jar_name = random_file_name(&".jar".to_string());
+    let tmp_jar_name = random_file_name(&".jar".to_string());
 
     let mut headers = header::HeaderMap::new();
     headers.insert(
@@ -92,7 +92,7 @@ pub fn get_channel_or_fallback(fallback: &String) -> String {
 }
 
 // Returns file name found in the /tmp directory
-async fn jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the_tmp_directory(project: &String, version: &String, build: &String, link: &String, regex: &str) -> Option<String> {
+async fn jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the_tmp_directory(_project: &String, _version: &String, _build: &String, link: &String, regex: &str) -> Option<String> {
     let random_zip_name = random_file_name(&".zip".to_string());
     let random_folder_name = random_file_name(&"".to_string());
 
