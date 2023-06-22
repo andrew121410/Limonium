@@ -96,25 +96,21 @@ async fn jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the
     let random_zip_name = random_file_name(&".zip".to_string());
     let random_folder_name = random_file_name(&"".to_string());
 
-    // Download the .zip file to the temp directory
-    let zip_file_path = env::temp_dir().join(&random_zip_name);
-    let response = reqwest::get(link).await.expect("Failed to send request.");
-    let bytes = response.bytes().await.expect("Failed to get bytes.");
-    fs::write(&zip_file_path, &bytes).expect("Failed to write file.");
-
     // Create a folder in the temp directory with a random name
     let created_folder = env::temp_dir().join(&random_folder_name);
     if !created_folder.exists() {
         fs::create_dir(&created_folder).unwrap();
     }
 
-    // Move the .zip file to the created folder
-    let new_zip_path = created_folder.join(&random_zip_name);
-    fs::rename(&zip_file_path, &new_zip_path).unwrap();
+    // Download the .zip file to the created folder
+    let zip_file_path = created_folder.join(&random_zip_name);
+    let response = reqwest::get(link).await.expect("Failed to send request.");
+    let bytes = response.bytes().await.expect("Failed to get bytes.");
+    fs::write(&zip_file_path, &bytes).expect("Failed to write file.");
 
     // Extract the .zip file in the created folder
     let output = Command::new("unzip")
-        .arg(&new_zip_path)
+        .arg(&zip_file_path)
         .current_dir(&created_folder)
         .output()
         .expect("Failed to execute command.");
@@ -124,10 +120,10 @@ async fn jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the
         return None;
     }
 
-    // Delete the .zip file
-    fs::remove_file(&new_zip_path).unwrap();
+    // Delete the .zip file in the created folder
+    fs::remove_file(&zip_file_path).unwrap();
 
-    // Find the .jar files in the created folder
+    // Find the .jar using the regex
     let jar_pattern = Regex::new(regex).unwrap();
     let jar_files = find_jar_files(&created_folder, &jar_pattern);
 
