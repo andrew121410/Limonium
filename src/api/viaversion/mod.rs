@@ -7,9 +7,9 @@ use async_trait::async_trait;
 use colored::Colorize;
 
 
-use crate::api;
+use crate::{api, jenkins_utils};
 use crate::api::platform;
-use crate::hashutils::Hash;
+use crate::hash_utils::Hash;
 
 // https://github.com/ViaVersion
 // https://ci.viaversion.com/
@@ -63,7 +63,7 @@ impl platform::IPlatform for ViaVersionAPI {
     }
 
     async fn custom_download_functionality(&self, project: &String, version: &String, build: &String, link: &String) -> Option<String> {
-        let file_name = api::jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the_tmp_directory(&project, &version, &build, &link, r"^Via(Backwards|Version)-\d+\.\d+\.\d+(-SNAPSHOT)?\.jar$").await;
+        let file_name = jenkins_utils::jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the_tmp_directory(&project, &version, &build, &link, r"^Via(Backwards|Version)-\d+\.\d+\.\d+(-SNAPSHOT)?\.jar$").await;
 
         return Some(file_name.unwrap());
     }

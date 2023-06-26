@@ -8,7 +8,7 @@ use colored::Colorize;
 
 use crate::{number_utils, SUB_COMMAND_ARG_MATCHES};
 use crate::api::platform;
-use crate::hashutils::Hash;
+use crate::hash_utils::Hash;
 
 // https://github.com/GeyserMC/
 pub struct GeyserAPI {}

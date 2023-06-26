@@ -5,8 +5,8 @@ use std::time::Instant;
 
 use colored::Colorize;
 
-use crate::{api, hashutils};
-use crate::hashutils::Hash;
+use crate::{api, hash_utils};
+use crate::hash_utils::Hash;
 
 pub async fn download_jar(project: &String, version: &String, path: &mut String) {
     let start = Instant::now();
@@ -56,7 +56,7 @@ pub async fn download_jar(project: &String, version: &String, path: &mut String)
         hash: jar_details.response.md5.to_string(),
     };
 
-    hashutils::validate_the_hash(&hash, temp_dir().as_path(), &tmp_jar_name, true);
+    hash_utils::validate_the_hash(&hash, temp_dir().as_path(), &tmp_jar_name, true);
 
     // If the path is empty then use the default
     if path.is_empty() {

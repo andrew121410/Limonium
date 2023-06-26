@@ -19,15 +19,16 @@ use colored::Colorize;
 
 use crate::api::spigotmc::SpigotAPI;
 use crate::backup::BackupFormat;
-use crate::logsearch::LogSearch;
+use crate::log_search::LogSearch;
 
 mod api;
-mod hashutils;
-mod githubutils;
+mod hash_utils;
+mod github_utils;
 mod server_jars_com;
 mod backup;
 mod number_utils;
-mod logsearch;
+mod log_search;
+mod jenkins_utils;
 
 static mut SUB_COMMAND_ARG_MATCHES: Option<ArgMatches> = None;
 
@@ -274,7 +275,7 @@ async fn handle_download(download_matches: &ArgMatches) {
         let hash = hash_optional.as_ref().unwrap();
 
         if current_path.join(&path_string).exists() {
-            let does_match = hashutils::validate_the_hash(&hash, &current_path, &path_string, false);
+            let does_match = hash_utils::validate_the_hash(&hash, &current_path, &path_string, false);
             if does_match {
                 // Don't download the jar if the hash is the same
                 println!("{} {} {}", format!("You are already up to date!").green().bold(), format!("Path:").yellow(), format!("{}", &path_string).blue().bold());
@@ -298,7 +299,7 @@ async fn handle_download(download_matches: &ArgMatches) {
     // Verify the hash of the downloaded jar in the temp directory
     if hash_optional.is_some() {
         let hash = &hash_optional.unwrap();
-        hashutils::validate_the_hash(&hash, &temp_dir(), &tmp_jar_name, true);
+        hash_utils::validate_the_hash(&hash, &temp_dir(), &tmp_jar_name, true);
     } else {
         println!("{}", format!("Not checking hash!").yellow().bold());
     }

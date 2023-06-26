@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::hashutils::Hash;
+use crate::hash_utils::Hash;
 
 #[async_trait]
 pub trait IPlatform: Sync {

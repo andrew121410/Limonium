@@ -5,7 +5,8 @@ use async_trait::async_trait;
 use regex::Regex;
 
 use crate::api::platform;
-use crate::hashutils::Hash;
+use crate::hash_utils::Hash;
+use crate::jenkins_utils;
 
 // https://github.com/pufferfish-gg/Pufferfish
 // https://ci.pufferfish.host/
@@ -55,20 +56,7 @@ impl platform::IPlatform for PufferfishAPI {
         url.push_str(&jar_name);
         url.push_str("/*fingerprint*/");
 
-        // Get the HTML
-        let response = reqwest::get(&url).await;
-        let html = response.unwrap().text().await.unwrap();
-
-        // Extract the MD5 hash using regex
-        let re = Regex::new(r#"The fingerprint (\w{32})"#).unwrap();
-        let captures = re.captures(&html).expect("Failed to extract MD5 hash");
-        let md5_hash = captures.get(1).unwrap().as_str();
-
-        let hash = Hash {
-            algorithm: String::from("md5"),
-            hash: String::from(md5_hash),
-        };
-
+        let hash = jenkins_utils::extract_file_fingerprint_hash(&url).await;
         return Some(hash);
     }
 

@@ -3,7 +3,7 @@ use std::string::String;
 use async_trait::async_trait;
 
 use crate::api::platform;
-use crate::hashutils::Hash;
+use crate::hash_utils::Hash;
 
 // https://github.com/PurpurMC/Purpur
 pub struct PurpurAPI;
