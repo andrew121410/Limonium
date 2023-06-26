@@ -17,8 +17,7 @@ self_update = { version = "0.37.0", features = ["archive-zip", "compression-zip-
 uuid = { version = "1.3.4", features = ["v4"] }
 chrono = "0.4.26"
 clap = "4.3.5"
-openssh-sftp-client = "0.13.6"
 openssh = "0.9.9"
+openssh-sftp-client = "0.13.6"
 indicatif = "0.17.5"
-flate2 = "1.0.26"
 regex = "1.8.4"
