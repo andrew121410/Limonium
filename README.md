@@ -7,14 +7,17 @@ Features:
 - Can backup your Minecraft Server
 - Can search in logs for specific text
 
-Limonium uses platform specific download APIs(Paper, Purpur) or Jenkins to download the .jars
-
 ### Global Arguments
 1. --help `Shows the help menu`
 2. --version `Shows the version of Limonium`
 3. --self-update `Updates limonium if there is a new version available`
 
 ## Download Function
+Download function uses platform specific download APIs(Paper, Purpur) or Jenkins(Pufferfish) to download the software.
+
+It will download the software and check the hash of the file to make sure it downloaded correctly, before it moves it to the directory you specified.
+
+**It will overwrite the file if it already exists.**
 
 ### Softwares
 
@@ -91,7 +94,7 @@ By default, it will use tar.gz, unless specified otherwise.
 
 ## Log Function
 
-The log function will search the logs for the text you specify.
+The log function will search the logs for the text you specify, and will open up nano with the results.
 
 ### Optional Log Arguments
 1. --path `The path to the logs.` (default is ./logs/)
