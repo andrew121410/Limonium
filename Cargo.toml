@@ -7,17 +7,17 @@ edition = "2021"
 
 [dependencies]
 reqwest = "0.11.18"
-serde = "1.0.166"
-serde_derive = "1.0.166"
+serde = "1.0.167"
+serde_derive = "1.0.167"
 serde_json = "1.0.100"
-async-trait = "0.1.70"
+async-trait = "0.1.71"
 tokio = { version = "1.29.1", features = ["rt-multi-thread", "macros"] }
-colored = "2.0.2"
+colored = "2.0.4"
 self_update = { version = "0.37.0", features = ["archive-zip", "compression-zip-deflate"] }
 uuid = { version = "1.4.0", features = ["v4"] }
 chrono = "0.4.26"
-clap = "4.3.10"
+clap = "4.3.11"
 openssh-sftp-client = "0.13.6"
 openssh = "0.9.9"
 indicatif = "0.17.5"
-regex = "1.8.4"
+regex = "1.9.1"
