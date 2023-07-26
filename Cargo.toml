@@ -7,9 +7,9 @@ edition = "2021"
 
 [dependencies]
 reqwest = "0.11.18"
-serde = "1.0.174"
-serde_derive = "1.0.174"
-serde_json = "1.0.103"
+serde = "1.0.176"
+serde_derive = "1.0.176"
+serde_json = "1.0.104"
 async-trait = "0.1.72"
 tokio = { version = "1.29.1", features = ["rt-multi-thread", "macros"] }
 colored = "2.0.4"
