@@ -3,12 +3,13 @@ use std::process;
 use std::string::String;
 
 use async_trait::async_trait;
-use clap::{ArgMatches};
+use clap::ArgMatches;
 use colored::Colorize;
 
 use crate::{number_utils, SUB_COMMAND_ARG_MATCHES};
-use crate::api::{platform};
+use crate::api::platform;
 use crate::hash_utils::Hash;
+use crate::objects::DownloadedJar::DownloadedJar;
 
 // https://github.com/PaperMC
 pub struct PaperAPI {}
@@ -108,7 +109,7 @@ impl platform::IPlatform for PaperAPI {
         return Some(latest_build);
     }
 
-    async fn get_jar_hash(&self, project: &String, version: &String, build: &String) -> Option<Hash> {
+    async fn get_jar_hash(&self, project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedJar>) -> Option<Hash> {
         let mut link = String::from(&PAPER_API_ENDPOINT.to_string());
         link.push_str("/v2/projects/");
         link.push_str(&project);
@@ -141,7 +142,7 @@ impl platform::IPlatform for PaperAPI {
         return None;
     }
 
-    async fn custom_download_functionality(&self, _project: &String, _version: &String, _build: &String, _link: &String) -> Option<String> {
+    async fn custom_download_functionality(&self, _project: &String, _version: &String, _build: &String, _link: &String) -> Option<DownloadedJar> {
         None
     }
 }

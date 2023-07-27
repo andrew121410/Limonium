@@ -1,4 +1,4 @@
-use std::{process};
+use std::process;
 use std::collections::HashMap;
 use std::env::temp_dir;
 use std::time::Instant;
@@ -7,6 +7,7 @@ use colored::Colorize;
 
 use crate::{api, hash_utils};
 use crate::hash_utils::Hash;
+use crate::objects::DownloadedJar::DownloadedJar;
 
 pub async fn download_jar(project: &String, version: &String, path: &mut String) {
     let start = Instant::now();
@@ -28,7 +29,7 @@ pub async fn download_jar(project: &String, version: &String, path: &mut String)
         download_link.push_str(&version);
     }
 
-    let tmp_jar_name = api::download_jar_to_temp_dir(&download_link).await;
+    let downloaded_jar: DownloadedJar = api::download_jar_to_temp_dir(&download_link).await;
 
     let mut jar_details_url = String::from("https://serverjars.com/api/fetchDetails/");
     jar_details_url.push_str(&server_jar.typea);
@@ -56,7 +57,7 @@ pub async fn download_jar(project: &String, version: &String, path: &mut String)
         hash: jar_details.response.md5.to_string(),
     };
 
-    hash_utils::validate_the_hash(&hash, temp_dir().as_path(), &tmp_jar_name, true);
+    hash_utils::validate_the_hash(&hash, temp_dir().as_path(), &downloaded_jar.temp_jar_name, true);
 
     // If the path is empty then use the default
     if path.is_empty() {
@@ -64,7 +65,7 @@ pub async fn download_jar(project: &String, version: &String, path: &mut String)
     }
 
     // Move the jar to the correct location
-    api::copy_jar_from_temp_dir_to_dest(&tmp_jar_name, &path);
+    api::copy_jar_from_temp_dir_to_dest(&downloaded_jar.temp_jar_name, &path);
 
     let duration = start.elapsed().as_millis().to_string();
     println!("{} {} {}", format!("ServerJars.com -> Successfully downloaded").green(), format!("{}", &project).blue().bold(), format!("from ServerJars.com").green());

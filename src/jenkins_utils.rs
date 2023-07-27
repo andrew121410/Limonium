@@ -7,6 +7,7 @@ use regex::Regex;
 
 use crate::api;
 use crate::hash_utils::Hash;
+use crate::objects::DownloadedJar::DownloadedJar;
 
 // Returns hash of the file fingerprint found on the Jenkins page (md5)
 pub async fn extract_file_fingerprint_hash(url: &String) -> Hash {
@@ -28,7 +29,7 @@ pub async fn extract_file_fingerprint_hash(url: &String) -> Hash {
 }
 
 // Returns file name found in the /tmp directory
-pub async fn jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the_tmp_directory(_project: &String, _version: &String, _build: &String, link: &String, regex: &str) -> Option<String> {
+pub async fn jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the_tmp_directory(_project: &String, _version: &String, _build: &String, link: &String, regex: &str) -> Option<DownloadedJar> {
     let random_zip_name = api::random_file_name(&".zip".to_string());
     let random_folder_name = api::random_file_name(&"".to_string());
 
@@ -75,17 +76,27 @@ pub async fn jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in
         return None;
     }
 
+    // Get the name of the jar file
+    let jar_file_name = the_jar_file_path.clone().unwrap().file_name().unwrap().to_str().unwrap().to_string();
+
     // Generate a random name for the jar file
     let random_jar_name = api::random_file_name(&".jar".to_string());
 
-    // Move the jar file to the temp directory
+    // Move the jar file to the temp directory with the random name
     let final_jar_path = env::temp_dir().join(&random_jar_name);
     fs::rename(&the_jar_file_path.unwrap(), &final_jar_path).unwrap();
 
     // Delete the created folder
     fs::remove_dir_all(&created_folder).unwrap();
 
-    // Return the name of the jar file
+    // Name of the jar file in the temp directory (random name)
     let final_jar_file_name = final_jar_path.file_name().unwrap().to_str().unwrap().to_string();
-    Some(final_jar_file_name)
+
+    let downloaded_jar: DownloadedJar = DownloadedJar {
+        real_jar_name: Some(jar_file_name),
+        temp_jar_name: final_jar_file_name,
+        temp_jar_path: final_jar_path,
+    };
+
+    return Some(downloaded_jar);
 }

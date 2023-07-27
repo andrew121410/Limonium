@@ -13,6 +13,7 @@ use uuid::Uuid;
 
 use crate::{api, SUB_COMMAND_ARG_MATCHES};
 use crate::api::platform::IPlatform;
+use crate::objects::DownloadedJar::DownloadedJar;
 
 pub mod platform;
 pub mod papermc;
@@ -54,7 +55,7 @@ pub fn random_file_name(fileExtension: &String) -> String {
     return tmp_jar_name;
 }
 
-pub async fn download_jar_to_temp_dir(link: &String) -> String {
+pub async fn download_jar_to_temp_dir(link: &String) -> DownloadedJar {
     let tmp_jar_name = random_file_name(&".jar".to_string());
 
     let mut headers = header::HeaderMap::new();
@@ -76,7 +77,11 @@ pub async fn download_jar_to_temp_dir(link: &String) -> String {
     let mut content = Cursor::new(response.bytes().await.unwrap());
     io::copy(&mut content, &mut file).unwrap();
 
-    return tmp_jar_name;
+    return DownloadedJar {
+        real_jar_name: None, // We might not know the real jar name
+        temp_jar_name: tmp_jar_name.clone(),
+        temp_jar_path: temp_dir().join(&tmp_jar_name),
+    };
 }
 
 pub fn copy_jar_from_temp_dir_to_dest(tmp_jar_name: &String, final_path: &String) {

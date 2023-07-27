@@ -1,15 +1,12 @@
-
-
-
-use std::process::{exit};
+use std::process::exit;
 
 use async_trait::async_trait;
 use colored::Colorize;
 
-
 use crate::{api, jenkins_utils};
 use crate::api::platform;
 use crate::hash_utils::Hash;
+use crate::objects::DownloadedJar::DownloadedJar;
 
 // https://github.com/ViaVersion
 // https://ci.viaversion.com/
@@ -58,14 +55,51 @@ impl platform::IPlatform for ViaVersionAPI {
         exit(1);
     }
 
-    async fn get_jar_hash(&self, _project: &String, _version: &String, _build: &String) -> Option<Hash> {
-        None
+    async fn get_jar_hash(&self, project: &String, version: &String, build: &String, downloaded_jar_option: Option<&DownloadedJar>) -> Option<Hash> {
+        if downloaded_jar_option.is_none() {
+            return None;
+        }
+
+        let mut fallback_channel = "".to_string();
+        if project.eq_ignore_ascii_case("viaversion") {
+            fallback_channel = "viaversion".to_string();
+        } else if project.eq_ignore_ascii_case("viabackwards") {
+            fallback_channel = "viabackwards".to_string();
+        }
+
+        let channel_selected = api::get_channel_or_fallback(&fallback_channel);
+
+        // Check if the channel is valid
+        if !is_valid_channel(&channel_selected) {
+            println!("{} {}", "Error:".red(), "Invalid channel selected");
+            return None;
+        }
+
+        let downloaded_jar = downloaded_jar_option.unwrap();
+
+        // We must have the real jar name.
+        if downloaded_jar.real_jar_name.is_none() {
+            return None;
+        }
+
+        let jar_name = downloaded_jar.real_jar_name.as_ref().unwrap();
+
+        let fingerprint_link = get_fingerprint_link(&project, &channel_selected, &jar_name);
+
+        let hash = jenkins_utils::extract_file_fingerprint_hash(&fingerprint_link).await;
+
+        return Some(hash);
     }
 
-    async fn custom_download_functionality(&self, project: &String, version: &String, build: &String, link: &String) -> Option<String> {
-        let file_name = jenkins_utils::jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the_tmp_directory(&project, &version, &build, &link, r"^Via(Backwards|Version)-\d+\.\d+\.\d+(-SNAPSHOT)?\.jar$").await;
+    async fn custom_download_functionality(&self, project: &String, version: &String, build: &String, link: &String) -> Option<DownloadedJar> {
+        let downloaded_jar_option: Option<DownloadedJar> = jenkins_utils::jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the_tmp_directory(&project, &version, &build, &link, r"^Via(Backwards|Version)-\d+\.\d+\.\d+(-SNAPSHOT)?\.jar$").await;
 
-        return Some(file_name.unwrap());
+        if downloaded_jar_option.is_none() {
+            println!("{} {}", "Error:".red(), "ViaVersion (custom_download_functionality) failed to download the jar");
+            exit(101);
+        }
+
+        return Some(downloaded_jar_option.unwrap());
     }
 }
 
@@ -78,6 +112,32 @@ fn get_zip_download_link(project: &String, channel: &String) -> String {
         return "https://ci.viaversion.com/view/ViaBackwards/job/ViaBackwards/lastSuccessfulBuild/artifact/build/libs/*zip*/libs.zip".to_string();
     } else if project.eq_ignore_ascii_case("viabackwards") && channel.eq_ignore_ascii_case("dev") {
         return "https://ci.viaversion.com/view/ViaBackwards/job/ViaBackwards-DEV/lastSuccessfulBuild/artifact/build/libs/*zip*/libs.zip".to_string();
+    }
+
+    return "na".to_string();
+}
+
+fn get_fingerprint_link(project: &String, channel: &String, jar_name: &String) -> String {
+    if project.eq_ignore_ascii_case("viaversion") && channel.eq_ignore_ascii_case("viaversion") {
+        let mut link = "https://ci.viaversion.com/job/ViaVersion/lastSuccessfulBuild/artifact/build/libs/".to_string();
+        link.push_str(jar_name);
+        link.push_str("/*fingerprint*/");
+        return link.to_string();
+    } else if project.eq_ignore_ascii_case("viaversion") && channel.eq_ignore_ascii_case("dev") {
+        let mut link = "https://ci.viaversion.com/job/ViaVersion-DEV/lastSuccessfulBuild/artifact/build/libs/".to_string();
+        link.push_str(jar_name);
+        link.push_str("/*fingerprint*/");
+        return link.to_string();
+    } else if project.eq_ignore_ascii_case("viabackwards") && channel.eq_ignore_ascii_case("viabackwards") {
+        let mut link = "https://ci.viaversion.com/job/ViaBackwards/lastSuccessfulBuild/artifact/build/libs/".to_string();
+        link.push_str(jar_name);
+        link.push_str("/*fingerprint*/");
+        return link.to_string();
+    } else if project.eq_ignore_ascii_case("viabackwards") && channel.eq_ignore_ascii_case("dev") {
+        let mut link = "https://ci.viaversion.com/job/ViaBackwards-DEV/lastSuccessfulBuild/artifact/build/libs/".to_string();
+        link.push_str(jar_name);
+        link.push_str("/*fingerprint*/");
+        return link.to_string();
     }
 
     return "na".to_string();

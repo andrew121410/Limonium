@@ -7,6 +7,7 @@ use regex::Regex;
 use crate::api::platform;
 use crate::hash_utils::Hash;
 use crate::jenkins_utils;
+use crate::objects::DownloadedJar::DownloadedJar;
 
 // https://github.com/pufferfish-gg/Pufferfish
 // https://ci.pufferfish.host/
@@ -42,7 +43,7 @@ impl platform::IPlatform for PufferfishAPI {
 
     // https://ci.pufferfish.host/job/Pufferfish-1.20/lastSuccessfulBuild/artifact/build/libs/pufferfish-paperclip-1.20.1-R0.1-SNAPSHOT-reobf.jar/*fingerprint*/
     // Will return a md5 hash
-    async fn get_jar_hash(&self, project: &String, version: &String, build: &String) -> Option<Hash> {
+    async fn get_jar_hash(&self, project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedJar>) -> Option<Hash> {
         let jar_name = self.get_jar_name(project, version, build);
         let jenkins_version = get_jenkins_version(version);
         validate_jenkins_version(&jenkins_version, &version);
@@ -64,7 +65,7 @@ impl platform::IPlatform for PufferfishAPI {
         None
     }
 
-    async fn custom_download_functionality(&self, _project: &String, _version: &String, _build: &String, _link: &String) -> Option<String> {
+    async fn custom_download_functionality(&self, _project: &String, _version: &String, _build: &String, _link: &String) -> Option<DownloadedJar> {
         None
     }
 }

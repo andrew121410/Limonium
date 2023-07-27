@@ -20,6 +20,7 @@ use colored::Colorize;
 use crate::api::spigotmc::SpigotAPI;
 use crate::backup::BackupFormat;
 use crate::log_search::LogSearch;
+use crate::objects::DownloadedJar::DownloadedJar;
 
 mod api;
 mod hash_utils;
@@ -29,6 +30,7 @@ mod backup;
 mod number_utils;
 mod log_search;
 mod jenkins_utils;
+mod objects;
 
 static mut SUB_COMMAND_ARG_MATCHES: Option<ArgMatches> = None;
 
@@ -268,11 +270,11 @@ async fn handle_download(download_matches: &ArgMatches) {
     let start = Instant::now();
 
     // Get the hash of the jar from a API
-    let hash_optional = platform.get_jar_hash(&software, &version, &build).await;
+    let hash_before_downloaded_jar = platform.get_jar_hash(&software, &version, &build, None).await;
 
     // Verify if we need to download the jar by checking the hash of the current installed jar
-    if hash_optional.is_some() {
-        let hash = hash_optional.as_ref().unwrap();
+    if hash_before_downloaded_jar.is_some() {
+        let hash = hash_before_downloaded_jar.as_ref().unwrap();
 
         if current_path.join(&path_string).exists() {
             let does_match = hash_utils::validate_the_hash(&hash, &current_path, &path_string, false);
@@ -285,26 +287,27 @@ async fn handle_download(download_matches: &ArgMatches) {
     }
 
     let download_link = platform.get_download_link(&software, &version, &build);
-    let mut tmp_jar_name = String::from("");
+    let mut downloaded_jar: DownloadedJar = DownloadedJar::empty();
 
     // Check if the platform has a custom download functionality
     let custom_download_function_result = platform.custom_download_functionality(&software, &version, &build, &download_link).await;
     if custom_download_function_result.is_some() {
-        tmp_jar_name = custom_download_function_result.unwrap();
+        downloaded_jar = custom_download_function_result.unwrap();
     } else {
         // If there's no custom download functionality, download the jar to the temp directory
-        tmp_jar_name = api::download_jar_to_temp_dir(&download_link).await;
+        downloaded_jar = api::download_jar_to_temp_dir(&download_link).await;
     }
 
     // Verify the hash of the downloaded jar in the temp directory
-    if hash_optional.is_some() {
-        let hash = &hash_optional.unwrap();
-        hash_utils::validate_the_hash(&hash, &temp_dir(), &tmp_jar_name, true);
+    let hash_after_downloaded_jar = platform.get_jar_hash(&software, &version, &build, Some(&downloaded_jar)).await;
+    if hash_after_downloaded_jar.is_some() {
+        let hash = &hash_after_downloaded_jar.unwrap();
+        hash_utils::validate_the_hash(&hash, &temp_dir(), &downloaded_jar.temp_jar_name, true);
     } else {
         println!("{}", format!("Not checking hash!").yellow().bold());
     }
 
-    api::copy_jar_from_temp_dir_to_dest(&tmp_jar_name, &path_string);
+    api::copy_jar_from_temp_dir_to_dest(&downloaded_jar.temp_jar_name, &path_string);
 
     let duration = start.elapsed().as_millis().to_string();
     println!("{} {} {} {}", format!("Downloaded JAR:").green().bold(), format!("{}", &path_string.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
