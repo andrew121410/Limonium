@@ -13,8 +13,7 @@ pub trait IPlatform: Sync {
 
     fn get_jar_name(&self, project: &String, version: &String, build: &String) -> String;
 
-    async fn get_jar_hash(&self, project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedJar>) -> Option<Hash>;
+    async fn get_hash_from_web(&self, project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedJar>) -> Option<Hash>;
 
-    // Returns file name in the /tmp directory (None if don't want to override the download functionality)
     async fn custom_download_functionality(&self, project: &String, version: &String, build: &String, link: &String) -> Option<DownloadedJar>;
 }

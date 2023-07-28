@@ -270,7 +270,7 @@ async fn handle_download(download_matches: &ArgMatches) {
     let start = Instant::now();
 
     // Get the hash of the jar from a API
-    let hash_before_downloaded_jar = platform.get_jar_hash(&software, &version, &build, None).await;
+    let hash_before_downloaded_jar = platform.get_hash_from_web(&software, &version, &build, None).await;
 
     // Verify if we need to download the jar by checking the hash of the current installed jar
     if hash_before_downloaded_jar.is_some() {
@@ -299,7 +299,7 @@ async fn handle_download(download_matches: &ArgMatches) {
     }
 
     // Verify the hash of the downloaded jar in the temp directory
-    let hash_after_downloaded_jar = platform.get_jar_hash(&software, &version, &build, Some(&downloaded_jar)).await;
+    let hash_after_downloaded_jar = platform.get_hash_from_web(&software, &version, &build, Some(&downloaded_jar)).await;
     if hash_after_downloaded_jar.is_some() {
         let hash = &hash_after_downloaded_jar.unwrap();
         hash_utils::validate_the_hash(&hash, &temp_dir(), &downloaded_jar.temp_jar_name, true);

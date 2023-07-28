@@ -34,7 +34,7 @@ impl platform::IPlatform for PurpurAPI {
         return Some(String::from("latest"));
     }
 
-    async fn get_jar_hash(&self, _project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedJar>) -> Option<Hash> {
+    async fn get_hash_from_web(&self, _project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedJar>) -> Option<Hash> {
         let mut link = String::from("https://api.purpurmc.org/v2/purpur/");
         link.push_str(&version);
         link.push_str("/");

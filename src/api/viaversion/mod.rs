@@ -55,7 +55,7 @@ impl platform::IPlatform for ViaVersionAPI {
         exit(1);
     }
 
-    async fn get_jar_hash(&self, project: &String, version: &String, build: &String, downloaded_jar_option: Option<&DownloadedJar>) -> Option<Hash> {
+    async fn get_hash_from_web(&self, project: &String, version: &String, build: &String, downloaded_jar_option: Option<&DownloadedJar>) -> Option<Hash> {
         if downloaded_jar_option.is_none() {
             return None;
         }

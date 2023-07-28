@@ -110,7 +110,7 @@ impl platform::IPlatform for GeyserAPI {
         return Some(latest_build);
     }
 
-    async fn get_jar_hash(&self, project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedJar>) -> Option<Hash> {
+    async fn get_hash_from_web(&self, project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedJar>) -> Option<Hash> {
         let mut link = String::from(&GEYSER_API_ENDPOINT.to_string());
         link.push_str("/v2/projects/");
         link.push_str(&project);
