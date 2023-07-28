@@ -50,7 +50,7 @@ _Note: When using `--serverjars.com` argument some choices may not work as they 
 2. --serverjars.com `When this argument is used it will download the jar from` [ServerJars.com](https://serverjars.com/) `instead`
 3. --c `The channel so for geyser the default channel is "standalone" but can be changed to (spigot, bungeecord, velocity, fabric, sponge)`
 4. --latest-use-at-your-own-risk `(Warning: Don't use this is bad (you don't want your Minecraft Server randomly getting upgraded to a new Minecraft version, without you knowing)) Using this argument with the latest version, It will find the latest version of the software for you (really used for something like Geyser or Velocity)`
-5. --latest-dont-include-snapshot-versions `When searching for the latest version, it will not include snapshot versions`
+5. --no-snapshot-version `When searching for the latest version, it will not include snapshot versions`
 ### Download Usage
 
 *Usage: &lt;software&gt; &lt;version&gt;*

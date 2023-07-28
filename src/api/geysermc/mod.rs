@@ -42,7 +42,7 @@ impl platform::IPlatform for GeyserAPI {
         // See if we don't include snapshot versions
         unsafe {
             let args: &ArgMatches = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
-            let dont_include_snapshot_versions: bool = args.get_flag("latest-dont-include-snapshot-versions");
+            let dont_include_snapshot_versions: bool = args.get_flag("no-snapshot-version");
             if dont_include_snapshot_versions {
                 versions.retain(|x| !x.contains("-SNAPSHOT"));
             }
