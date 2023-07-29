@@ -3,7 +3,7 @@
 ## Limonium is a tiny Minecraft Server management tool.
 
 Features:
-- Can download Minecraft Server .jars (I use it for updating the server jars)
+- Can download & update MC Server Software
 - Can backup your Minecraft Server
 - Can search in logs for specific text
 
@@ -21,16 +21,16 @@ It will download the software and check the hash of the file to make sure it dow
 
 ### Softwares
 
-1. [Paper](https://github.com/PaperMC/Paper) -> `./limonium downlaod paper 1.20.1`
-2. [Purpur](https://github.com/PurpurMC/Purpur) -> `./limonium downlaod purpur 1.20.1`
-3. [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) -> `./limonium downlaod pufferfish 1.20.1`
-4. [Geyser](https://github.com/GeyserMc/Geyser) -> `./limonium downlaod geyser 2.1.0` (default is geyser-standalone)
+1. [Paper](https://github.com/PaperMC/Paper) -> `./limonium download paper 1.20.1`
+2. [Purpur](https://github.com/PurpurMC/Purpur) -> `./limonium download purpur 1.20.1`
+3. [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) -> `./limonium download pufferfish 1.20.1`
+4. [Geyser](https://github.com/GeyserMc/Geyser) -> `./limonium download geyser 2.1.0` (default is geyser-standalone)
 6. [Spigot](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/browse) -> `./limonium download spigot 1.20.1` (Not recommended)\
 __If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run it__
 
 ### Proxies
 
-1. [Waterfall](https://github.com/PaperMC/Waterfall) -> `./limonium download waterfall 1.19`
+1. [Waterfall](https://github.com/PaperMC/Waterfall) -> `./limonium download waterfall 1.20`
 2. [Velocity](https://github.com/PaperMC/Velocity) -> `./limonium download velocity 3.2.0-SNAPSHOT`
 
 ### Plugins
