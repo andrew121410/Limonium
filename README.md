@@ -2,12 +2,12 @@
 
 ## Limonium is a tiny Minecraft Server management tool.
 
-Features:
+### Features:
 - Can download & update MC Server Software
 - Can backup your Minecraft Server
 - Can search in logs for specific text
 
-### Global Arguments
+#### Global Arguments
 1. --help `Shows the help menu`
 2. --version `Shows the version of Limonium`
 3. --self-update `Updates limonium if there is a new version available`
