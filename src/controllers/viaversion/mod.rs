@@ -3,8 +3,8 @@ use std::process::exit;
 use async_trait::async_trait;
 use colored::Colorize;
 
-use crate::{api, jenkins_utils};
-use crate::api::platform;
+use crate::{controllers, jenkins_utils};
+use crate::controllers::platform;
 use crate::hash_utils::Hash;
 use crate::objects::DownloadedJar::DownloadedJar;
 
@@ -30,7 +30,7 @@ impl platform::IPlatform for ViaVersionAPI {
             fallback_channel = "viabackwards".to_string();
         }
 
-        let channel_selected = api::get_channel_or_fallback(&fallback_channel);
+        let channel_selected = controllers::clap_get_one_or_fallback(&"channel".to_string(), &fallback_channel);
 
         // Check if the channel is valid
         if !is_valid_channel(&channel_selected) {
@@ -67,7 +67,7 @@ impl platform::IPlatform for ViaVersionAPI {
             fallback_channel = "viabackwards".to_string();
         }
 
-        let channel_selected = api::get_channel_or_fallback(&fallback_channel);
+        let channel_selected = controllers::clap_get_one_or_fallback(&"channel".to_string(), &fallback_channel);
 
         // Check if the channel is valid
         if !is_valid_channel(&channel_selected) {

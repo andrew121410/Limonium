@@ -4,7 +4,7 @@ use std::string::String;
 use async_trait::async_trait;
 use regex::Regex;
 
-use crate::api::platform;
+use crate::controllers::platform;
 use crate::hash_utils::Hash;
 use crate::jenkins_utils;
 use crate::objects::DownloadedJar::DownloadedJar;

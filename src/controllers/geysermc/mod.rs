@@ -3,11 +3,10 @@ use std::process;
 use std::string::String;
 
 use async_trait::async_trait;
-use clap::ArgMatches;
 use colored::Colorize;
 
-use crate::{number_utils, SUB_COMMAND_ARG_MATCHES};
-use crate::api::platform;
+use crate::{controllers, number_utils};
+use crate::controllers::platform;
 use crate::hash_utils::Hash;
 use crate::objects::DownloadedJar::DownloadedJar;
 
@@ -40,12 +39,9 @@ impl platform::IPlatform for GeyserAPI {
         let mut versions: Vec<String> = json.versions.unwrap();
 
         // See if we don't include snapshot versions
-        unsafe {
-            let args: &ArgMatches = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
-            let dont_include_snapshot_versions: bool = args.get_flag("no-snapshot-version");
-            if dont_include_snapshot_versions {
-                versions.retain(|x| !x.contains("-SNAPSHOT"));
-            }
+        let dont_include_snapshot_versions: bool = controllers::clap_get_flag_or_fallback(&String::from("no-snapshot-version"));
+        if dont_include_snapshot_versions {
+            versions.retain(|x| !x.contains("-SNAPSHOT"));
         }
 
         // Sort versions
@@ -67,12 +63,8 @@ impl platform::IPlatform for GeyserAPI {
         to_return.push_str(&build);
         to_return.push_str("/downloads/");
 
-        unsafe {
-            let args: &ArgMatches = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
-            let default_channel: String = DEFAULT_GEYSER_CHANNEL.to_string();
-            let channel = args.get_one::<String>("channel").unwrap_or(&default_channel);
-            to_return.push_str(channel);
-        }
+        let channel = controllers::clap_get_one_or_fallback(&String::from("channel"), &String::from(DEFAULT_GEYSER_CHANNEL));
+        to_return.push_str(&channel);
 
         return to_return;
     }
@@ -96,17 +88,17 @@ impl platform::IPlatform for GeyserAPI {
         link.push_str(&version);
 
         let text = reqwest::get(&link).await.unwrap().text().await.unwrap();
-        let paper_json: BibliothekBuildsJSON = serde_json::from_str(text.as_str()).unwrap();
+        let geyser_json: BibliothekBuildsJSON = serde_json::from_str(text.as_str()).unwrap();
 
-        if paper_json.error.is_some() {
+        if geyser_json.error.is_some() {
             return None;
         }
 
-        if paper_json.builds.is_none() {
+        if geyser_json.builds.is_none() {
             return None;
         }
 
-        let latest_build: String = paper_json.builds.unwrap().iter().max().unwrap().to_string();
+        let latest_build: String = geyser_json.builds.unwrap().iter().max().unwrap().to_string();
         return Some(latest_build);
     }
 
@@ -120,26 +112,22 @@ impl platform::IPlatform for GeyserAPI {
         link.push_str(&build);
 
         let text = reqwest::get(&link).await.unwrap().text().await.unwrap();
-        let paper_build_info_json: BibliothekBuildInfo = serde_json::from_str(text.as_str()).unwrap();
+        let geyser_build_info_json: BibliothekBuildInfo = serde_json::from_str(text.as_str()).unwrap();
 
-        unsafe {
-            if paper_build_info_json.downloads.is_some() {
-                let downloads = paper_build_info_json.downloads.unwrap();
+        if geyser_build_info_json.downloads.is_some() {
+            let downloads = geyser_build_info_json.downloads.unwrap();
+            let channel = controllers::clap_get_one_or_fallback(&String::from("channel"), &String::from(DEFAULT_GEYSER_CHANNEL));
 
-                let args: &ArgMatches = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
-                let default_channel: String = DEFAULT_GEYSER_CHANNEL.to_string();
-                let channel = args.get_one::<String>("channel").unwrap_or(&default_channel);
-
-                if !downloads.contains_key(channel) {
-                    println!("{} channel does not exist", format!("{}", channel).red());
-                    list_all_available_channels(project, version, build).await;
-                    process::exit(102);
-                }
-
-                let sha256: &String = downloads.get(channel).unwrap().get("sha256").unwrap();
-
-                return Some(Hash::new(String::from("sha256"), sha256.clone()));
+            // Check if channel exists
+            if !downloads.contains_key(&channel) {
+                println!("{} channel does not exist", format!("{}", channel).red());
+                list_all_available_channels(project, version, build).await;
+                process::exit(102);
             }
+
+            let sha256: &String = downloads.get(&channel).unwrap().get("sha256").unwrap();
+
+            return Some(Hash::new(String::from("sha256"), sha256.clone()));
         }
         return None;
     }
@@ -159,14 +147,12 @@ async fn list_all_available_channels(project: &String, version: &String, build: 
     link.push_str(&build);
 
     let text = reqwest::get(&link).await.unwrap().text().await.unwrap();
-    let paper_build_info_json: BibliothekBuildInfo = serde_json::from_str(text.as_str()).unwrap();
+    let geyser_build_info_json: BibliothekBuildInfo = serde_json::from_str(text.as_str()).unwrap();
 
-    unsafe {
-        if paper_build_info_json.downloads.is_some() {
-            let downloads = paper_build_info_json.downloads.unwrap();
+    if geyser_build_info_json.downloads.is_some() {
+        let downloads = geyser_build_info_json.downloads.unwrap();
 
-            println!("{} {}", "Available channels:".green(), downloads.keys().map(|x| format!("{}", x)).collect::<Vec<String>>().join(", "));
-        }
+        println!("{} {}", "Available channels:".green(), downloads.keys().map(|x| format!("{}", x)).collect::<Vec<String>>().join(", "));
     }
 }
 

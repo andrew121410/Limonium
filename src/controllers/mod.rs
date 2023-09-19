@@ -10,9 +10,9 @@ use regex::Regex;
 use reqwest::header;
 use uuid::Uuid;
 
-use crate::SUB_COMMAND_ARG_MATCHES;
-use crate::api::platform::IPlatform;
+use crate::controllers::platform::IPlatform;
 use crate::objects::DownloadedJar::DownloadedJar;
+use crate::SUB_COMMAND_ARG_MATCHES;
 
 pub mod platform;
 pub mod papermc;
@@ -49,6 +49,22 @@ pub fn is_valid_platform(the_project: &String) -> bool {
         "viabackwards" => true,
         _ => false,
     };
+}
+
+pub fn clap_get_one_or_fallback(flag: &String, fallback: &String) -> String {
+    unsafe {
+        let args: &ArgMatches = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
+        let flag = args.get_one::<String>(flag).unwrap_or(&fallback);
+        return flag.to_string();
+    }
+}
+
+pub fn clap_get_flag_or_fallback(flag: &String) -> bool {
+    unsafe {
+        let args: &ArgMatches = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
+        let flag = args.get_flag(flag);
+        return flag;
+    }
 }
 
 pub fn random_file_name(fileExtension: &String) -> String {
@@ -89,14 +105,6 @@ pub async fn download_jar_to_temp_dir(link: &String) -> DownloadedJar {
 
 pub fn copy_jar_from_temp_dir_to_dest(tmp_jar_name: &String, final_path: &String) {
     fs::copy(temp_dir().join(&tmp_jar_name), &final_path).expect("Failed copying jar from temp directory to final path");
-}
-
-pub fn get_channel_or_fallback(fallback: &String) -> String {
-    unsafe {
-        let args: &ArgMatches = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
-        let channel = args.get_one::<String>("channel").unwrap_or(&fallback);
-        return channel.to_string();
-    }
 }
 
 pub(crate) fn find_jar_files(dir: &Path, jar_pattern: &Regex) -> Vec<PathBuf> {

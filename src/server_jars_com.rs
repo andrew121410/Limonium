@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use colored::Colorize;
 
-use crate::{api, hash_utils};
+use crate::{controllers, hash_utils};
 use crate::hash_utils::Hash;
 use crate::objects::DownloadedJar::DownloadedJar;
 
@@ -29,7 +29,7 @@ pub async fn download_jar(project: &String, version: &String, path: &mut String)
         download_link.push_str(&version);
     }
 
-    let downloaded_jar: DownloadedJar = api::download_jar_to_temp_dir(&download_link).await;
+    let downloaded_jar: DownloadedJar = controllers::download_jar_to_temp_dir(&download_link).await;
 
     let mut jar_details_url = String::from("https://serverjars.com/api/fetchDetails/");
     jar_details_url.push_str(&server_jar.typea);
@@ -65,7 +65,7 @@ pub async fn download_jar(project: &String, version: &String, path: &mut String)
     }
 
     // Move the jar to the correct location
-    api::copy_jar_from_temp_dir_to_dest(&downloaded_jar.temp_jar_name, &path);
+    controllers::copy_jar_from_temp_dir_to_dest(&downloaded_jar.temp_jar_name, &path);
 
     let duration = start.elapsed().as_millis().to_string();
     println!("{} {} {}", format!("ServerJars.com -> Successfully downloaded").green(), format!("{}", &project).blue().bold(), format!("from ServerJars.com").green());

@@ -3,11 +3,10 @@ use std::process;
 use std::string::String;
 
 use async_trait::async_trait;
-use clap::ArgMatches;
 use colored::Colorize;
 
-use crate::{number_utils, SUB_COMMAND_ARG_MATCHES};
-use crate::api::platform;
+use crate::{controllers, number_utils};
+use crate::controllers::platform;
 use crate::hash_utils::Hash;
 use crate::objects::DownloadedJar::DownloadedJar;
 
@@ -43,12 +42,9 @@ impl platform::IPlatform for PaperAPI {
         versions.retain(|x| !x.contains("-pre"));
 
         // See if we don't include snapshot versions
-        unsafe {
-            let args: &ArgMatches = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
-            let dont_include_snapshot_versions: bool = args.get_flag("no-snapshot-version");
-            if dont_include_snapshot_versions {
-                versions.retain(|x| !x.contains("-SNAPSHOT"));
-            }
+        let dont_include_snapshot_versions: bool = controllers::clap_get_flag_or_fallback(&String::from("no-snapshot-version"));
+        if dont_include_snapshot_versions {
+            versions.retain(|x| !x.contains("-SNAPSHOT"));
         }
 
         // Sort versions
@@ -121,29 +117,45 @@ impl platform::IPlatform for PaperAPI {
         let text = reqwest::get(&link).await.unwrap().text().await.unwrap();
         let paper_build_info_json: BibliothekBuildInfo = serde_json::from_str(text.as_str()).unwrap();
 
-        unsafe {
-            if paper_build_info_json.downloads.is_some() {
-                let downloads = paper_build_info_json.downloads.unwrap();
+        if paper_build_info_json.downloads.is_some() {
+            let downloads = paper_build_info_json.downloads.unwrap();
+            let channel = controllers::clap_get_one_or_fallback(&String::from("channel"), &String::from(DEFAULT_PAPER_CHANNEL));
 
-                let args: &ArgMatches = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
-                let default_channel = &DEFAULT_PAPER_CHANNEL.to_string();
-                let channel = args.get_one::<String>("channel").unwrap_or(default_channel);
-
-                if !downloads.contains_key(channel) {
-                    println!("{} channel does not exist", format!("{}", channel).red());
-                    process::exit(102);
-                }
-
-                let sha256: &String = downloads.get(channel).unwrap().get("sha256").unwrap();
-
-                return Some(Hash::new(String::from("sha256"), sha256.clone()));
+            // Check if channel exists
+            if !downloads.contains_key(&channel) {
+                println!("{} channel does not exist", format!("{}", channel).red());
+                list_all_available_channels(project, version, build).await;
+                process::exit(102);
             }
+
+            let sha256: &String = downloads.get(&channel).unwrap().get("sha256").unwrap();
+
+            return Some(Hash::new(String::from("sha256"), sha256.clone()));
         }
         return None;
     }
 
     async fn custom_download_functionality(&self, _project: &String, _version: &String, _build: &String, _link: &String) -> Option<DownloadedJar> {
         None
+    }
+}
+
+async fn list_all_available_channels(project: &String, version: &String, build: &String) {
+    let mut link = String::from(&PAPER_API_ENDPOINT.to_string());
+    link.push_str("/v2/projects/");
+    link.push_str(&project);
+    link.push_str("/versions/");
+    link.push_str(&version);
+    link.push_str("/builds/");
+    link.push_str(&build);
+
+    let text = reqwest::get(&link).await.unwrap().text().await.unwrap();
+    let paper_build_info_json: BibliothekBuildInfo = serde_json::from_str(text.as_str()).unwrap();
+
+    if paper_build_info_json.downloads.is_some() {
+        let downloads = paper_build_info_json.downloads.unwrap();
+
+        println!("{} {}", "Available channels:".green(), downloads.keys().map(|x| format!("{}", x)).collect::<Vec<String>>().join(", "));
     }
 }
 

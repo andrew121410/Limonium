@@ -17,12 +17,12 @@ use clap::{ArgAction, ArgMatches};
 use clap::builder::TypedValueParser;
 use colored::Colorize;
 
-use crate::api::spigotmc::SpigotAPI;
+use crate::controllers::spigotmc::SpigotAPI;
 use crate::backup::BackupFormat;
 use crate::log_search::LogSearch;
 use crate::objects::DownloadedJar::DownloadedJar;
 
-mod api;
+mod controllers;
 mod hash_utils;
 mod github_utils;
 mod server_jars_com;
@@ -225,7 +225,7 @@ async fn handle_download(download_matches: &ArgMatches) {
     }
 
     // Check if the software is supported
-    if !api::is_valid_platform(&software) {
+    if !controllers::is_valid_platform(&software) {
         println!("{} {} {} {}", format!("Something went wrong!").red().bold(), format!("Project").yellow(), format!("{}", &software).red(), format!("is not valid!").yellow());
         process::exit(102);
     }
@@ -243,7 +243,7 @@ async fn handle_download(download_matches: &ArgMatches) {
         return; // Don't continue
     }
 
-    let platform = api::get_platform(&software);
+    let platform = controllers::get_platform(&software);
 
     // Get the latest version if the version is "latest" (use at your own risk)
     if version.eq_ignore_ascii_case("latest") {
@@ -295,7 +295,7 @@ async fn handle_download(download_matches: &ArgMatches) {
         downloaded_jar = custom_download_function_result.unwrap();
     } else {
         // If there's no custom download functionality, download the jar to the temp directory
-        downloaded_jar = api::download_jar_to_temp_dir(&download_link).await;
+        downloaded_jar = controllers::download_jar_to_temp_dir(&download_link).await;
     }
 
     // Verify the hash of the downloaded jar in the temp directory
@@ -307,7 +307,7 @@ async fn handle_download(download_matches: &ArgMatches) {
         println!("{}", format!("Not checking hash!").yellow().bold());
     }
 
-    api::copy_jar_from_temp_dir_to_dest(&downloaded_jar.temp_jar_name, &path_string);
+    controllers::copy_jar_from_temp_dir_to_dest(&downloaded_jar.temp_jar_name, &path_string);
 
     let duration = start.elapsed().as_millis().to_string();
     println!("{} {} {} {}", format!("Downloaded JAR:").green().bold(), format!("{}", &path_string.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());
