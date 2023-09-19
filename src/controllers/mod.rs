@@ -85,14 +85,29 @@ pub async fn download_jar_to_temp_dir(link: &String) -> DownloadedJar {
         header::USER_AGENT,
         "rust-reqwest/limonium".parse().unwrap(),
     );
-    headers.insert(
-        header::ACCEPT,
-        "application/octet-stream".parse().unwrap(),
-    );
-    let response = reqwest::Client::new()
+
+    // This seems to break some downloads?
+    // headers.insert(
+    //     header::ACCEPT,
+    //     "application/octet-stream".parse().unwrap(),
+    // );
+
+    let response = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::limited(10))
+        .build()
+        .unwrap()
         .get(link)
         .headers(headers)
-        .send().await.unwrap();
+        .send()
+        .await
+        .unwrap();
+
+    // If the response is not successful, we should alert not exit though
+    if !response.status().is_success() {
+        println!("{} {}", "Failed to download file from".red(), link);
+        println!("{} {}", "Status code:".red(), response.status());
+        println!("{} {}", "Status text:".red(), response.status().canonical_reason().unwrap());
+    }
 
     let path = temp_dir().join(&tmp_jar_name);
     let mut file = File::create(path).unwrap();
