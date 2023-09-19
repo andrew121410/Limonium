@@ -1,9 +1,8 @@
-use std::{env, fs, io};
+use std::{fs, io};
 use std::env::temp_dir;
 use std::fs::File;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 
 use clap::ArgMatches;
 use colored::Colorize;
@@ -11,7 +10,7 @@ use regex::Regex;
 use reqwest::header;
 use uuid::Uuid;
 
-use crate::{api, SUB_COMMAND_ARG_MATCHES};
+use crate::SUB_COMMAND_ARG_MATCHES;
 use crate::api::platform::IPlatform;
 use crate::objects::DownloadedJar::DownloadedJar;
 
@@ -27,7 +26,7 @@ pub fn get_platform(the_project: &String) -> &dyn IPlatform {
     return match the_project.to_lowercase().as_str() {
         "purpur" => &purpurmc::PurpurAPI as &dyn IPlatform,
         "pufferfish" => &pufferfish::PufferfishAPI as &dyn IPlatform,
-        "geyser" => &geysermc::GeyserAPI {} as &dyn IPlatform,
+        "geyser" | "floodgate" => &geysermc::GeyserAPI {} as &dyn IPlatform,
         "viaversion" | "viabackwards" => &viaversion::ViaVersionAPI {} as &dyn IPlatform,
         _ => &papermc::PaperAPI {} as &dyn IPlatform,
     };
@@ -38,10 +37,14 @@ pub fn is_valid_platform(the_project: &String) -> bool {
         "spigot" => true,
         "purpur" => true,
         "pufferfish" => true,
+
         "paper" => true,
         "waterfall" => true,
         "velocity" => true,
+
         "geyser" => true,
+        "floodgate" => true,
+
         "viaversion" => true,
         "viabackwards" => true,
         _ => false,

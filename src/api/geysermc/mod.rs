@@ -132,6 +132,7 @@ impl platform::IPlatform for GeyserAPI {
 
                 if !downloads.contains_key(channel) {
                     println!("{} channel does not exist", format!("{}", channel).red());
+                    list_all_available_channels(project, version, build).await;
                     process::exit(102);
                 }
 
@@ -145,6 +146,27 @@ impl platform::IPlatform for GeyserAPI {
 
     async fn custom_download_functionality(&self, _project: &String, _version: &String, _build: &String, _link: &String) -> Option<DownloadedJar> {
         None
+    }
+}
+
+async fn list_all_available_channels(project: &String, version: &String, build: &String) {
+    let mut link = String::from(&GEYSER_API_ENDPOINT.to_string());
+    link.push_str("/v2/projects/");
+    link.push_str(&project);
+    link.push_str("/versions/");
+    link.push_str(&version);
+    link.push_str("/builds/");
+    link.push_str(&build);
+
+    let text = reqwest::get(&link).await.unwrap().text().await.unwrap();
+    let paper_build_info_json: BibliothekBuildInfo = serde_json::from_str(text.as_str()).unwrap();
+
+    unsafe {
+        if paper_build_info_json.downloads.is_some() {
+            let downloads = paper_build_info_json.downloads.unwrap();
+
+            println!("{} {}", "Available channels:".green(), downloads.keys().map(|x| format!("{}", x)).collect::<Vec<String>>().join(", "));
+        }
     }
 }
 
