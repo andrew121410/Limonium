@@ -1,8 +1,7 @@
 name: Rust build-and-release
 
 on:
-  push:
-    branches: [ master ]
+  workflow_dispatch: # Manually triggered
 
 env:
   CARGO_TERM_COLOR: always
