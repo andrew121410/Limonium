@@ -1,3 +1,5 @@
+pub mod bungeecord;
+
 use std::fs;
 use std::process::Command;
 use std::string::String;

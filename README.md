@@ -30,13 +30,14 @@ __If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run 
 
 ### Proxies
 
-1. [Waterfall](https://github.com/PaperMC/Waterfall) -> `./limonium download waterfall 1.20`
-2. [Velocity](https://github.com/PaperMC/Velocity) -> `./limonium download velocity 3.2.0-SNAPSHOT`
+1. [Velocity](https://github.com/PaperMC/Velocity) -> `./limonium download velocity 3.2.0-SNAPSHOT`
+2. [Waterfall](https://github.com/PaperMC/Waterfall) -> `./limonium download waterfall 1.20`
+3. [BungeeCord](https://github.com/SpigotMC/BungeeCord) -> `./limonium download bungeecord latest`
 
 ### Plugins
-1. [ViaVersion](https://github.com/ViaVersion/ViaVersion) -> `./limonium download viaversion latest`
-2. [ViaBackwards](https://github.com/ViaVersion/ViaBackwards) -> `./limonium download viabackwards latest`
-3. [Floodgate](https://github.com/GeyserMC/Floodgate) -> `./limonium download floodgate latest`
+1. [Floodgate](https://github.com/GeyserMC/Floodgate) -> `./limonium download floodgate latest`
+2. [ViaVersion](https://github.com/ViaVersion/ViaVersion) -> `./limonium download viaversion latest`
+3. [ViaBackwards](https://github.com/ViaVersion/ViaBackwards) -> `./limonium download viabackwards latest`
 
 ### Important
 

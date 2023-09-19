@@ -28,6 +28,7 @@ pub fn get_platform(the_project: &String) -> &dyn IPlatform {
         "pufferfish" => &pufferfish::PufferfishAPI as &dyn IPlatform,
         "geyser" | "floodgate" => &geysermc::GeyserAPI {} as &dyn IPlatform,
         "viaversion" | "viabackwards" => &viaversion::ViaVersionAPI {} as &dyn IPlatform,
+        "bungeecord" => &spigotmc::bungeecord::BungeeCordAPI {} as &dyn IPlatform,
         _ => &papermc::PaperAPI {} as &dyn IPlatform,
     };
 }
@@ -35,6 +36,8 @@ pub fn get_platform(the_project: &String) -> &dyn IPlatform {
 pub fn is_valid_platform(the_project: &String) -> bool {
     return match the_project.to_lowercase().as_str() {
         "spigot" => true,
+        "bungeecord" => true,
+
         "purpur" => true,
         "pufferfish" => true,
 
