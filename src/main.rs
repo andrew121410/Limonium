@@ -17,8 +17,8 @@ use clap::{ArgAction, ArgMatches};
 use clap::builder::TypedValueParser;
 use colored::Colorize;
 
-use crate::controllers::spigotmc::SpigotAPI;
 use crate::backup::BackupFormat;
+use crate::controllers::spigotmc::SpigotAPI;
 use crate::log_search::LogSearch;
 use crate::objects::DownloadedJar::DownloadedJar;
 
@@ -52,6 +52,8 @@ async fn main() {
             .global(true)
             .action(ArgAction::SetTrue)
             .required(false))
+        .subcommand(clap::Command::new("self-update")
+            .about("Updates Limonium"))
         .subcommand(clap::Command::new("download")
             .about("Downloads a server jar")
             .arg(clap::Arg::new("software")
@@ -167,15 +169,19 @@ async fn main() {
 
     let command_matches: ArgMatches = matches_commands.get_matches();
 
-    // Handle self-update
+    // Handle self-update flag
     if command_matches.get_flag("self-update") {
         if self_update() {
             process::exit(0); // Exit if updated
-            return;
         }
     }
 
     match command_matches.subcommand() {
+        // Handle self-update subcommand
+        Some(("self-update", _)) => {
+            self_update();
+            process::exit(0);
+        }
         Some(("download", download_matches)) => {
             unsafe { SUB_COMMAND_ARG_MATCHES = Some(download_matches.clone()); }
             handle_download(&download_matches).await;
