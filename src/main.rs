@@ -121,7 +121,7 @@ async fn main() {
                 .action(ArgAction::Set)
                 .required(false)
                 .default_value("tar.gz")
-                .value_parser(["zip", "tar.gz", "tar.zst"]))
+                .value_parser(["tar.gz", "tar.zst", "zip"]))
             .arg(clap::Arg::new("level")
                 .help("The compression level to use")
                 .long("level")
