@@ -78,8 +78,22 @@ impl Backup {
             println!("The backup directory did not exist, so it was created at {}", &self.backup_directory.display());
         }
 
-        let backup_path = self.backup_directory.join(format!("{}-{}.{}", &self.name, timestamp, extension));
-        let hash_path = self.backup_directory.join(format!("{}-{}_hash.txt", &self.name, timestamp));
+        // Create a hidden temporary directory in the backup directory
+        let our_tmp_directory = self.backup_directory.join(".lmtmp");
+
+        // Create the temporary directory if it does not exist
+        if !our_tmp_directory.exists() {
+            fs::create_dir_all(&our_tmp_directory)?;
+        } else {
+            println!("{}", format!("Did you force quit the program last time?").red());
+            println!("{}", format!("Please let me know if you did NOT force close the program last time").red());
+            println!();
+            // Error if the temporary directory already exists say where it is
+            return Err(Error::new(ErrorKind::Other, format!("The temporary directory already exists at {}. Please delete it and try again.", our_tmp_directory.display())));
+        }
+
+        let backup_path = our_tmp_directory.join(format!("{}-{}.{}", &self.name, timestamp, extension));
+        let hash_path = our_tmp_directory.join(format!("{}-{}_hash.txt", &self.name, timestamp));
 
         println!("{}", format!("Please wait while the backup is being created...").yellow());
 
@@ -196,27 +210,32 @@ impl Backup {
         let mut hash_file = fs::File::create(&hash_path)?;
         hash_file.write_all(&hash_output.stdout)?;
 
-        // Combine the backup archive and the hash into a single archive
         let how_many_backups_of_today_date = self.get_how_many_backups_of_today_date()?;
         let combined_backup_path = self.backup_directory.join(format!("{}-{}-{}-bundle.{}", &self.name, timestamp, how_many_backups_of_today_date, extension));
 
+        // This should never happen, but just in case
+        if combined_backup_path.exists() {
+            return Err(Error::new(ErrorKind::Other, format!("The combined backup archive already exists at {}. This shouldn't have happened", combined_backup_path.display())));
+        }
+
+        // Create the combined backup archive with the backup archive and hash file, and it will be placed in the backup directory
         cmd = Command::new("tar");
         match self.backup_format {
             BackupFormat::TarGz => {
                 cmd.arg("-czf").arg(&combined_backup_path);
-                cmd.arg("-C").arg(&self.backup_directory);
+                cmd.arg("-C").arg(&our_tmp_directory);
                 cmd.arg(&backup_path.file_name().unwrap());
                 cmd.arg(&hash_path.file_name().unwrap());
             }
             BackupFormat::TarZst => {
                 cmd.arg("--zstd").arg("-cf").arg(&combined_backup_path);
-                cmd.arg("-C").arg(&self.backup_directory);
+                cmd.arg("-C").arg(&our_tmp_directory);
                 cmd.arg(&backup_path.file_name().unwrap());
                 cmd.arg(&hash_path.file_name().unwrap());
             }
             BackupFormat::Zip => {
                 cmd = Command::new("zip");
-                cmd.current_dir(&self.backup_directory);
+                cmd.current_dir(&our_tmp_directory);
 
                 cmd.arg("-r").arg(&combined_backup_path);
                 cmd.arg(&backup_path.file_name().unwrap());
@@ -229,9 +248,12 @@ impl Backup {
             return Err(Error::new(ErrorKind::Other, format!("Failed to create combined backup archive of Minecraft server files and hash file: {}", String::from_utf8_lossy(&cmd_output.stderr))));
         }
 
-        // Delete the temporary backup archive and hash file
+        // Delete the temporary backup archive and hash file in the temporary directory
         fs::remove_file(&backup_path).expect("Failed to delete temporary backup archive");
         fs::remove_file(&hash_path).expect("Failed to delete temporary hash file");
+
+        // Delete the temporary directory
+        fs::remove_dir_all(&our_tmp_directory).expect("Failed to delete temporary directory");
 
         // Create hash of combined backup archive
         let mut hash_cmd = Command::new("sha256sum");
@@ -369,16 +391,22 @@ impl Backup {
         Ok(())
     }
 
+    /*
+   Determine how many backups of today's date exist
+   If there are none backups, of today's date, the return will be 1
+   If there is 1 backup, of today's date, the return will be 2 so on and so forth
+     */
     fn get_how_many_backups_of_today_date(&self) -> Result<i64, Error> {
-        if !self.backup_directory.exists() {
-            return Ok(1);
-        }
-
         let timestamp = chrono::Local::now().format("%-m-%-d-%Y");
-        let mut count = 0;
+        let mut count = 1;
+
         for entry in fs::read_dir(&self.backup_directory)? {
             let entry = entry?;
             let path = entry.path();
+            if path.is_dir() {
+                continue;
+            }
+
             if path.is_file() {
                 let file_name = path.file_name().unwrap().to_str().unwrap();
                 if file_name.starts_with(&format!("{}-{}", self.name, timestamp)) {
@@ -386,7 +414,7 @@ impl Backup {
                 }
             }
         }
-        Ok(count - 1)
+        Ok(count)
     }
 
     fn does_tar_command_exist(&self) -> bool {
