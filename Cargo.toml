@@ -16,8 +16,8 @@ colored = "2.0.4"
 self_update = { version = "0.38.0", features = ["archive-zip", "compression-zip-deflate"] }
 uuid = { version = "1.4.1", features = ["v4"] }
 chrono = "0.4.31"
-clap = "4.4.4"
+clap = "4.4.6"
 openssh-sftp-client = "0.14.0"
 openssh = "0.10.0"
-indicatif = "0.17.6"
+indicatif = "0.17.7"
 regex = "1.9.5"
