@@ -121,7 +121,13 @@ async fn main() {
                 .action(ArgAction::Set)
                 .required(false)
                 .default_value("tar.gz")
-                .value_parser(["zip", "tar.gz"]))
+                .value_parser(["zip", "tar.gz", "tar.zst"]))
+            .arg(clap::Arg::new("level")
+                .help("The compression level to use")
+                .long("level")
+                .action(ArgAction::Set)
+                .required(false)
+                .value_parser(clap::value_parser!(i64)))
             .arg(clap::Arg::new("sftp")
                 .help("The SFTP server to backup to")
                 .long("sftp")
@@ -328,13 +334,21 @@ async fn handle_backup(backup_matches: &ArgMatches) {
     let to_backup = backup_matches.get_one::<String>("to_backup").unwrap();
     let backup_folder = backup_matches.get_one::<String>("backup_folder").unwrap();
     let format = backup_matches.get_one::<String>("format").unwrap();
-    let exclude: Option<&String> = backup_matches.get_one::<String>("exclude");
 
-    // Lazy to mess with lifetimes so I'm just going to do this Lol..
+    let exclude: Option<&String> = backup_matches.get_one::<String>("exclude");
     let mut exclude_ours: Option<String> = None;
     match exclude {
         Some(string) => {
             exclude_ours = Some(string.to_string());
+        }
+        _ => {}
+    }
+
+    let compression_level: Option<&i64> = backup_matches.get_one::<i64>("level");
+    let mut compression_level_ours: Option<i64> = None;
+    match compression_level {
+        Some(level) => {
+            compression_level_ours = Some(level.to_owned());
         }
         _ => {}
     }
@@ -347,7 +361,7 @@ async fn handle_backup(backup_matches: &ArgMatches) {
     }
 
     let backup_folder_pathbuf = current_path.join(backup_folder);
-    let backup = backup::Backup::new(name.to_string(), to_backup.to_string(), backup_folder_pathbuf, backup_format, exclude_ours);
+    let backup = backup::Backup::new(name.to_string(), to_backup.to_string(), backup_folder_pathbuf, backup_format, exclude_ours, compression_level_ours);
 
     let time = Instant::now();
 
