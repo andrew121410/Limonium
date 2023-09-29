@@ -28,28 +28,32 @@ pub struct Backup {
     backup_directory: PathBuf,
     backup_format: BackupFormat,
     exclude: Option<String>,
+    compression_level: Option<i64>,
 }
 
 impl Backup {
-    pub fn new(name: String, directory_to_backup: String, backup_directory: PathBuf, backup_format: BackupFormat, exclude: Option<String>) -> Self {
+    pub fn new(name: String, directory_to_backup: String, backup_directory: PathBuf, backup_format: BackupFormat, exclude: Option<String>, compression_level: Option<i64>) -> Self {
         Backup {
             name,
             directory_to_backup,
             backup_directory,
             backup_format,
             exclude,
+            compression_level,
         }
     }
 
     pub fn backup(&self) -> Result<Backup_Result, Error> {
         let timestamp = chrono::Local::now().format("%-m-%-d-%Y");
 
+        // The extension of the backup archive
         let extension = match self.backup_format {
             BackupFormat::TarGz => "tar.gz",
             BackupFormat::TarZst => "tar.zst",
             BackupFormat::Zip => "zip",
         };
 
+        // Check if the compression format is installed
         match self.backup_format {
             BackupFormat::TarGz => {
                 if !self.does_tar_command_exist() {
@@ -80,7 +84,7 @@ impl Backup {
         println!("{}", format!("Please wait while the backup is being created...").yellow());
 
         // Create compressed tar or zip archive of the Minecraft server files
-        let mut cmd: Command = Command::new("tar");
+        let mut cmd = Command::new("tar");
         match self.backup_format {
             BackupFormat::TarGz | BackupFormat::TarZst => {
                 // You may exclude files and folders by splitting them with a : (colon)
@@ -94,9 +98,39 @@ impl Backup {
                 }
 
                 if self.backup_format == BackupFormat::TarZst {
-                    cmd.arg("--zstd").arg("-cf"); // c = create, f = file
+                    // If we have a compression level, use it
+                    if self.compression_level.is_some() {
+                        let compression_level = self.compression_level.unwrap();
+
+                        // Check if the compression level is between 1 and 22
+                        if compression_level < 1 || compression_level > 22 {
+                            return Err(Error::new(ErrorKind::Other, "The compression level must be between 1 and 22"));
+                        }
+
+                        // Compression level 20 to 22 uses --ultra
+                        if compression_level >= 20 {
+                            cmd.args(&["-I", &format!("zstd --ultra -{}", compression_level)]);
+                        } else {
+                            cmd.args(&["-I", &format!("zstd -{}", compression_level)]);
+                        }
+                    } else { // If we don't have a compression level, use the default
+                        cmd.arg("--zstd");
+                    }
+                    cmd.arg("-cf"); // c = create, f = file
                 } else {
-                    cmd.arg("-czf"); // c = create, z = gzip, f = file
+                    // If we have a compression level, use it
+                    if self.compression_level.is_some() {
+                        let compression_level = self.compression_level.unwrap();
+
+                        // Check if the compression level is between 1 and 9
+                        if compression_level < 1 || compression_level > 9 {
+                            return Err(Error::new(ErrorKind::Other, "The compression level must be between 1 and 9"));
+                        }
+
+                        cmd.args(&["-I", &format!("gzip -{}", compression_level), "-cf"]);
+                    } else { // If we don't have a compression level, use the default
+                        cmd.arg("-czf"); // c = create, z = gzip, f = file
+                    }
                 }
                 cmd.arg(&backup_path);
 
@@ -110,6 +144,19 @@ impl Backup {
             }
             BackupFormat::Zip => {
                 cmd = Command::new("zip");
+
+                // If we have a compression level, use it
+                if self.compression_level.is_some() {
+                    let compression_level = self.compression_level.unwrap();
+
+                    // Check if the compression level is between 1 and 9
+                    if compression_level < 1 || compression_level > 9 {
+                        return Err(Error::new(ErrorKind::Other, "The compression level must be between 1 and 9"));
+                    }
+
+                    cmd.arg(format!("-{}", compression_level));
+                }
+
                 cmd.arg("-r").arg(&backup_path);
 
                 // You may backup multiple folders by splitting them with a : (colon)
