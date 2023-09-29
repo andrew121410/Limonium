@@ -109,9 +109,9 @@ impl Backup {
 
                         // Compression level 20 to 22 uses --ultra
                         if compression_level >= 20 {
-                            cmd.arg(&format!("-I \"zstd --ultra -{}\"", compression_level));
+                            cmd.args(&["-I", &format!("zstd --ultra -{}", compression_level)]);
                         } else {
-                            cmd.arg(&format!("-I \"zstd -{}\"", compression_level));
+                            cmd.args(&["-I", &format!("zstd -{}", compression_level)]);
                         }
                     } else { // If we don't have a compression level, use the default
                         cmd.arg("--zstd");
@@ -127,9 +127,7 @@ impl Backup {
                             return Err(Error::new(ErrorKind::Other, "The compression level must be between 1 and 9"));
                         }
 
-                        cmd.arg("-I");
-                        cmd.arg(format!("gzip -{}", compression_level));
-                        cmd.arg("-cf");
+                        cmd.args(&["-I", &format!("gzip -{}", compression_level), "-cf"]);
                     } else { // If we don't have a compression level, use the default
                         cmd.arg("-czf"); // c = create, z = gzip, f = file
                     }
@@ -180,9 +178,6 @@ impl Backup {
                 }
             }
         };
-
-        // Testing
-        println!("{:?}", cmd);
 
         let cmd_output = cmd.output()?;
         if !cmd_output.status.success() {
