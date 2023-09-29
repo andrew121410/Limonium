@@ -116,7 +116,7 @@ async fn main() {
                 .action(ArgAction::Set)
                 .required(false))
             .arg(clap::Arg::new("format")
-                .help("The format to use (tar.gz, zip)")
+                .help("The format to use (tar.gz, tar.zst, zip)")
                 .long("format")
                 .action(ArgAction::Set)
                 .required(false)
@@ -340,7 +340,9 @@ async fn handle_backup(backup_matches: &ArgMatches) {
     }
 
     let mut backup_format: BackupFormat = BackupFormat::TarGz;
-    if format.eq("zip") {
+    if format.eq("tar.zst") {
+        backup_format = BackupFormat::TarZst;
+    } else if format.eq("zip") {
         backup_format = BackupFormat::Zip;
     }
 

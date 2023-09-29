@@ -9,8 +9,10 @@ use indicatif::{ProgressBar, ProgressStyle};
 use openssh::Stdio;
 use openssh_sftp_client::Sftp;
 
+#[derive(PartialEq)]
 pub enum BackupFormat {
     TarGz,
+    TarZst,
     Zip,
 }
 
@@ -44,6 +46,7 @@ impl Backup {
 
         let extension = match self.backup_format {
             BackupFormat::TarGz => "tar.gz",
+            BackupFormat::TarZst => "tar.zst",
             BackupFormat::Zip => "zip",
         };
 
@@ -51,6 +54,11 @@ impl Backup {
             BackupFormat::TarGz => {
                 if !self.does_tar_command_exist() {
                     return Err(Error::new(ErrorKind::Other, "The tar command does not exist. Please install it and try again."));
+                }
+            }
+            BackupFormat::TarZst => {
+                if !self.does_zstd_command_exist() {
+                    return Err(Error::new(ErrorKind::Other, "The zstd command does not exist. Please install it and try again."));
                 }
             }
             BackupFormat::Zip => {
@@ -74,7 +82,7 @@ impl Backup {
         // Create compressed tar or zip archive of the Minecraft server files
         let mut cmd: Command = Command::new("tar");
         match self.backup_format {
-            BackupFormat::TarGz => {
+            BackupFormat::TarGz | BackupFormat::TarZst => {
                 // You may exclude files and folders by splitting them with a : (colon)
                 // Example: "logs:plugins/dynmap"
                 if let Some(exclude) = &self.exclude {
@@ -85,7 +93,12 @@ impl Backup {
                     }
                 }
 
-                cmd.arg("-czf").arg(&backup_path);
+                if self.backup_format == BackupFormat::TarZst {
+                    cmd.arg("--zstd").arg("-cf"); // c = create, f = file
+                } else {
+                    cmd.arg("-czf"); // c = create, z = gzip, f = file
+                }
+                cmd.arg(&backup_path);
 
                 // You may backup multiple folders by splitting them with a : (colon)
                 // Example: "world:world_nether:world_the_end"
@@ -144,6 +157,12 @@ impl Backup {
         match self.backup_format {
             BackupFormat::TarGz => {
                 cmd.arg("-czf").arg(&combined_backup_path);
+                cmd.arg("-C").arg(&self.backup_directory);
+                cmd.arg(&backup_path.file_name().unwrap());
+                cmd.arg(&hash_path.file_name().unwrap());
+            }
+            BackupFormat::TarZst => {
+                cmd.arg("--zstd").arg("-cf").arg(&combined_backup_path);
                 cmd.arg("-C").arg(&self.backup_directory);
                 cmd.arg(&backup_path.file_name().unwrap());
                 cmd.arg(&hash_path.file_name().unwrap());
@@ -325,6 +344,17 @@ impl Backup {
 
     fn does_tar_command_exist(&self) -> bool {
         let output = Command::new("tar").arg("--version").output();
+
+        if output.is_err() {
+            return false;
+        }
+
+        let the_output = output.unwrap();
+        the_output.status.success()
+    }
+
+    fn does_zstd_command_exist(&self) -> bool {
+        let output = Command::new("zstd").arg("--version").output();
 
         if output.is_err() {
             return false;

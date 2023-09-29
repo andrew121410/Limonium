@@ -75,7 +75,7 @@ The backup function will back up the folders you specify, and compress them and 
 By default, it will use tar.gz, unless specified otherwise.
 
 ### Optional Backup Arguments
-1. --format `The format to use (tar.gz, zip)`
+1. --format `The format to use (tar.gz, tar.zst, zip)`
 2. --exclude `Excludes files from the backup`
 3. --sftp `Uploads the backup to a SFTP server. Example 1: --sftp user@host:22 /remote/path Example 2: --sftp "user@host:22 path/to/key /remote/path"` (**Password Authentication is not supported.**)
 4. --delete-after-upload `Deletes the backup after uploading it to the SFTP server.`
