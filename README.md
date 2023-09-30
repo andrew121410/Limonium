@@ -81,6 +81,10 @@ By default, it will use tar.gz, unless specified otherwise.
 3. --sftp `Uploads the backup to a SFTP server. Example 1: --sftp user@host:22 /remote/path Example 2: --sftp "user@host:22 path/to/key /remote/path"` (**Password Authentication is not supported.**)
 4. --delete-after-upload `Deletes the backup after uploading it to the SFTP server.`
 
+Debug Arguments
+1. --verbose `Shows more information`
+2. --I `Overides the -I argument for tar. Example: --I "zstd -T0 -19 -v""`
+
 ### Backup Usage
 
 *Usage: &lt;name&gt; &lt;folder/s&gt; &lt;backup_directory&gt;*

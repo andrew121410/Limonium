@@ -9,6 +9,8 @@ use indicatif::{ProgressBar, ProgressStyle};
 use openssh::Stdio;
 use openssh_sftp_client::Sftp;
 
+use crate::controllers;
+
 #[derive(PartialEq)]
 pub enum BackupFormat {
     TarGz,
@@ -111,9 +113,10 @@ impl Backup {
                     }
                 }
 
+                let i_override = controllers::clap_get_one_or_fallback(&"I".to_string(), &"NONE".to_string());
                 if self.backup_format == BackupFormat::TarZst {
                     // If we have a compression level, use it
-                    if self.compression_level.is_some() {
+                    if self.compression_level.is_some() && i_override.eq("NONE") {
                         let compression_level = self.compression_level.unwrap();
 
                         // Check if the compression level is between 1 and 22
@@ -127,13 +130,19 @@ impl Backup {
                         } else {
                             cmd.args(&["-I", &format!("zstd -{}", compression_level)]);
                         }
+                    } else if !i_override.eq("NONE") {
+                        if self.compression_level.is_some() {
+                            return Err(Error::new(ErrorKind::Other, "The compression level flag (--level) and the override flag (-I) cannot be used at the same time. Please use one or the other."));
+                        }
+
+                        cmd.args(&["-I", &format!("{}", i_override)]);
                     } else { // If we don't have a compression level, use the default
                         cmd.arg("--zstd");
                     }
                     cmd.arg("-cf"); // c = create, f = file
-                } else {
+                } else { // GZip
                     // If we have a compression level, use it
-                    if self.compression_level.is_some() {
+                    if self.compression_level.is_some() && i_override.eq("NONE") {
                         let compression_level = self.compression_level.unwrap();
 
                         // Check if the compression level is between 1 and 9
@@ -142,6 +151,12 @@ impl Backup {
                         }
 
                         cmd.args(&["-I", &format!("gzip -{}", compression_level), "-cf"]);
+                    } else if !i_override.eq("NONE") {
+                        if self.compression_level.is_some() {
+                            return Err(Error::new(ErrorKind::Other, "The compression level flag (--level) and the override flag (-I) cannot be used at the same time. Please use one or the other."));
+                        }
+
+                        cmd.args(&["-I", &format!("{}", i_override), "-cf"]);
                     } else { // If we don't have a compression level, use the default
                         cmd.arg("-czf"); // c = create, z = gzip, f = file
                     }
@@ -193,9 +208,25 @@ impl Backup {
             }
         };
 
+        let verbose = controllers::clap_get_flag_or_fallback(&"verbose".to_string());
+        // Verbose before
+        if verbose { // Capture the output of the backup command
+            cmd.stdout(Stdio::piped());
+        }
+
         let cmd_output = cmd.output()?;
         if !cmd_output.status.success() {
             return Err(Error::new(ErrorKind::Other, format!("Failed to create backup archive of Minecraft server files: {}", String::from_utf8_lossy(&cmd_output.stderr))));
+        }
+
+        // Verbose after
+        if verbose {
+            // Print the output of the backup command
+            println!("{}", format!("Backup command output:").green());
+            println!("{}", String::from_utf8_lossy(&cmd_output.stdout));
+
+            // Print the backup command
+            println!("{} {}", format!("Backup command:").green(), format!("{:?}", cmd).bright_yellow());
         }
 
         // Compute the sha256 hash of the backup archive
