@@ -26,7 +26,7 @@ impl LogSearch {
 
     pub fn context(&self, lines_before: u64, lines_after: u64) {
         // Create a temporary directory inside the "logs" folder to hold the log files
-        let temp_dir_in_logs_folder = self.logs_dir.join("temp");
+        let temp_dir_in_logs_folder = self.logs_dir.join(".lmtmp");
         fs::create_dir(&temp_dir_in_logs_folder).unwrap_or_else(|e| {
             eprintln!("Error creating directory: {}", e);
             std::process::exit(1);
