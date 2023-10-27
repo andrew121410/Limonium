@@ -83,7 +83,7 @@ pub fn validate_jenkins_version(real_version: &Option<String>, version: &String)
 }
 
 pub fn get_jenkins_version(version: &String) -> Option<String> {
-    if version.contains("1.20.1") || version.contains("1.20.2") { // at the time of writing this, 1.20.2 is not out yet
+    if version.contains("1.20.2") {
         return Some(String::from("1.20"));
     } else if version.contains("1.19.4") {
         return Some(String::from("1.19"));
@@ -96,7 +96,6 @@ pub fn get_jenkins_version(version: &String) -> Option<String> {
 pub fn get_supported_versions() -> Vec<String> {
     return vec![
         String::from("1.20.2"),
-        String::from("1.20.1"), // remove this when 1.20.2 is out
         String::from("1.19.4"),
         String::from("1.18.2"),
     ];
