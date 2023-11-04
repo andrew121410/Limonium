@@ -138,6 +138,11 @@ async fn main() {
                 .long("delete-after-upload")
                 .action(ArgAction::SetTrue)
                 .required(false))
+            .arg(clap::Arg::new("afk-before-uploading")
+                .help("Ask if you want to upload the backup to SFTP before uploading")
+                .long("ask-before-uploading")
+                .action(ArgAction::SetTrue)
+                .required(false))
             .arg(clap::Arg::new("verbose")
                 .help("Shows more information")
                 .long("verbose")
@@ -387,9 +392,16 @@ async fn handle_backup(backup_matches: &ArgMatches) {
 
     let backup_result = the_backup.unwrap();
 
+    // Ask if you want to upload the backup to SFTP before uploading
+    let ask_before_upload = backup_matches.get_flag("ask-before-uploading");
+    let mut skip_upload = false;
+    if ask_before_upload {
+        skip_upload = ask_for_input_for_to_upload_to_sftp();
+    }
+
     // Handle uploading to SFTP if SFTP is specified
     let sftp_option = backup_matches.get_one::<String>("sftp");
-    if sftp_option.is_some() {
+    if sftp_option.is_some() && !skip_upload {
         println!("{} {}", format!("Uploading to SFTP!").green().bold(), format!("This may take a while depending on the size of the backup!").yellow());
 
         let sftp_args = sftp_option.unwrap();
@@ -435,6 +447,8 @@ async fn handle_backup(backup_matches: &ArgMatches) {
                 process::exit(102);
             }
         }
+    } else if sftp_option.is_some() && skip_upload {
+        println!("{} {}", format!("Skipping upload to SFTP!").green().bold(), format!("Skipping upload to SFTP!").yellow());
     }
 
     let time_elapsed_seconds = time.elapsed().as_secs();
@@ -464,6 +478,20 @@ async fn handle_log_search(log_search: &ArgMatches) {
         let lines_after = lines_after_option.unwrap();
 
         log_search.context(lines_before.clone(), lines_after.clone());
+    }
+}
+
+fn ask_for_input_for_to_upload_to_sftp() -> bool {
+    let mut input = String::new();
+    println!("{} {}", format!("Do you want to upload the backup to SFTP?").yellow(), format!("(y/n)").green());
+    std::io::stdin().read_line(&mut input).unwrap();
+    let input = input.trim();
+    if input.eq_ignore_ascii_case("y") || input.eq_ignore_ascii_case("yes") {
+        return false;
+    } else if input.eq_ignore_ascii_case("n") || input.eq_ignore_ascii_case("no") {
+        return true;
+    } else {
+        return ask_for_input_for_to_upload_to_sftp();
     }
 }
 
