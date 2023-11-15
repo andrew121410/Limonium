@@ -138,7 +138,7 @@ async fn main() {
                 .long("delete-after-upload")
                 .action(ArgAction::SetTrue)
                 .required(false))
-            .arg(clap::Arg::new("afk-before-uploading")
+            .arg(clap::Arg::new("ask-before-uploading")
                 .help("Ask if you want to upload the backup to SFTP before uploading")
                 .long("ask-before-uploading")
                 .action(ArgAction::SetTrue)
