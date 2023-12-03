@@ -1,5 +1,5 @@
 use std::fs;
-use std::io::{Error, ErrorKind, Read, Write};
+use std::io::{BufRead, Error, ErrorKind, Read, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -440,7 +440,7 @@ impl Backup {
                             fs::remove_file(&path).unwrap_or_else(|e| {
                                 eprintln!("Error deleting file: {}", e);
                             });
-                            println!("{}", format!("(--delete-after-time) Deleted file {} in the backup directory it was too OLD", file_name).yellow());
+                            println!("{}", format!("(delete-after-time) Deleted file {} in the backup directory it was too OLD", file_name).yellow());
                         }
                     }
                     "w" => {
@@ -449,7 +449,7 @@ impl Backup {
                             fs::remove_file(&path).unwrap_or_else(|e| {
                                 eprintln!("Error deleting file: {}", e);
                             });
-                            println!("{}", format!("(--delete-after-time) Deleted file {} in the backup directory it was too OLD", file_name).yellow());
+                            println!("{}", format!("(delete-after-time) Deleted file {} in the backup directory it was too OLD", file_name).yellow());
                         }
                     }
                     "d" => {
@@ -458,7 +458,7 @@ impl Backup {
                             fs::remove_file(&path).unwrap_or_else(|e| {
                                 eprintln!("Error deleting file: {}", e);
                             });
-                            println!("{}", format!("(--delete-after-time) Deleted file {} in the backup directory it was too OLD", file_name).yellow());
+                            println!("{}", format!("(delete-after-time) Deleted file {} in the backup directory it was too OLD", file_name).yellow());
                         }
                     }
                     _ => {
@@ -590,19 +590,31 @@ async fn sftp_login(user: String, host: String, port: Option<u16>, key_file: Opt
 }
 
 async fn list_files_on_sftp(session: &Session, remote_dir: &String) -> Result<Vec<String>, Error> {
+    let mut file_names: Vec<String> = Vec::new();
+
     // Just use ls command
     let mut command = session.command("ls".to_string());
     command.arg(remote_dir);
-    let output = command.output().await.unwrap();
-    let output_string = String::from_utf8_lossy(&output.stdout);
 
-    let mut file_names: Vec<String> = Vec::new();
+    // Execute the command and capture the output
+    let output = command.output().await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
-    for line in output_string.lines() {
-        let file_name = line.split(" ").collect::<Vec<&str>>()[8].to_string();
-        file_names.push(file_name);
+    // Check if the command was successful
+    if output.status.success() {
+        // Convert the output bytes to a string
+        let output_str = String::from_utf8(output.stdout).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+
+        // Split the output by newline characters and collect the file names
+        file_names = output_str.split('\n').map(|s| s.to_string()).collect();
+    } else {
+        // Return an error if the command failed
+        return Err(Error::new(
+            ErrorKind::Other,
+            format!("ls command failed: {}", output.status),
+        ));
     }
 
+    // Return the file names
     Ok(file_names)
 }
 
@@ -617,7 +629,7 @@ async fn delete_file_on_sftp(session: &Session, file_name: &String, remote_dir: 
         println!("{}", format!("The file {} does not exist on the SFTP server", file_name).red());
     }
 
-    println!("{}", format!("Deleted file {} on the SFTP server", file_name).green());
+    println!("{}", format!("(delete-after-time) Deleted file {} in the backup directory on the SFTP server it was too OLD", file_name).yellow());
     Ok(())
 }
 
