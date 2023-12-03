@@ -483,7 +483,7 @@ impl Backup {
         let current_date = Utc::now().naive_utc().date();
 
         // For each file in the backup directory
-        let file_names = self.list_files_on_sftp(&sftp_result, &remote_dir).await.unwrap();
+        let file_names = list_files_on_sftp(&sftp_result, &remote_dir).await.unwrap();
 
         for file_name in file_names {
             let date = extract_date_from_file_name(&file_name.to_string());
@@ -503,7 +503,7 @@ impl Backup {
                 "m" => {
                     if days_difference > amount * 30 {
                         // Delete the file
-                        self.delete_file_on_sftp(&sftp_result, &file_name, &remote_dir).await.unwrap_or_else(|e| {
+                        delete_file_on_sftp(&sftp_result, &file_name, &remote_dir).await.unwrap_or_else(|e| {
                             eprintln!("Error deleting file: {}", e);
                         });
                     }
@@ -511,7 +511,7 @@ impl Backup {
                 "w" => {
                     if days_difference > amount * 7 {
                         // Delete the file
-                        self.delete_file_on_sftp(&sftp_result, &file_name, &remote_dir).await.unwrap_or_else(|e| {
+                        delete_file_on_sftp(&sftp_result, &file_name, &remote_dir).await.unwrap_or_else(|e| {
                             eprintln!("Error deleting file: {}", e);
                         });
                     }
@@ -519,7 +519,7 @@ impl Backup {
                 "d" => {
                     if days_difference > amount {
                         // Delete the file
-                        self.delete_file_on_sftp(&sftp_result, &file_name, &remote_dir).await.unwrap_or_else(|e| {
+                        delete_file_on_sftp(&sftp_result, &file_name, &remote_dir).await.unwrap_or_else(|e| {
                             eprintln!("Error deleting file: {}", e);
                         });
                     }
@@ -529,38 +529,6 @@ impl Backup {
                 }
             }
         }
-    }
-
-    async fn list_files_on_sftp(&self, session: &Session, remote_dir: &String) -> Result<Vec<String>, Error> {
-        // Just use ls command
-        let mut command = session.command("ls".to_string());
-        command.arg(remote_dir);
-        let output = command.output().await.unwrap();
-        let output_string = String::from_utf8_lossy(&output.stdout);
-
-        let mut file_names: Vec<String> = Vec::new();
-
-        for line in output_string.lines() {
-            let file_name = line.split(" ").collect::<Vec<&str>>()[8].to_string();
-            file_names.push(file_name);
-        }
-
-        Ok(file_names)
-    }
-
-    async fn delete_file_on_sftp(&self, session: &Session, file_name: &String, remote_dir: &String) -> Result<(), Error> {
-        // Delete file using rm command
-        let mut command = session.command("rm".to_string());
-        command.arg(format!("{}/{}", remote_dir, file_name));
-        let output = command.output().await.unwrap();
-        let output_string = String::from_utf8_lossy(&output.stdout);
-
-        if output_string.contains("No such file") {
-            println!("{}", format!("The file {} does not exist on the SFTP server", file_name).red());
-        }
-
-        println!("{}", format!("Deleted file {} on the SFTP server", file_name).green());
-        Ok(())
     }
 
     /*
@@ -619,6 +587,38 @@ async fn sftp_login(user: String, host: String, port: Option<u16>, key_file: Opt
     }
 
     Ok(session_result.unwrap())
+}
+
+async fn list_files_on_sftp(session: &Session, remote_dir: &String) -> Result<Vec<String>, Error> {
+    // Just use ls command
+    let mut command = session.command("ls".to_string());
+    command.arg(remote_dir);
+    let output = command.output().await.unwrap();
+    let output_string = String::from_utf8_lossy(&output.stdout);
+
+    let mut file_names: Vec<String> = Vec::new();
+
+    for line in output_string.lines() {
+        let file_name = line.split(" ").collect::<Vec<&str>>()[8].to_string();
+        file_names.push(file_name);
+    }
+
+    Ok(file_names)
+}
+
+async fn delete_file_on_sftp(session: &Session, file_name: &String, remote_dir: &String) -> Result<(), Error> {
+    // Delete file using rm command
+    let mut command = session.command("rm".to_string());
+    command.arg(format!("{}/{}", remote_dir, file_name));
+    let output = command.output().await.unwrap();
+    let output_string = String::from_utf8_lossy(&output.stdout);
+
+    if output_string.contains("No such file") {
+        println!("{}", format!("The file {} does not exist on the SFTP server", file_name).red());
+    }
+
+    println!("{}", format!("Deleted file {} on the SFTP server", file_name).green());
+    Ok(())
 }
 
 fn extract_date_from_file_name(file_name: &String) -> String {
