@@ -320,10 +320,22 @@ impl Backup {
     }
 
     pub async fn upload_sftp(&self, user: String, host: String, port: Option<u16>, key_file: Option<&Path>, path: &PathBuf, file_name: String, remote_dir: String, local_hash: String) -> Result<(), Error> {
-        let sftp_result = sftp_login(user, host, port, key_file).await?;
+        let real_session: Session = sftp_login(user, host, port, key_file).await?;
 
-        let sftp = sftp_result.sftp;
-        let real_session = sftp_result.session;
+        let mut child = real_session
+            .subsystem("sftp")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .await
+            .unwrap();
+
+        let sftp = Sftp::new(
+            child.stdin().take().unwrap(),
+            child.stdout().take().unwrap(),
+            Default::default(), )
+            .await
+            .unwrap();
 
         let mut fs = sftp.fs();
 
@@ -519,9 +531,9 @@ impl Backup {
         }
     }
 
-    async fn list_files_on_sftp(&self, sftp_result: &SftpLoginResult, remote_dir: &String) -> Result<Vec<String>, Error> {
+    async fn list_files_on_sftp(&self, session: &Session, remote_dir: &String) -> Result<Vec<String>, Error> {
         // Just use ls command
-        let mut command = sftp_result.session.command("ls".to_string());
+        let mut command = session.command("ls".to_string());
         command.arg(remote_dir);
         let output = command.output().await.unwrap();
         let output_string = String::from_utf8_lossy(&output.stdout);
@@ -536,9 +548,9 @@ impl Backup {
         Ok(file_names)
     }
 
-    async fn delete_file_on_sftp(&self, sftp_result: &SftpLoginResult, file_name: &String, remote_dir: &String) -> Result<(), Error> {
+    async fn delete_file_on_sftp(&self, session: &Session, file_name: &String, remote_dir: &String) -> Result<(), Error> {
         // Delete file using rm command
-        let mut command = sftp_result.session.command("rm".to_string());
+        let mut command = session.command("rm".to_string());
         command.arg(format!("{}/{}", remote_dir, file_name));
         let output = command.output().await.unwrap();
         let output_string = String::from_utf8_lossy(&output.stdout);
@@ -578,7 +590,7 @@ impl Backup {
     }
 }
 
-async fn sftp_login(user: String, host: String, port: Option<u16>, key_file: Option<&Path>) -> Result<SftpLoginResult, Error> {
+async fn sftp_login(user: String, host: String, port: Option<u16>, key_file: Option<&Path>) -> Result<Session, Error> {
     let mut session_builder = openssh::SessionBuilder::default();
 
     if key_file.is_some() {
@@ -606,29 +618,7 @@ async fn sftp_login(user: String, host: String, port: Option<u16>, key_file: Opt
         return Err(Error::new(ErrorKind::Other, "Failed to connect to host"));
     }
 
-    let mut session = session_result.unwrap();
-
-    let mut child = session
-        .subsystem("sftp")
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()
-        .await
-        .unwrap();
-
-    let sftp = Sftp::new(
-        child.stdin().take().unwrap(),
-        child.stdout().take().unwrap(),
-        Default::default(), )
-        .await
-        .unwrap();
-
-    let to_return: SftpLoginResult = SftpLoginResult {
-        session,
-        sftp,
-    };
-
-    Ok(to_return)
+    Ok(session_result.unwrap())
 }
 
 fn extract_date_from_file_name(file_name: &String) -> String {
@@ -675,11 +665,6 @@ fn does_zip_command_exist() -> bool {
 
     let the_output = output.unwrap();
     the_output.status.success()
-}
-
-struct SftpLoginResult {
-    session: Session,
-    sftp: Sftp,
 }
 
 #[cfg(test)]
