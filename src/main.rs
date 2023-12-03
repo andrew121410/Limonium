@@ -138,9 +138,14 @@ async fn main() {
                 .long("delete-after-upload")
                 .action(ArgAction::SetTrue)
                 .required(false))
-            .arg(clap::Arg::new("delete-after-time")
-                .help("Deletes the backup after a certain amount of time")
-                .long("delete-after-time")
+            .arg(clap::Arg::new("local-delete-after-time")
+                .help("Deletes backups after a certain amount of time LOCALLY")
+                .long("local-delete-after-time")
+                .action(ArgAction::Set)
+                .required(false))
+            .arg(clap::Arg::new("remote-delete-after-time")
+                .help("Deletes backups after a certain amount of time REMOTELY")
+                .long("remote-delete-after-time")
                 .action(ArgAction::Set)
                 .required(false))
             .arg(clap::Arg::new("ask-before-uploading")
@@ -398,12 +403,12 @@ async fn handle_backup(backup_matches: &ArgMatches) {
     let backup_result = the_backup.unwrap();
 
     // Handle deleting backups after a certain amount of time LOCALLY
-    let delete_after_time = backup_matches.get_one::<String>("delete-after-time");
-    if delete_after_time.is_some() {
-        let delete_after_time_input = delete_after_time.unwrap().to_string();
-        backup.local_delete_after_time(&delete_after_time_input);
+    let local_delete_after_time = backup_matches.get_one::<String>("local-delete-after-time");
+    if local_delete_after_time.is_some() {
+        let local_delete_after_time_input = local_delete_after_time.unwrap().to_string();
+        backup.local_delete_after_time(&local_delete_after_time_input);
 
-        println!("{} {}", format!("Deleting LOCAL backups after").yellow(), format!("{}", delete_after_time_input).green());
+        println!("{} {}", format!("Deleting LOCAL backups after").yellow(), format!("{}", local_delete_after_time_input).green());
     }
 
     // Ask if you want to upload the backup to SFTP before uploading
@@ -451,11 +456,12 @@ async fn handle_backup(backup_matches: &ArgMatches) {
         }
 
         // Handle deleting backups after a certain amount of time REMOTELY
-        if delete_after_time.is_some() {
-            let delete_after_time_input = delete_after_time.unwrap().to_string();
-            backup.sftp_delete_after_time(&delete_after_time_input, sftp_user.to_string(), sftp_host.to_string(), sftp_port, sftp_key_file, sftp_remote_dir.to_string()).await;
+        let remote_delete_after_time = backup_matches.get_one::<String>("remote-delete-after-time");
+        if remote_delete_after_time.is_some() {
+            let remote_delete_after_time_input = remote_delete_after_time.unwrap().to_string();
+            backup.sftp_delete_after_time(&remote_delete_after_time_input, sftp_user.to_string(), sftp_host.to_string(), sftp_port, sftp_key_file, sftp_remote_dir.to_string()).await;
 
-            println!("{} {}", format!("Deleting REMOTE backups after").yellow(), format!("{}", delete_after_time_input).green());
+            println!("{} {}", format!("Deleting REMOTE backups after").yellow(), format!("{}", remote_delete_after_time_input).green());
         }
 
         // Handle deleting the file after upload if specified
