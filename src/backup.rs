@@ -4,10 +4,12 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use chrono::{NaiveDate, Utc};
 use colored::Colorize;
 use indicatif::{ProgressBar, ProgressStyle};
-use openssh::Stdio;
+use openssh::{Session, Stdio};
 use openssh_sftp_client::Sftp;
+use regex::Regex;
 
 use crate::controllers;
 
@@ -58,17 +60,17 @@ impl Backup {
         // Check if the compression format is installed
         match self.backup_format {
             BackupFormat::TarGz => {
-                if !self.does_tar_command_exist() {
+                if !does_tar_command_exist() {
                     return Err(Error::new(ErrorKind::Other, "The tar command does not exist. Please install it and try again."));
                 }
             }
             BackupFormat::TarZst => {
-                if !self.does_zstd_command_exist() {
+                if !does_zstd_command_exist() {
                     return Err(Error::new(ErrorKind::Other, "The zstd command does not exist. Please install it and try again."));
                 }
             }
             BackupFormat::Zip => {
-                if !self.does_zip_command_exist() {
+                if !does_zip_command_exist() {
                     return Err(Error::new(ErrorKind::Other, "The zip command does not exist. Please install it and try again."));
                 }
             }
@@ -318,49 +320,10 @@ impl Backup {
     }
 
     pub async fn upload_sftp(&self, user: String, host: String, port: Option<u16>, key_file: Option<&Path>, path: &PathBuf, file_name: String, remote_dir: String, local_hash: String) -> Result<(), Error> {
-        let mut session_builder = openssh::SessionBuilder::default();
+        let sftp_result = sftp_login(user, host, port, key_file).await?;
 
-        if key_file.is_some() {
-            session_builder.keyfile(key_file.unwrap());
-            println!("Using key file: {}", key_file.unwrap().display());
-
-            // Check if right permissions are set on the key file
-            let metadata = fs::metadata(key_file.unwrap()).unwrap();
-            let permissions = metadata.permissions();
-            if permissions.mode() != 33152 { // chmod 600
-                println!("{}", format!("The key file must have the permissions 600 (rw-------). Please run \"chmod 600 {}\" to set the correct permissions.", key_file.unwrap().display()).red());
-                return Err(Error::new(ErrorKind::Other, "Wrong permissions on key file"));
-            }
-        }
-
-        session_builder.user(user);
-
-        if port.is_some() {
-            session_builder.port(port.unwrap());
-        }
-
-        let session_result = session_builder.connect(&host).await;
-        if session_result.is_err() {
-            println!("{}", format!("Failed to connect to {}: {}", host, session_result.err().unwrap()).red());
-            return Err(Error::new(ErrorKind::Other, "Failed to connect to host"));
-        }
-
-        let real_session = session_result.unwrap();
-
-        let mut child = real_session
-            .subsystem("sftp")
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .spawn()
-            .await
-            .unwrap();
-
-        let sftp = Sftp::new(
-            child.stdin().take().unwrap(),
-            child.stdout().take().unwrap(),
-            Default::default(), )
-            .await
-            .unwrap();
+        let sftp = sftp_result.sftp;
+        let real_session = sftp_result.session;
 
         let mut fs = sftp.fs();
 
@@ -422,10 +385,176 @@ impl Backup {
         Ok(())
     }
 
+    pub fn local_delete_after_time(&self, input: &String) {
+        // Deletes backups after a certain amount of time
+        // Example input: 1m = 1 month, 1w = 1 week, 1d = 1 day
+
+        let backup_directory = self.backup_directory.clone();
+
+        // Parse the input duration
+        let (amount, unit) = input.split_at(input.len() - 1);
+        let amount: i64 = amount.parse().unwrap_or(0);
+
+        // Get the current date
+        let current_date = Utc::now().naive_utc().date();
+
+        // For each file in the backup directory
+        for entry in fs::read_dir(&backup_directory).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            if path.is_dir() {
+                continue;
+            }
+
+            if path.is_file() {
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let date = extract_date_from_file_name(&file_name.to_string());
+
+                // If the file name does not contain a date or does not start with the backup name, skip it
+                if date.is_empty() || !file_name.starts_with(&self.name) {
+                    continue;
+                }
+
+                let date_chrono = NaiveDate::parse_from_str(&date, "%-m-%-d-%Y").unwrap();
+
+                // Calculate the difference in days between the current date and the backup date
+                let days_difference = (current_date - date_chrono).num_days();
+
+                // Delete if it's older than the input duration
+                match unit {
+                    "m" => {
+                        if days_difference > amount * 30 {
+                            // Delete the file
+                            fs::remove_file(&path).unwrap_or_else(|e| {
+                                eprintln!("Error deleting file: {}", e);
+                            });
+                            println!("{}", format!("(--delete-after-time) Deleted file {} in the backup directory it was too OLD", file_name).yellow());
+                        }
+                    }
+                    "w" => {
+                        if days_difference > amount * 7 {
+                            // Delete the file
+                            fs::remove_file(&path).unwrap_or_else(|e| {
+                                eprintln!("Error deleting file: {}", e);
+                            });
+                            println!("{}", format!("(--delete-after-time) Deleted file {} in the backup directory it was too OLD", file_name).yellow());
+                        }
+                    }
+                    "d" => {
+                        if days_difference > amount {
+                            // Delete the file
+                            fs::remove_file(&path).unwrap_or_else(|e| {
+                                eprintln!("Error deleting file: {}", e);
+                            });
+                            println!("{}", format!("(--delete-after-time) Deleted file {} in the backup directory it was too OLD", file_name).yellow());
+                        }
+                    }
+                    _ => {
+                        eprintln!("Invalid time unit: {}", unit);
+                    }
+                }
+            }
+        }
+    }
+
+    pub async fn sftp_delete_after_time(&self, input: &String, user: String, host: String, port: Option<u16>, key_file: Option<&Path>, remote_dir: String) {
+        // Deletes backups after a certain amount of time in the SFTP server
+        // Example input: 1m = 1 month, 1w = 1 week, 1d = 1 day
+
+        let sftp_result = sftp_login(user, host, port, key_file).await.unwrap();
+
+        // Parse the input duration
+        let (amount, unit) = input.split_at(input.len() - 1);
+        let amount: i64 = amount.parse().unwrap_or(0);
+
+        // Get the current date
+        let current_date = Utc::now().naive_utc().date();
+
+        // For each file in the backup directory
+        let file_names = self.list_files_on_sftp(&sftp_result, &remote_dir).await.unwrap();
+
+        for file_name in file_names {
+            let date = extract_date_from_file_name(&file_name.to_string());
+
+            // If the file name does not contain a date or does not start with the backup name, skip it
+            if date.is_empty() || !file_name.starts_with(&self.name) {
+                continue;
+            }
+
+            let date_chrono = NaiveDate::parse_from_str(&date, "%-m-%-d-%Y").unwrap();
+
+            // Calculate the difference in days between the current date and the backup date
+            let days_difference = (current_date - date_chrono).num_days();
+
+            // Delete if it's older than the input duration
+            match unit {
+                "m" => {
+                    if days_difference > amount * 30 {
+                        // Delete the file
+                        self.delete_file_on_sftp(&sftp_result, &file_name, &remote_dir).await.unwrap_or_else(|e| {
+                            eprintln!("Error deleting file: {}", e);
+                        });
+                    }
+                }
+                "w" => {
+                    if days_difference > amount * 7 {
+                        // Delete the file
+                        self.delete_file_on_sftp(&sftp_result, &file_name, &remote_dir).await.unwrap_or_else(|e| {
+                            eprintln!("Error deleting file: {}", e);
+                        });
+                    }
+                }
+                "d" => {
+                    if days_difference > amount {
+                        // Delete the file
+                        self.delete_file_on_sftp(&sftp_result, &file_name, &remote_dir).await.unwrap_or_else(|e| {
+                            eprintln!("Error deleting file: {}", e);
+                        });
+                    }
+                }
+                _ => {
+                    eprintln!("Invalid time unit: {}", unit);
+                }
+            }
+        }
+    }
+
+    async fn list_files_on_sftp(&self, sftp_result: &SftpLoginResult, remote_dir: &String) -> Result<Vec<String>, Error> {
+        // Just use ls command
+        let mut command = sftp_result.session.command("ls".to_string());
+        command.arg(remote_dir);
+        let output = command.output().await.unwrap();
+        let output_string = String::from_utf8_lossy(&output.stdout);
+
+        let mut file_names: Vec<String> = Vec::new();
+
+        for line in output_string.lines() {
+            let file_name = line.split(" ").collect::<Vec<&str>>()[8].to_string();
+            file_names.push(file_name);
+        }
+
+        Ok(file_names)
+    }
+
+    async fn delete_file_on_sftp(&self, sftp_result: &SftpLoginResult, file_name: &String, remote_dir: &String) -> Result<(), Error> {
+        // Delete file using rm command
+        let mut command = sftp_result.session.command("rm".to_string());
+        command.arg(format!("{}/{}", remote_dir, file_name));
+        let output = command.output().await.unwrap();
+        let output_string = String::from_utf8_lossy(&output.stdout);
+
+        if output_string.contains("No such file") {
+            println!("{}", format!("The file {} does not exist on the SFTP server", file_name).red());
+        }
+
+        println!("{}", format!("Deleted file {} on the SFTP server", file_name).green());
+        Ok(())
+    }
+
     /*
-   Determine how many backups of today's date exist
-   If there are none backups, of today's date, the return will be 1
-   If there is 1 backup, of today's date, the return will be 2 so on and so forth
+    Determine how many backups of today's date exist
+    If there are none backups, of today's date, the return will be 1
+    If there is 1 backup, of today's date, the return will be 2 so on and so forth
      */
     fn get_how_many_backups_of_today_date(&self) -> Result<i64, Error> {
         let timestamp = chrono::Local::now().format("%-m-%-d-%Y");
@@ -447,37 +576,176 @@ impl Backup {
         }
         Ok(count)
     }
+}
 
-    fn does_tar_command_exist(&self) -> bool {
-        let output = Command::new("tar").arg("--version").output();
+async fn sftp_login(user: String, host: String, port: Option<u16>, key_file: Option<&Path>) -> Result<SftpLoginResult, Error> {
+    let mut session_builder = openssh::SessionBuilder::default();
 
-        if output.is_err() {
-            return false;
+    if key_file.is_some() {
+        session_builder.keyfile(key_file.unwrap());
+        println!("Using key file: {}", key_file.unwrap().display());
+
+        // Check if right permissions are set on the key file
+        let metadata = fs::metadata(key_file.unwrap()).unwrap();
+        let permissions = metadata.permissions();
+        if permissions.mode() != 33152 { // chmod 600
+            println!("{}", format!("The key file must have the permissions 600 (rw-------). Please run \"chmod 600 {}\" to set the correct permissions.", key_file.unwrap().display()).red());
+            return Err(Error::new(ErrorKind::Other, "Wrong permissions on key file"));
         }
-
-        let the_output = output.unwrap();
-        the_output.status.success()
     }
 
-    fn does_zstd_command_exist(&self) -> bool {
-        let output = Command::new("zstd").arg("--version").output();
+    session_builder.user(user);
 
-        if output.is_err() {
-            return false;
-        }
-
-        let the_output = output.unwrap();
-        the_output.status.success()
+    if port.is_some() {
+        session_builder.port(port.unwrap());
     }
 
-    fn does_zip_command_exist(&self) -> bool {
-        let output = Command::new("zip").arg("--version").output();
+    let session_result = session_builder.connect(&host).await;
+    if session_result.is_err() {
+        println!("{}", format!("Failed to connect to {}: {}", host, session_result.err().unwrap()).red());
+        return Err(Error::new(ErrorKind::Other, "Failed to connect to host"));
+    }
 
-        if output.is_err() {
-            return false;
-        }
+    let mut session = session_result.unwrap();
 
-        let the_output = output.unwrap();
-        the_output.status.success()
+    let mut child = session
+        .subsystem("sftp")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .await
+        .unwrap();
+
+    let sftp = Sftp::new(
+        child.stdin().take().unwrap(),
+        child.stdout().take().unwrap(),
+        Default::default(), )
+        .await
+        .unwrap();
+
+    let to_return: SftpLoginResult = SftpLoginResult {
+        session,
+        sftp,
+    };
+
+    Ok(to_return)
+}
+
+fn extract_date_from_file_name(file_name: &String) -> String {
+    // Define a regex pattern for capturing the date part
+    let date_pattern = Regex::new(r"(\d{1,2}-\d{1,2}-\d{4})").unwrap();
+
+    // Find the first match in the file name
+    if let Some(captures) = date_pattern.find(file_name) {
+        return captures.as_str().to_string();
+    }
+
+    // Default value if no match is found
+    String::new()
+}
+
+fn does_tar_command_exist() -> bool {
+    let output = Command::new("tar").arg("--version").output();
+
+    if output.is_err() {
+        return false;
+    }
+
+    let the_output = output.unwrap();
+    the_output.status.success()
+}
+
+fn does_zstd_command_exist() -> bool {
+    let output = Command::new("zstd").arg("--version").output();
+
+    if output.is_err() {
+        return false;
+    }
+
+    let the_output = output.unwrap();
+    the_output.status.success()
+}
+
+fn does_zip_command_exist() -> bool {
+    let output = Command::new("zip").arg("--version").output();
+
+    if output.is_err() {
+        return false;
+    }
+
+    let the_output = output.unwrap();
+    the_output.status.success()
+}
+
+struct SftpLoginResult {
+    session: Session,
+    sftp: Sftp,
+}
+
+#[cfg(test)]
+mod backup_testing {
+    use std::fs::File;
+
+    use chrono::Duration;
+
+    use crate::backup::extract_date_from_file_name;
+
+    use super::*;
+
+    #[test]
+    fn test_extract_date_from_file_name() {
+        assert_eq!(extract_date_from_file_name(&"hub-everything-10-19-2023-1-bundle.tar.zst".to_string()), "10-19-2023");
+        assert_eq!(extract_date_from_file_name(&"hub-11-15-2023-1-bundle.tar.zst".to_string()), "11-15-2023");
+        assert_eq!(extract_date_from_file_name(&"hub-11-15-2023-2-bundle.tar.zst".to_string()), "11-15-2023");
+        assert_eq!(extract_date_from_file_name(&"hub-10-30-2023-1-bundle.tar.zst".to_string()), "10-30-2023");
+        assert_eq!(extract_date_from_file_name(&"testing-9-29-2023-1-bundle.tar.zst".to_string()), "9-29-2023");
+        assert_eq!(extract_date_from_file_name(&"testing-9-29-2023-1-bundle.zip".to_string()), "9-29-2023");
+        assert_eq!(extract_date_from_file_name(&"testing-9-29-2023-2-bundle.zip".to_string()), "9-29-2023");
+        assert_eq!(extract_date_from_file_name(&"testing-everything-9-29-2023-1-bundle.zip".to_string()), "9-29-2023");
+        assert_eq!(extract_date_from_file_name(&"hub-11-15-2023-1-bundle.tar.zst".to_string()), "11-15-2023");
+        assert_eq!(extract_date_from_file_name(&"can-have-infinite-dashes-right-here-11-4-2023-1-bundle.tar.zst".to_string()), "11-4-2023");
+        assert_eq!(extract_date_from_file_name(&"can-have-infinite-dashes-right-here-11-4-2023-2-bundle.tar.zst".to_string()), "11-4-2023");
+        assert_eq!(extract_date_from_file_name(&"can-have-infinite-dashes-right-here-11-4-2023-1-bundle.zip".to_string()), "11-4-2023");
+    }
+
+    #[test]
+    fn test_local_delete_after_time() {
+        // Create a temporary directory for testing
+        let temp_dir_dir_to_backup = tempdir::TempDir::new("directory-to-backup").expect("Failed to create temp dir");
+        let temp_dir_backup_directory = tempdir::TempDir::new("backup-directory").expect("Failed to create temp dir");
+
+        // Define a backup object with a sample configuration
+        let backup = Backup {
+            name: "testing-backup".to_string(),
+            directory_to_backup: temp_dir_dir_to_backup.path().to_string_lossy().to_string(),
+            backup_directory: temp_dir_backup_directory.path().to_path_buf(),
+            backup_format: BackupFormat::TarGz,
+            exclude: None,
+            compression_level: None,
+        };
+
+        // Create a backup file with a date that should be deleted based on the provided input
+        let old_backup_date = Utc::now().naive_utc().date() - Duration::days(10); // Example: 10 days old
+        let old_backup_file_name = format!("{}-{}.tar.gz", backup.name, old_backup_date.format("%-m-%-d-%Y"));
+        let old_backup_file_path = backup.backup_directory.join(&old_backup_file_name);
+        File::create(&old_backup_file_path).expect("Failed to create old backup file");
+
+        // Create a backup file with a recent date that should not be deleted
+        let recent_backup_date = Utc::now().naive_utc().date() - Duration::days(2); // Example: 2 days old
+        let recent_backup_file_name = format!("{}-{}.tar.gz", backup.name, recent_backup_date.format("%-m-%-d-%Y"));
+        let recent_backup_file_path = backup.backup_directory.join(&recent_backup_file_name);
+        File::create(&recent_backup_file_path).expect("Failed to create recent backup file");
+
+        // Define the input for deletion (e.g., 7d for 7 days)
+        let deletion_input = "7d".to_string();
+
+        // Call the local_delete_after_time function
+        backup.local_delete_after_time(&deletion_input);
+
+        // Check if the old backup file is deleted
+        assert!(!old_backup_file_path.exists(), "Old backup file should be deleted");
+
+        // Check if the recent backup file is not deleted
+        assert!(recent_backup_file_path.exists(), "Recent backup file should not be deleted");
     }
 }

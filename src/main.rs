@@ -138,6 +138,11 @@ async fn main() {
                 .long("delete-after-upload")
                 .action(ArgAction::SetTrue)
                 .required(false))
+            .arg(clap::Arg::new("delete-after-time")
+                .help("Deletes the backup after a certain amount of time")
+                .long("delete-after-time")
+                .action(ArgAction::Set)
+                .required(false))
             .arg(clap::Arg::new("ask-before-uploading")
                 .help("Ask if you want to upload the backup to SFTP before uploading")
                 .long("ask-before-uploading")
@@ -392,6 +397,15 @@ async fn handle_backup(backup_matches: &ArgMatches) {
 
     let backup_result = the_backup.unwrap();
 
+    // Handle deleting backups after a certain amount of time LOCALLY
+    let delete_after_time = backup_matches.get_one::<String>("delete-after-time");
+    if delete_after_time.is_some() {
+        let delete_after_time_input = delete_after_time.unwrap().to_string();
+        backup.local_delete_after_time(&delete_after_time_input);
+
+        println!("{} {}", format!("Deleting LOCAL backups after").yellow(), format!("{}", delete_after_time_input).green());
+    }
+
     // Ask if you want to upload the backup to SFTP before uploading
     let ask_before_upload = backup_matches.get_flag("ask-before-uploading");
     let mut skip_upload = false;
@@ -434,6 +448,14 @@ async fn handle_backup(backup_matches: &ArgMatches) {
         if result.is_err() {
             println!("{} {} {}", format!("Something went wrong!").red().bold(), format!("Error:").yellow(), format!("{}", result.err().unwrap()).red());
             process::exit(102);
+        }
+
+        // Handle deleting backups after a certain amount of time REMOTELY
+        if delete_after_time.is_some() {
+            let delete_after_time_input = delete_after_time.unwrap().to_string();
+            backup.sftp_delete_after_time(&delete_after_time_input, sftp_user.to_string(), sftp_host.to_string(), sftp_port, sftp_key_file, sftp_remote_dir.to_string()).await;
+
+            println!("{} {}", format!("Deleting REMOTE backups after").yellow(), format!("{}", delete_after_time_input).green());
         }
 
         // Handle deleting the file after upload if specified

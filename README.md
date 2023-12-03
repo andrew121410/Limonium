@@ -79,8 +79,9 @@ By default, it will use tar.gz, unless specified otherwise.
 2. --level `The compression level to use (tar.gz 0-9) (tar.zst 1-22) (zip 0-9)`
 2. --exclude `Excludes files from the backup`
 3. --sftp `Uploads the backup to a SFTP server. Example 1: --sftp user@host:22 /remote/path Example 2: --sftp "user@host:22 path/to/key /remote/path"` (**Password Authentication is not supported.**)
-4. --delete-after-upload `Deletes the backup after uploading it to the SFTP server.`
+4. --delete-after-upload `Deletes the local backup after uploading it to the SFTP server.`
 5. --ask-before-uploading `Asks before uploading the backup to the SFTP server.`
+6. --delete-after-time `Deletes backups after a certain amount of time. Example: --delete-after-time 1m (1 month) --delete-after-time 1w (1 week) --delete-after-time 1d (1 day)`
 
 Debug Arguments
 1. --verbose `Shows more information`
