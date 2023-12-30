@@ -19,7 +19,7 @@ impl platform::IPlatform for PufferfishAPI {
         let jenkins_version = get_jenkins_version(&version);
         validate_jenkins_version(&jenkins_version, &version);
 
-        // Example https://ci.pufferfish.host/job/Pufferfish-1.19/lastSuccessfulBuild/artifact/build/libs/pufferfish-paperclip-1.19.2-R0.1-SNAPSHOT-reobf.jar
+        // Example https://ci.pufferfish.host/job/Pufferfish-1.20/lastSuccessfulBuild/artifact/build/libs/pufferfish-paperclip-1.20.4-R0.1-SNAPSHOT-reobf.jar
         let mut to_return = String::from("https://ci.pufferfish.host/job/Pufferfish-");
         to_return.push_str(&jenkins_version.unwrap());
         to_return.push_str("/");
@@ -40,7 +40,7 @@ impl platform::IPlatform for PufferfishAPI {
         return Some(String::from("lastSuccessfulBuild"));
     }
 
-    // https://ci.pufferfish.host/job/Pufferfish-1.20/lastSuccessfulBuild/artifact/build/libs/pufferfish-paperclip-1.20.1-R0.1-SNAPSHOT-reobf.jar/*fingerprint*/
+    // https://ci.pufferfish.host/job/Pufferfish-1.20/lastSuccessfulBuild/artifact/build/libs/pufferfish-paperclip-1.20.4-R0.1-SNAPSHOT-reobf.jar/*fingerprint*/
     // Will return a md5 hash
     async fn get_hash_from_web(&self, project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedJar>) -> Option<Hash> {
         let jar_name = self.get_jar_name(project, version, build);
@@ -83,7 +83,7 @@ pub fn validate_jenkins_version(real_version: &Option<String>, version: &String)
 }
 
 pub fn get_jenkins_version(version: &String) -> Option<String> {
-    if version.contains("1.20.2") {
+    if version.contains("1.20.4") {
         return Some(String::from("1.20"));
     } else if version.contains("1.19.4") {
         return Some(String::from("1.19"));
@@ -95,7 +95,7 @@ pub fn get_jenkins_version(version: &String) -> Option<String> {
 
 pub fn get_supported_versions() -> Vec<String> {
     return vec![
-        String::from("1.20.2"),
+        String::from("1.20.4"),
         String::from("1.19.4"),
         String::from("1.18.2"),
     ];
