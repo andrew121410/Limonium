@@ -336,7 +336,7 @@ async fn handle_download(download_matches: &ArgMatches) {
         downloaded_jar = custom_download_function_result.unwrap();
     } else {
         // If there's no custom download functionality, download the jar to the temp directory
-        downloaded_jar = controllers::download_jar_to_temp_dir(&download_link).await;
+        downloaded_jar = controllers::download_jar_to_temp_dir_with_progress_bar(&download_link).await;
     }
 
     // Verify the hash of the downloaded jar in the temp directory
