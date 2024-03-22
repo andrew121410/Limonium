@@ -179,7 +179,7 @@ pub async fn download_jar_to_temp_dir_with_progress_bar(link: &String) -> Downlo
     }
 
     // Finish the progress bar
-    pb.finish();
+    pb.finish_and_clear();
 
     return DownloadedJar {
         real_jar_name: None, // We might not know the real jar name
