@@ -1,7 +1,8 @@
 pub mod bungeecord;
 
 use std::fs;
-use std::process::Command;
+use std::io::{BufRead, BufReader};
+use std::process::{Command, Stdio};
 use std::string::String;
 use std::time::Instant;
 
@@ -29,15 +30,25 @@ impl SpigotAPI {
 
         let start = Instant::now();
 
-        let _output = Command::new("java")
+        let mut command = Command::new("java")
             .arg("-jar")
             .arg("BuildTools.jar")
             .arg("--rev")
             .arg(&version)
             .arg("--compile-if-changed")
             .current_dir("./lmtmp/")
-            .output()
-            .expect("Hmm");
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("Failed to run BuildTools?");
+
+        let output = command.stdout.take().unwrap();
+        let reader = BufReader::new(output);
+
+        for line in reader.lines() {
+            println!("{}", line.unwrap());
+        }
+
+        command.wait().expect("Failed to wait on child process");
 
         let mut copy_from = String::from("./lmtmp/spigot-");
         copy_from.push_str(&version);
