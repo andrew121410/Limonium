@@ -3,7 +3,7 @@ use std::env::temp_dir;
 use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, Read, Write};
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use std::process::{Command, exit, Stdio};
 use std::time::{Duration, SystemTime};
 
@@ -25,6 +25,12 @@ impl LogSearch {
     }
 
     pub fn context(&self, lines_before: u64, lines_after: u64) {
+        // See if the logs directory exists
+        if !self.logs_dir.exists() {
+            eprintln!("{}", format!("We couldn't find the logs directory at {}. Exiting...", self.logs_dir.display()).red());
+            exit(1);
+        }
+
         // Create a temporary directory inside the "logs" folder to hold the log files
         let temp_dir_in_logs_folder = self.logs_dir.join(".lmtmp");
         fs::create_dir(&temp_dir_in_logs_folder).unwrap_or_else(|e| {
@@ -147,6 +153,14 @@ impl LogSearch {
         fs::remove_dir_all(temp_dir_in_logs_folder).unwrap_or_else(|e| {
             eprintln!("Error deleting directory: {}", e);
         });
+
+        // Check if the txt file exists
+        let file_path = temp_dir().join("limonium-log-search.txt");
+        if !file_path.exists() {
+            println!("{}", format!("We searched for {}", self.to_search.as_str()).bright_yellow());
+            println!("{}", "No matching lines found in the logs. Exiting...".red());
+            return;
+        }
 
         // Open the file in nano
         self.open_in_nano();
