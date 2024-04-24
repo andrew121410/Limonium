@@ -3,10 +3,11 @@ use std::io::{BufRead, Error, ErrorKind, Read, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::time::{Duration, Instant};
 
 use chrono::{NaiveDate, Utc};
 use colored::Colorize;
-use indicatif::{ProgressBar, ProgressStyle};
+use indicatif::{HumanDuration, ProgressBar, ProgressStyle};
 use openssh::{Session, Stdio};
 use openssh_sftp_client::Sftp;
 use regex::Regex;
@@ -100,6 +101,20 @@ impl Backup {
         let hash_path = our_tmp_directory.join(format!("{}-{}_hash.txt", &self.name, timestamp));
 
         println!("{}", format!("Please wait while the backup is being created...").yellow());
+
+        // Progress bar
+        let bar = ProgressBar::new_spinner();
+        let style = ProgressStyle::default_spinner()
+            .tick_strings(&["-", "\\", "|", "/"])
+            // Use ANSI escape code `\x1b[31m` for red, and `\x1b[0m` to reset the color
+            .template("{spinner} \x1b[31m{elapsed_precise}\x1b[0m")
+            .unwrap_or_else(|e| {
+                eprintln!("Template error: {}", e);
+                ProgressStyle::default_spinner()
+            });
+        bar.set_style(style);
+        let start = Instant::now();
+        bar.enable_steady_tick(Duration::from_millis(100));
 
         // Create compressed tar or zip archive of the Minecraft server files
         let mut cmd = Command::new("tar");
@@ -302,6 +317,11 @@ impl Backup {
             file_path: combined_backup_path,
             sha256_hash: combined_backup_hash,
         };
+
+        // Finish the progress bar
+        let duration = HumanDuration(start.elapsed());
+        let progress_bar_ending_message = format!("Task completed in {}", duration);
+        bar.finish_with_message(progress_bar_ending_message);
 
         // Display the result of the backup
         println!("{} {}", format!("Local backup finished!").bright_green(), format!("Details below:").yellow());
