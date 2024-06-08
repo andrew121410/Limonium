@@ -21,11 +21,11 @@ It will download the software and check the hash of the file to make sure it dow
 
 ### Softwares
 
-1. [Paper](https://github.com/PaperMC/Paper) -> `./limonium download paper 1.20.5`
-2. [Purpur](https://github.com/PurpurMC/Purpur) -> `./limonium download purpur 1.20.5`
-3. [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) -> `./limonium download pufferfish 1.20.5`
+1. [Paper](https://github.com/PaperMC/Paper) -> `./limonium download paper 1.20.6`
+2. [Purpur](https://github.com/PurpurMC/Purpur) -> `./limonium download purpur 1.20.6`
+3. [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) -> `./limonium download pufferfish 1.20.6`
 4. [Geyser](https://github.com/GeyserMc/Geyser) -> `./limonium download geyser 2.1.0` (default is geyser-standalone)
-6. [Spigot](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/browse) -> `./limonium download spigot 1.20.5` (Not recommended)\
+6. [Spigot](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/browse) -> `./limonium download spigot 1.20.6` (Not recommended)\
 __If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run it__
 
 ### Proxies
@@ -58,15 +58,15 @@ _Note: When using `--serverjars.com` argument some choices may not work as they 
 *Usage: &lt;software&gt; &lt;version&gt;*
 
 ```
-./limonium download paper 1.20.5
+./limonium download paper 1.20.6
 ```
 
 ```
-./limonium download paper 1.20.5 --o Paper.jar
+./limonium download paper 1.20.6 --o Paper.jar
 ```
 
 ```
-./limonium download paper 1.20.5 --o ./mc-servers/hub/Paper.jar
+./limonium download paper 1.20.6 --o ./mc-servers/hub/Paper.jar
 ```
 
 ## Backup Function
