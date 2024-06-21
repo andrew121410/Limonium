@@ -53,6 +53,7 @@ _Note: When using `--serverjars.com` argument some choices may not work as they 
 3. --c `The channel so for geyser the default channel is "standalone" but can be changed to (spigot, bungeecord, velocity, fabric, sponge)`
 4. --latest-use-at-your-own-risk `(Warning: Don't use this is bad (you don't want your Minecraft Server randomly getting upgraded to a new Minecraft version, without you knowing)) Using this argument with the latest version, It will find the latest version of the software for you (really used for something like Geyser or Velocity)`
 5. --no-snapshot-version `When searching for the latest version, it will not include snapshot versions`
+6. run-jvmdowngrader `Runs the JVM Downgrader after downloading the software Example: --run-jvmdowngrader 52 (Java 8) --run-jvmdowngrader 60 (Java 16) ETC`
 ### Download Usage
 
 *Usage: &lt;software&gt; &lt;version&gt;*

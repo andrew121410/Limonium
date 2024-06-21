@@ -93,6 +93,11 @@ async fn main() {
                 .help("When searching for the latest version of the server, don't include snapshot versions")
                 .long("no-snapshot-version")
                 .action(ArgAction::SetTrue)
+                .required(false))
+            .arg(clap::Arg::new("run-jvmdowngrader")
+                .help("After downloading the server, run the JAR through the JVM Downgrader")
+                .long("run-jvmdowngrader")
+                .action(ArgAction::Set)
                 .required(false)))
         .subcommand(clap::Command::new("backup")
             .about("Backs up the server")
@@ -348,6 +353,100 @@ async fn handle_download(download_matches: &ArgMatches) {
         println!("{}", format!("Not checking hash!").yellow().bold());
     }
 
+    // Run the JVM Downgrader if specified
+    let run_jvmdowngrader = download_matches.get_one::<String>("run-jvmdowngrader");
+    if run_jvmdowngrader.is_some() {
+        let major_version = run_jvmdowngrader.unwrap();
+
+        // Create a temp directory for the JVM Downgrader in the temp directory
+        let jvm_downgrader_temp_dir = temp_dir().join("jvm_downgrader");
+        fs::create_dir_all(&jvm_downgrader_temp_dir).expect("Failed to create JVM Downgrader temp directory");
+
+        // Move the jar file that we downloaded to the temp directory we created
+        let current_path = downloaded_jar.temp_jar_path;
+        let final_path = jvm_downgrader_temp_dir.join("input.jar");
+        fs::copy(&current_path, &final_path).expect("Failed to copy downloaded jar to JVM Downgrader temp directory");
+        // Delete the downloaded jar from the temp directory
+        fs::remove_file(&current_path).expect("Failed to delete downloaded jar from temp directory");
+
+        // Download the JVM Downgrader to the temp directory
+        let jvm_downgrader_download_link = "https://github.com/unimined/JvmDowngrader/releases/download/0.7.2/jvmdowngrader-0.7.2-all.jar".to_string();
+        let jvm_downgrader_downloaded_jar = controllers::download_jar_to_temp_dir_with_progress_bar(&jvm_downgrader_download_link).await;
+
+        // Move the jvmDowngrader jar to the temp directory we created for it.
+        let current_path = jvm_downgrader_downloaded_jar.temp_jar_path;
+        let final_path = jvm_downgrader_temp_dir.join("jvmdowngrader.jar");
+        fs::copy(&current_path, &final_path).expect("Failed to copy JVM Downgrader to temp directory");
+        // Delete the JVM Downgrader jar from the temp directory
+        fs::remove_file(&current_path).expect("Failed to delete JVM Downgrader jar from temp directory");
+
+        // Run the JVM Downgrader downgrade first then shade
+        // java -jar JvmDowngrader-all.jar -c 52 downgrade -t input.jar output.jar
+        let output = std::process::Command::new("java")
+            .arg("-jar")
+            .arg("jvmdowngrader.jar")
+            .arg("-c")
+            .arg(major_version)
+            .arg("downgrade")
+            .arg("-t")
+            .arg("input.jar")
+            .arg("output.jar")
+            .current_dir(&jvm_downgrader_temp_dir)
+            .output()
+            .expect("Failed to execute JVM Downgrader");
+
+        // Display the command output
+        println!("JVM Downgrader output:");
+        println!("{}", String::from_utf8_lossy(&output.stdout));
+        println!("JVM Downgrader errors (if any):");
+        println!("{}", String::from_utf8_lossy(&output.stderr));
+
+        // Check if the command was successful
+        if !output.status.success() {
+            eprintln!("JVM Downgrader failed with error: {}", String::from_utf8_lossy(&output.stderr));
+        }
+
+        // Now we need to take the output.jar and shade it
+        // java -jar JvmDowngrader-all.jar -c 52 shade -p "shade/prefix" -t output.jar new_output.jar
+        let output = std::process::Command::new("java")
+            .arg("-jar")
+            .arg("jvmdowngrader.jar")
+            .arg("-c")
+            .arg(major_version)
+            .arg("shade")
+            .arg("-p")
+            .arg("shade/prefix/")
+            .arg("-t")
+            .arg("output.jar")
+            .arg("new_output.jar")
+            .current_dir(&jvm_downgrader_temp_dir)
+            .output()
+            .expect("Failed to execute JVM Downgrader");
+
+        // Display the command output
+        println!("JVM Downgrader output:");
+        println!("{}", String::from_utf8_lossy(&output.stdout));
+        println!("JVM Downgrader errors (if any):");
+        println!("{}", String::from_utf8_lossy(&output.stderr));
+
+        // Check if the command was successful
+        if !output.status.success() {
+            eprintln!("JVM Downgrader failed with error: {}", String::from_utf8_lossy(&output.stderr));
+        }
+
+        // Move the final new_output.jar to the temp directory
+        let final_path = jvm_downgrader_temp_dir.join("new_output.jar");
+        let new_final_path = temp_dir().join(&downloaded_jar.temp_jar_name);
+        fs::copy(&final_path, &new_final_path).expect("Failed to copy JVM Downgrader output to temp directory");
+
+        // Delete the JVM Downgrader temp directory
+        fs::remove_dir_all(&jvm_downgrader_temp_dir).expect("Failed to delete JVM Downgrader temp directory");
+
+        // Message saying that the JVM Downgrader was successful
+        println!("{}", format!("JVM Downgrader was successful!").green().bold());
+    }
+
+    // Copy the downloaded jar to the destination
     controllers::copy_jar_from_temp_dir_to_dest(&downloaded_jar.temp_jar_name, &path_string);
 
     let duration = start.elapsed().as_millis().to_string();
