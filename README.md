@@ -21,11 +21,11 @@ It will download the software and check the hash of the file to make sure it dow
 
 ### Softwares
 
-1. [Paper](https://github.com/PaperMC/Paper) -> `./limonium download paper 1.20.6`
-2. [Purpur](https://github.com/PurpurMC/Purpur) -> `./limonium download purpur 1.20.6`
-3. [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) -> `./limonium download pufferfish 1.20.6`
+1. [Paper](https://github.com/PaperMC/Paper) -> `./limonium download paper 1.21`
+2. [Purpur](https://github.com/PurpurMC/Purpur) -> `./limonium download purpur 1.21`
+3. [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) -> `./limonium download pufferfish 1.21`
 4. [Geyser](https://github.com/GeyserMc/Geyser) -> `./limonium download geyser 2.1.0` (default is geyser-standalone)
-6. [Spigot](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/browse) -> `./limonium download spigot 1.20.6` (Not recommended)\
+6. [Spigot](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/browse) -> `./limonium download spigot 1.21` (Not recommended)\
 __If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run it__
 
 ### Proxies
@@ -53,21 +53,21 @@ _Note: When using `--serverjars.com` argument some choices may not work as they 
 3. --c `The channel so for geyser the default channel is "standalone" but can be changed to (spigot, bungeecord, velocity, fabric, sponge)`
 4. --latest-use-at-your-own-risk `(Warning: Don't use this is bad (you don't want your Minecraft Server randomly getting upgraded to a new Minecraft version, without you knowing)) Using this argument with the latest version, It will find the latest version of the software for you (really used for something like Geyser or Velocity)`
 5. --no-snapshot-version `When searching for the latest version, it will not include snapshot versions`
-6. run-jvmdowngrader `Runs the JVM Downgrader after downloading the software Example: --run-jvmdowngrader 52 (Java 8) --run-jvmdowngrader 60 (Java 16) ETC`
+6. --run-jvmdowngrader `Runs the JVM Downgrader after downloading the software Example: --run-jvmdowngrader 52 (Java 8) --run-jvmdowngrader 60 (Java 16) ETC`
 ### Download Usage
 
 *Usage: &lt;software&gt; &lt;version&gt;*
 
 ```
-./limonium download paper 1.20.6
+./limonium download paper 1.21
 ```
 
 ```
-./limonium download paper 1.20.6 --o Paper.jar
+./limonium download paper 1.21 --o Paper.jar
 ```
 
 ```
-./limonium download paper 1.20.6 --o ./mc-servers/hub/Paper.jar
+./limonium download paper 1.21 --o ./mc-servers/hub/Paper.jar
 ```
 
 ## Backup Function
