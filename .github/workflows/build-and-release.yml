@@ -9,29 +9,12 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: sudo apt-get update && sudo apt upgrade -y && sudo apt-get install -y libssl-dev pkg-config gcc-aarch64-linux-gnu
-
-      - name: Set environment variables for cross-compilation
-        run: |
-          export PKG_CONFIG_ALLOW_CROSS=1
-          export OPENSSL_NO_PKG_CONFIG=1
-          export PATH=$PATH:/usr/aarch64-linux-gnu/bin
-
-      - name: Install Rust toolchain
-        run: |
-          rustup toolchain install stable
-          rustup target add ${{ matrix.target }}
-
       - name: Build
-        run: cargo build --release --target ${{ matrix.target }}
+        run: cargo build --release
 
       - name: Get Version from Cargo.toml
         id: cargo_version
@@ -43,7 +26,7 @@ jobs:
         uses: vimtor/action-zip@v1
         with:
           files: /target/release/limonium
-          dest: /target/release/limonium-${{ matrix.target }}.zip
+          dest: /target/release/limonium-x86_64-unknown-linux-gnu.zip
 
       - name: Deploy Release With Artifact
         uses: "marvinpinto/action-automatic-releases@latest"
@@ -52,4 +35,4 @@ jobs:
           automatic_release_tag: "${{ steps.cargo_version.outputs.t_cargo_version }}"
           prerelease: false
           files: |
-            target/release/limonium-${{ matrix.target }}.zip
+            target/release/limonium-x86_64-unknown-linux-gnu.zip
