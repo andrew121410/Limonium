@@ -9,12 +9,20 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install stable
+          rustup target add ${{ matrix.target }}
+
       - name: Build
-        run: cargo build --release
+        run: cargo build --release --target ${{ matrix.target }}
 
       - name: Get Version from Cargo.toml
         id: cargo_version
@@ -26,7 +34,7 @@ jobs:
         uses: vimtor/action-zip@v1
         with:
           files: /target/release/limonium
-          dest: /target/release/limonium-x86_64-unknown-linux-gnu.zip
+          dest: /target/release/limonium-${{ matrix.target }}.zip
 
       - name: Deploy Release With Artifact
         uses: "marvinpinto/action-automatic-releases@latest"
@@ -35,4 +43,4 @@ jobs:
           automatic_release_tag: "${{ steps.cargo_version.outputs.t_cargo_version }}"
           prerelease: false
           files: |
-            target/release/limonium-x86_64-unknown-linux-gnu.zip
+            target/release/limonium-${{ matrix.target }}.zip
