@@ -370,7 +370,7 @@ async fn handle_download(download_matches: &ArgMatches) {
         fs::remove_file(&current_path).expect("Failed to delete downloaded jar from temp directory");
 
         // Download the JVM Downgrader to the temp directory
-        let jvm_downgrader_download_link = "https://github.com/unimined/JvmDowngrader/releases/download/0.7.2/jvmdowngrader-0.7.2-all.jar".to_string();
+        let jvm_downgrader_download_link = "https://github.com/unimined/JvmDowngrader/releases/download/1.0.0/jvmdowngrader-1.0.0-all.jar".to_string();
         let jvm_downgrader_downloaded_jar = controllers::download_jar_to_temp_dir_with_progress_bar(&jvm_downgrader_download_link).await;
 
         // Move the jvmDowngrader jar to the temp directory we created for it.
