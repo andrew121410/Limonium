@@ -93,7 +93,12 @@ impl platform::IPlatform for ViaVersionAPI {
     }
 
     async fn custom_download_functionality(&self, project: &String, version: &String, build: &String, link: &String) -> Option<DownloadedJar> {
-        let downloaded_jar_option: Option<DownloadedJar> = jenkins_utils::jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the_tmp_directory(&project, &version, &build, &link, r"^Via(Backwards|Version)-\d+\.\d+\.\d+(-SNAPSHOT)?\.jar$").await;
+        let downloaded_jar_option: Option<DownloadedJar> = jenkins_utils::jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the_tmp_directory(
+            &project,
+            &version,
+            &build,
+            &link,
+            r"^Via(Backwards|Version)-\d+\.\d+\.\d+(-SNAPSHOT)?(-downgraded)?\.jar$").await; // r"^Via(Backwards|Version)-\d+\.\d+\.\d+(-SNAPSHOT)?\.jar$
 
         if downloaded_jar_option.is_none() {
             println!("{} {}", "Error:".red(), "ViaVersion (custom_download_functionality) failed to download the jar");
