@@ -24,13 +24,7 @@ impl platform::IPlatform for ViaVersionAPI {
     }
 
     fn get_download_link(&self, project: &String, _version: &String, _build: &String) -> String {
-        let mut fallback_channel = "".to_string();
-        if project.eq_ignore_ascii_case("viaversion") {
-            fallback_channel = "viaversion".to_string();
-        } else if project.eq_ignore_ascii_case("viabackwards") {
-            fallback_channel = "viabackwards".to_string();
-        }
-
+        let fallback_channel = fallback_channel(&project);
         let channel_selected = controllers::clap_get_one_or_fallback(&"channel".to_string(), &fallback_channel);
 
         // Check if the channel is valid
@@ -61,13 +55,7 @@ impl platform::IPlatform for ViaVersionAPI {
             return None;
         }
 
-        let mut fallback_channel = "".to_string();
-        if project.eq_ignore_ascii_case("viaversion") {
-            fallback_channel = "viaversion".to_string();
-        } else if project.eq_ignore_ascii_case("viabackwards") {
-            fallback_channel = "viabackwards".to_string();
-        }
-
+        let fallback_channel = fallback_channel(&project);
         let channel_selected = controllers::clap_get_one_or_fallback(&"channel".to_string(), &fallback_channel);
 
         // Check if the channel is valid
