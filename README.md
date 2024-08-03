@@ -36,8 +36,8 @@ __If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run 
 
 ### Plugins
 1. [Floodgate](https://github.com/GeyserMC/Floodgate) -> `./limonium download floodgate latest`
-2. [ViaVersion](https://github.com/ViaVersion/ViaVersion) -> `./limonium download viaversion latest`
-3. [ViaBackwards](https://github.com/ViaVersion/ViaBackwards) -> `./limonium download viabackwards latest`
+2. [ViaVersion](https://github.com/ViaVersion/ViaVersion) -> `./limonium download viaversion latest` (Available channels: dev, compatibility)
+3. [ViaBackwards](https://github.com/ViaVersion/ViaBackwards) -> `./limonium download viabackwards latest` (Available channels: dev, compatibility)
 
 ### Important
 

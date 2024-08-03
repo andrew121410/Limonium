@@ -1,3 +1,4 @@
+use std::ascii::AsciiExt;
 use std::process::exit;
 
 use async_trait::async_trait;
@@ -108,10 +109,14 @@ fn get_zip_download_link(project: &String, channel: &String) -> String {
         return "https://ci.viaversion.com/job/ViaVersion/lastSuccessfulBuild/artifact/build/libs/*zip*/libs.zip".to_string();
     } else if project.eq_ignore_ascii_case("viaversion") && channel.eq_ignore_ascii_case("dev") {
         return "https://ci.viaversion.com/job/ViaVersion-DEV/lastSuccessfulBuild/artifact/build/libs/*zip*/libs.zip".to_string();
+    } else if project.eq_ignore_ascii_case("viaversion") && channel.eq_ignore_ascii_case("compatibility") {
+        return "https://ci.viaversion.com/job/ViaVersion-Java8/lastSuccessfulBuild/artifact/build/libs/*zip*/libs.zip".to_string();
     } else if project.eq_ignore_ascii_case("viabackwards") && channel.eq_ignore_ascii_case("viabackwards") {
         return "https://ci.viaversion.com/view/ViaBackwards/job/ViaBackwards/lastSuccessfulBuild/artifact/build/libs/*zip*/libs.zip".to_string();
     } else if project.eq_ignore_ascii_case("viabackwards") && channel.eq_ignore_ascii_case("dev") {
         return "https://ci.viaversion.com/view/ViaBackwards/job/ViaBackwards-DEV/lastSuccessfulBuild/artifact/build/libs/*zip*/libs.zip".to_string();
+    } else if project.eq_ignore_ascii_case("viabackwards") && channel.eq_ignore_ascii_case("compatibility") {
+        return "https://ci.viaversion.com/view/ViaBackwards/job/ViaBackwards-Java8/lastSuccessfulBuild/artifact/build/libs/*zip*/libs.zip".to_string();
     }
 
     return "na".to_string();
@@ -128,6 +133,11 @@ fn get_fingerprint_link(project: &String, channel: &String, jar_name: &String) -
         link.push_str(jar_name);
         link.push_str("/*fingerprint*/");
         return link.to_string();
+    } else if project.eq_ignore_ascii_case("viaversion") && channel.eq_ignore_ascii_case("compatibility") {
+        let mut link = "https://ci.viaversion.com/job/ViaVersion-Java8/lastSuccessfulBuild/artifact/build/libs/".to_string();
+        link.push_str(jar_name);
+        link.push_str("/*fingerprint*/");
+        return link.to_string();
     } else if project.eq_ignore_ascii_case("viabackwards") && channel.eq_ignore_ascii_case("viabackwards") {
         let mut link = "https://ci.viaversion.com/job/ViaBackwards/lastSuccessfulBuild/artifact/build/libs/".to_string();
         link.push_str(jar_name);
@@ -135,6 +145,11 @@ fn get_fingerprint_link(project: &String, channel: &String, jar_name: &String) -
         return link.to_string();
     } else if project.eq_ignore_ascii_case("viabackwards") && channel.eq_ignore_ascii_case("dev") {
         let mut link = "https://ci.viaversion.com/job/ViaBackwards-DEV/lastSuccessfulBuild/artifact/build/libs/".to_string();
+        link.push_str(jar_name);
+        link.push_str("/*fingerprint*/");
+        return link.to_string();
+    } else if project.eq_ignore_ascii_case("viabackwards") && channel.eq_ignore_ascii_case("compatibility") {
+        let mut link = "https://ci.viaversion.com/view/ViaBackwards/job/ViaBackwards-Java8/lastSuccessfulBuild/artifact/build/libs/".to_string();
         link.push_str(jar_name);
         link.push_str("/*fingerprint*/");
         return link.to_string();
@@ -148,6 +163,7 @@ fn is_valid_channel(channel: &String) -> bool {
         "viaversion" => true,
         "dev" => true,
         "viabackwards" => true,
+        "compatibility" => true,
         _ => false,
     };
 }
