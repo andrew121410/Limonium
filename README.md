@@ -43,17 +43,14 @@ __If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run 
 
 Limonium is not affiliated with any of the projects listed.
 
-_Note: When using `--serverjars.com` argument some choices may not work as they may not be added to serverjars.com_
-
 ### Examples
 
 ### Optional Download Arguments
 1. --o `The path of where the jar should go Example: --o /mc-servers/hub/Paper.jar`
-2. --serverjars.com `When this argument is used it will download the jar from` [ServerJars.com](https://serverjars.com/) `instead`
-3. --c `The channel so for geyser the default channel is "standalone" but can be changed to (spigot, bungeecord, velocity, fabric, sponge)`
-4. --latest-use-at-your-own-risk `(Warning: Don't use this is bad (you don't want your Minecraft Server randomly getting upgraded to a new Minecraft version, without you knowing)) Using this argument with the latest version, It will find the latest version of the software for you (really used for something like Geyser or Velocity)`
-5. --no-snapshot-version `When searching for the latest version, it will not include snapshot versions`
-6. --run-jvmdowngrader `Runs JvmDowngrader to downgrade the JAR file to a Java Version Example: --run-jvmdowngrader 52 (Java 8) --run-jvmdowngrader 60 (Java 16) ETC` https://github.com/unimined/JvmDowngrader
+2. --c `The channel so for geyser the default channel is "standalone" but can be changed to (spigot, bungeecord, velocity, fabric, sponge)`
+3. --latest-use-at-your-own-risk `(Warning: Don't use this is bad (you don't want your Minecraft Server randomly getting upgraded to a new Minecraft version, without you knowing)) Using this argument with the latest version, It will find the latest version of the software for you (really used for something like Geyser or Velocity)`
+4. --no-snapshot-version `When searching for the latest version, it will not include snapshot versions`
+5. --run-jvmdowngrader `Runs JvmDowngrader to downgrade the JAR file to a Java Version Example: --run-jvmdowngrader 52 (Java 8) --run-jvmdowngrader 60 (Java 16) ETC` https://github.com/unimined/JvmDowngrader
 ### Download Usage
 
 *Usage: &lt;software&gt; &lt;version&gt;*

@@ -25,7 +25,6 @@ use crate::objects::DownloadedJar::DownloadedJar;
 mod controllers;
 mod hash_utils;
 mod github_utils;
-mod server_jars_com;
 mod backup;
 mod number_utils;
 mod log_search;
@@ -72,11 +71,6 @@ async fn main() {
                 .long("output")
                 .aliases(["o", "n", "name"])
                 .action(ArgAction::Set)
-                .required(false))
-            .arg(clap::Arg::new("serverjars.com")
-                .help("Downloads the server from serverjars.com")
-                .long("serverjars.com")
-                .action(ArgAction::SetTrue)
                 .required(false))
             .arg(clap::Arg::new("channel")
                 .help("Choose the server to download [Example for Geyser the default is \"standalone\" the choices are (spigot, bungeecord, standalone, velocity, ...)]")
@@ -261,14 +255,6 @@ async fn handle_download(download_matches: &ArgMatches) {
 
     let temp = String::from("");
     let mut path_string = download_matches.get_one::<String>("path").unwrap_or(&temp).to_string();
-
-    // Handle serverjars.com flag
-    let use_serverjars_com = download_matches.get_flag("serverjars.com");
-    if use_serverjars_com {
-        println!("{} {}", format!("Downloading from").yellow(), format!("serverjars.com").red());
-        server_jars_com::download_jar(&software, &version, &mut path_string).await;
-        return; // Don't continue
-    }
 
     // Check if the software is supported
     if !controllers::is_valid_platform(&software) {
