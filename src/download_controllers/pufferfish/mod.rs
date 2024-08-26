@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use colored::Colorize;
 use regex::Regex;
 
-use crate::controllers::platform;
+use crate::download_controllers::platform;
 use crate::hash_utils::Hash;
 use crate::jenkins_utils;
 use crate::objects::DownloadedJar::DownloadedJar;

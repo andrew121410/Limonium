@@ -2,7 +2,7 @@ use std::string::String;
 
 use async_trait::async_trait;
 
-use crate::controllers::platform;
+use crate::download_controllers::platform;
 use crate::hash_utils::Hash;
 use crate::objects::DownloadedJar::DownloadedJar;
 

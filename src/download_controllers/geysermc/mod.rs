@@ -5,8 +5,8 @@ use std::string::String;
 use async_trait::async_trait;
 use colored::Colorize;
 
-use crate::{controllers, number_utils};
-use crate::controllers::platform;
+use crate::{download_controllers, number_utils};
+use crate::download_controllers::platform;
 use crate::hash_utils::Hash;
 use crate::objects::DownloadedJar::DownloadedJar;
 
@@ -39,7 +39,7 @@ impl platform::IPlatform for GeyserAPI {
         let mut versions: Vec<String> = json.versions.unwrap();
 
         // See if we don't include snapshot versions
-        let dont_include_snapshot_versions: bool = controllers::clap_get_flag_or_fallback(&String::from("no-snapshot-version"));
+        let dont_include_snapshot_versions: bool = download_controllers::clap_get_flag_or_fallback(&String::from("no-snapshot-version"));
         if dont_include_snapshot_versions {
             versions.retain(|x| !x.contains("-SNAPSHOT"));
         }
@@ -63,7 +63,7 @@ impl platform::IPlatform for GeyserAPI {
         to_return.push_str(&build);
         to_return.push_str("/downloads/");
 
-        let channel = controllers::clap_get_one_or_fallback(&String::from("channel"), &String::from(DEFAULT_GEYSER_CHANNEL));
+        let channel = download_controllers::clap_get_one_or_fallback(&String::from("channel"), &String::from(DEFAULT_GEYSER_CHANNEL));
         to_return.push_str(&channel);
 
         return to_return;
@@ -116,7 +116,7 @@ impl platform::IPlatform for GeyserAPI {
 
         if geyser_build_info_json.downloads.is_some() {
             let downloads = geyser_build_info_json.downloads.unwrap();
-            let channel = controllers::clap_get_one_or_fallback(&String::from("channel"), &String::from(DEFAULT_GEYSER_CHANNEL));
+            let channel = download_controllers::clap_get_one_or_fallback(&String::from("channel"), &String::from(DEFAULT_GEYSER_CHANNEL));
 
             // Check if channel exists
             if !downloads.contains_key(&channel) {

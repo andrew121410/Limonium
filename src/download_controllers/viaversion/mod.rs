@@ -4,8 +4,8 @@ use std::process::exit;
 use async_trait::async_trait;
 use colored::Colorize;
 
-use crate::{controllers, jenkins_utils};
-use crate::controllers::platform;
+use crate::{download_controllers, jenkins_utils};
+use crate::download_controllers::platform;
 use crate::hash_utils::Hash;
 use crate::objects::DownloadedJar::DownloadedJar;
 
@@ -25,7 +25,7 @@ impl platform::IPlatform for ViaVersionAPI {
 
     fn get_download_link(&self, project: &String, _version: &String, _build: &String) -> String {
         let fallback_channel = fallback_channel(&project);
-        let channel_selected = controllers::clap_get_one_or_fallback(&"channel".to_string(), &fallback_channel);
+        let channel_selected = download_controllers::clap_get_one_or_fallback(&"channel".to_string(), &fallback_channel);
 
         // Check if the channel is valid
         if !is_valid_channel(&channel_selected) {
@@ -56,7 +56,7 @@ impl platform::IPlatform for ViaVersionAPI {
         }
 
         let fallback_channel = fallback_channel(&project);
-        let channel_selected = controllers::clap_get_one_or_fallback(&"channel".to_string(), &fallback_channel);
+        let channel_selected = download_controllers::clap_get_one_or_fallback(&"channel".to_string(), &fallback_channel);
 
         // Check if the channel is valid
         if !is_valid_channel(&channel_selected) {

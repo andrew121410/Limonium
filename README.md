@@ -25,8 +25,6 @@ It will download the software and check the hash of the file to make sure it dow
 2. [Purpur](https://github.com/PurpurMC/Purpur) -> `./limonium download purpur 1.21.1`
 3. [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) -> `./limonium download pufferfish 1.21.1`
 4. [Geyser](https://github.com/GeyserMc/Geyser) -> `./limonium download geyser 2.1.0` (default is geyser-standalone)
-6. [Spigot](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/browse) -> `./limonium download spigot 1.21.1` (Not recommended)\
-__If you choose Spigot then it will install BuildTools.jar to ./lmtmp/ then run it__
 
 ### Proxies
 
@@ -65,6 +63,35 @@ Limonium is not affiliated with any of the projects listed.
 
 ```
 ./limonium download paper 1.21.1 --o ./mc-servers/hub/Paper.jar
+```
+
+## Compile Function
+
+The compile function will compile the software you specify, and put it in the directory you specify.
+
+All the software will be downloaded & compiled in the ./limonium-compile directory you can delete at any time.
+
+### Softwares
+
+1. [Spigot](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/browse) -> `./limonium compile spigot server.jar --version 1.21.1` (Not recommended to use)
+2. [PlotSquared](https://github.com/IntellectualSites/PlotSquared) -> `./limonium compile plotsquared PlotSquared.jar`
+
+### Examples
+
+### Optional Compile Arguments
+1. --branch `The branch to use (If you don't specify a branch, it will use the default branch)`
+2. --version `The version to use (used only for Spigot for now)`
+
+### Compile Usage
+
+*Usage: &lt;software&gt; &lt;output&gt;*
+
+```
+./limonium compile spigot server.jar --version 1.21.1
+```
+
+``` 
+./limonium compile plotsquared PlotSquared.jar
 ```
 
 ## Backup Function

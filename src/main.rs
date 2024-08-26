@@ -6,23 +6,23 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
-use std::{env, fs, process};
 use std::env::temp_dir;
 use std::ops::Index;
 use std::path::{Path, PathBuf};
 use std::string::String;
 use std::time::Instant;
+use std::{env, fs, process};
 
-use clap::{ArgAction, ArgMatches};
 use clap::builder::TypedValueParser;
+use clap::{ArgAction, ArgMatches};
 use colored::Colorize;
 
 use crate::backup::BackupFormat;
-use crate::controllers::spigotmc::SpigotAPI;
 use crate::log_search::LogSearch;
 use crate::objects::DownloadedJar::DownloadedJar;
 
-mod controllers;
+mod compile_controllers;
+mod download_controllers;
 mod hash_utils;
 mod github_utils;
 mod backup;
@@ -53,6 +53,33 @@ async fn main() {
             .required(false))
         .subcommand(clap::Command::new("self-update")
             .about("Updates Limonium"))
+        .subcommand(clap::Command::new("compile")
+            .about("Compiles software")
+            .arg(clap::Arg::new("software")
+                .help("The software to compile (paper, spigot, etc)")
+                .action(ArgAction::Set)
+                .required(true)
+                .index(1))
+            .arg(clap::Arg::new("path")
+                .help("The path to compile the software to (example: server.jar or ./server.jar or ./servers/hub/server.jar)")
+                .short('o')
+                .long("output")
+                .aliases(["o", "n", "name"])
+                .action(ArgAction::Set)
+                .index(2)
+                .required(true))
+            .arg(clap::Arg::new("version")
+                .long("version")
+                .help("The version of the software to compile")
+                .action(ArgAction::Set)
+                .required(false))
+            .arg(clap::Arg::new("branch")
+                .help("The branch to compile")
+                .short('b')
+                .long("branch")
+                .aliases(["b"])
+                .action(ArgAction::Set)
+                .required(false)))
         .subcommand(clap::Command::new("download")
             .about("Downloads a server jar")
             .arg(clap::Arg::new("software")
@@ -220,6 +247,10 @@ async fn main() {
             unsafe { SUB_COMMAND_ARG_MATCHES = Some(download_matches.clone()); }
             handle_download(&download_matches).await;
         }
+        Some(("compile", compile_matches)) => {
+            unsafe { SUB_COMMAND_ARG_MATCHES = Some(compile_matches.clone()); }
+            compile_controllers::CompileController::handle_compile(&compile_matches).await;
+        }
         Some(("backup", backup_matches)) => {
             unsafe { SUB_COMMAND_ARG_MATCHES = Some(backup_matches.clone()); }
             handle_backup(&backup_matches).await;
@@ -257,25 +288,26 @@ async fn handle_download(download_matches: &ArgMatches) {
     let mut path_string = download_matches.get_one::<String>("path").unwrap_or(&temp).to_string();
 
     // Check if the software is supported
-    if !controllers::is_valid_platform(&software) {
+    if !download_controllers::is_valid_platform(&software) {
         println!("{} {} {} {}", format!("Something went wrong!").red().bold(), format!("Project").yellow(), format!("{}", &software).red(), format!("is not valid!").yellow());
         process::exit(102);
     }
 
     // Handle SpigotMC
     if software.eq_ignore_ascii_case("spigot") {
-        if path_string.eq("") {
-            path_string.push_str("./spigot-");
-            path_string.push_str(&version);
-            path_string.push_str(".jar");
-        }
+        // If you want to download Spigot you can't so you'll have to compile it
+        // Like ./limonium compile spigot --version 1.21.1 --o server.jar
+        println!("{} {}", format!("Something went wrong!").red().bold(), format!("You can't download Spigot!").yellow());
+        println!("{}", format!("You'll have to compile it!").yellow());
 
-        SpigotAPI::download_build_tools();
-        SpigotAPI::run_build_tools(&version, &path_string);
+        // Show example
+        println!("{}", format!("Example:").yellow());
+        println!("{}", format!("./limonium compile spigot server.jar --version 1.21.1").green());
+
         return; // Don't continue
     }
 
-    let platform = controllers::get_platform(&software);
+    let platform = download_controllers::get_platform(&software);
 
     // Get the latest version if the version is "latest" (use at your own risk)
     if version.eq_ignore_ascii_case("latest") {
@@ -327,7 +359,7 @@ async fn handle_download(download_matches: &ArgMatches) {
         downloaded_jar = custom_download_function_result.unwrap();
     } else {
         // If there's no custom download functionality, download the jar to the temp directory
-        downloaded_jar = controllers::download_jar_to_temp_dir_with_progress_bar(&download_link).await;
+        downloaded_jar = download_controllers::download_jar_to_temp_dir_with_progress_bar(&download_link).await;
     }
 
     // Verify the hash of the downloaded jar in the temp directory
@@ -357,7 +389,7 @@ async fn handle_download(download_matches: &ArgMatches) {
 
         // Download the JVM Downgrader to the temp directory
         let jvm_downgrader_download_link = "https://github.com/unimined/JvmDowngrader/releases/download/1.1.2/jvmdowngrader-1.1.2-all.jar".to_string();
-        let jvm_downgrader_downloaded_jar = controllers::download_jar_to_temp_dir_with_progress_bar(&jvm_downgrader_download_link).await;
+        let jvm_downgrader_downloaded_jar = download_controllers::download_jar_to_temp_dir_with_progress_bar(&jvm_downgrader_download_link).await;
 
         // Move the jvmDowngrader jar to the temp directory we created for it.
         let current_path = jvm_downgrader_downloaded_jar.temp_jar_path;
@@ -433,7 +465,7 @@ async fn handle_download(download_matches: &ArgMatches) {
     }
 
     // Copy the downloaded jar to the destination
-    controllers::copy_jar_from_temp_dir_to_dest(&downloaded_jar.temp_jar_name, &path_string);
+    download_controllers::copy_jar_from_temp_dir_to_dest(&downloaded_jar.temp_jar_name, &path_string);
 
     let duration = start.elapsed().as_millis().to_string();
     println!("{} {} {} {}", format!("Downloaded JAR:").green().bold(), format!("{}", &path_string.as_str()).blue().bold(), format!("Time In Milliseconds:").purple().bold(), format!("{}", &duration).yellow().bold());

@@ -5,7 +5,7 @@ use std::process::Command;
 use colored::Colorize;
 use regex::Regex;
 
-use crate::controllers;
+use crate::download_controllers;
 use crate::hash_utils::Hash;
 use crate::objects::DownloadedJar::DownloadedJar;
 
@@ -30,8 +30,8 @@ pub async fn extract_file_fingerprint_hash(url: &String) -> Hash {
 
 // Returns file name found in the /tmp directory
 pub async fn jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the_tmp_directory(_project: &String, _version: &String, _build: &String, link: &String, regex: &str) -> Option<DownloadedJar> {
-    let random_zip_name = controllers::random_file_name(&".zip".to_string());
-    let random_folder_name = controllers::random_file_name(&"".to_string());
+    let random_zip_name = download_controllers::random_file_name(&".zip".to_string());
+    let random_folder_name = download_controllers::random_file_name(&"".to_string());
 
     // Create a folder in the temp directory with a random name
     let created_folder = env::temp_dir().join(&random_folder_name);
@@ -62,7 +62,7 @@ pub async fn jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in
 
     // Find the .jar using the regex
     let jar_pattern = Regex::new(regex).unwrap();
-    let jar_files = controllers::find_jar_files(&created_folder, &jar_pattern);
+    let jar_files = download_controllers::find_jar_files(&created_folder, &jar_pattern);
 
     let mut the_jar_file_path: Option<PathBuf> = None;
     // Find the jar file (should only be one)
@@ -80,7 +80,7 @@ pub async fn jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in
     let jar_file_name = the_jar_file_path.clone().unwrap().file_name().unwrap().to_str().unwrap().to_string();
 
     // Generate a random name for the jar file
-    let random_jar_name = controllers::random_file_name(&".jar".to_string());
+    let random_jar_name = download_controllers::random_file_name(&".jar".to_string());
 
     // Move the jar file to the temp directory with the random name
     let final_jar_path = env::temp_dir().join(&random_jar_name);

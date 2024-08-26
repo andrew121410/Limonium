@@ -12,7 +12,7 @@ use regex::Regex;
 use reqwest::{Client, header};
 use uuid::Uuid;
 
-use crate::controllers::platform::IPlatform;
+use crate::download_controllers::platform::IPlatform;
 use crate::objects::DownloadedJar::DownloadedJar;
 use crate::SUB_COMMAND_ARG_MATCHES;
 

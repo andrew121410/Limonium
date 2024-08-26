@@ -1,31 +1,39 @@
-pub mod bungeecord;
-
 use std::fs;
 use std::io::{BufRead, BufReader};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::string::String;
 use std::time::Instant;
 
 use colored::Colorize;
 
-// Unfortunately there’s no download site for Spigot. So we have to use BuildTools to compile it...
 pub struct SpigotAPI;
 
 impl SpigotAPI {
-    pub fn download_build_tools() {
-        fs::create_dir_all("./lmtmp/").expect("Failed to create lmtmp folder?");
+    pub fn handle_spigot(compile_path: &PathBuf, version: &String, path: &mut String) {
+        // In the limonium-compile folder, we will create a new folder called spigot
+        let spigot_path = compile_path.join("spigot");
+        if !spigot_path.exists() {
+            fs::create_dir(&spigot_path).expect("Failed to create spigot folder?");
+        }
 
+        SpigotAPI::download_build_tools(&spigot_path);
+        SpigotAPI::run_build_tools(&spigot_path, &version, &path);
+    }
+
+    pub fn download_build_tools(compile_path: &PathBuf) {
         let _output = Command::new("wget")
             .arg("-O")
-            .arg("./lmtmp/BuildTools.jar")
+            .arg("./BuildTools.jar")
             .arg("https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar")
+            .current_dir(compile_path)
             .output()
             .expect("Downloading BuildTools failed?");
 
-        println!("{}", format!("Installed BuildTools.jar to ./lmtmp/").yellow())
+        println!("{}", format!("Downloaded BuildTools.jar").green());
     }
 
-    pub fn run_build_tools(version: &String, path: &String) {
+    pub fn run_build_tools(compile_path: &PathBuf, version: &String, path: &String) {
         println!("{} {}", format!("Please wait patiently while BuildTools compiles Spigot for you!").yellow(), format!("If there's no changes BuildTools will skip compiling \n\r If you have left the folder there from last time").red());
 
         let start = Instant::now();
@@ -36,7 +44,7 @@ impl SpigotAPI {
             .arg("--rev")
             .arg(&version)
             .arg("--compile-if-changed")
-            .current_dir("./lmtmp/")
+            .current_dir(compile_path)
             .stdout(Stdio::piped())
             .spawn()
             .expect("Failed to run BuildTools?");
@@ -50,7 +58,8 @@ impl SpigotAPI {
 
         command.wait().expect("Failed to wait on child process");
 
-        let mut copy_from = String::from("./lmtmp/spigot-");
+        let compile_path_string = compile_path.to_str().unwrap();
+        let mut copy_from = String::from(compile_path_string.to_string() + "/spigot-");
         copy_from.push_str(&version);
         copy_from.push_str(".jar");
 
