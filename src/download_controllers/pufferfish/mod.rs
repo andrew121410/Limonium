@@ -31,9 +31,14 @@ impl platform::IPlatform for PufferfishAPI {
     }
 
     fn get_jar_name(&self, _project: &String, version: &String, _build: &String) -> String {
+        let version_number: f32 = version.split('.').take(2).collect::<Vec<&str>>().join(".").parse().unwrap_or(0.0);
         let mut to_return = String::from("pufferfish-paperclip-");
         to_return.push_str(&version);
-        to_return.push_str("-R0.1-SNAPSHOT-reobf.jar");
+        if version_number >= 1.21 {
+            to_return.push_str("-R0.1-SNAPSHOT-mojmap.jar");
+        } else {
+            to_return.push_str("-R0.1-SNAPSHOT-reobf.jar");
+        }
         return to_return;
     }
 
@@ -151,6 +156,12 @@ mod pufferfish_tests {
         let expected_version = String::from("1.19.4");
 
         let version = get_minecraft_version_from_page(&url).await;
-        assert_eq!(version, expected_version);
+        assert_eq!(version, Some(expected_version));
+
+        let url = String::from("https://ci.pufferfish.host/job/Pufferfish-1.20/");
+        let expected_version = String::from("1.20.4");
+
+        let version = get_minecraft_version_from_page(&url).await;
+        assert_eq!(version, Some(expected_version));
     }
 }
