@@ -27,6 +27,7 @@ impl CompileController {
 
         let optional_version = compile_matches.get_one::<String>("version");
         let optional_branch = compile_matches.get_one::<String>("branch"); // We need to implement this
+        let our_optional_branch = optional_branch.map(|branch| branch.to_string());
 
         // Check if Java is installed on the system
         if !is_java_installed() {
@@ -43,7 +44,7 @@ impl CompileController {
 
             spigotmc::SpigotAPI::handle_spigot(&compile_dir, optional_version.unwrap(), &mut path_string);
         } else if software.eq_ignore_ascii_case("PlotSquared") {
-            plotsquared::PlotSquaredAPI::handle_plotsquared(&compile_dir, &mut path_string).await;
+            plotsquared::PlotSquaredAPI::handle_plotsquared(&compile_dir, &mut path_string, our_optional_branch).await;
         } else {
             println!("{}", format!("Unknown software: {}", software).red());
         }

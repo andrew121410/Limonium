@@ -7,10 +7,10 @@ use std::path::PathBuf;
 pub(crate) struct PlotSquaredAPI;
 
 impl PlotSquaredAPI {
-    pub async fn handle_plotsquared(compile_path: &PathBuf, path: &mut String) {
+    pub async fn handle_plotsquared(compile_path: &PathBuf, path: &mut String, branch: Option<String>) {
         let config = SoftwareConfig {
             repo_url: "https://github.com/IntellectualSites/PlotSquared.git".to_string(),
-            branch: None,
+            branch,
             build_command: "gradlew build".to_string(),
             jar_regex: r"plotsquared-.*\.jar".to_string(),
             jar_location: "Bukkit/build/libs/".to_string(),
