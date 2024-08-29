@@ -111,12 +111,14 @@ fn run_build_command(software_path: &PathBuf, build_command: &str) -> Result<std
     // Convert the main command to Unix format
     convert_to_unix_format(&main_command_path)?;
 
-    let mut nouse = Command::new(main_command);
-    let mut command = nouse
-        .args(&args)
+    let mut command = Command::new(main_command_path);
+    command.args(&args)
         .current_dir(software_path)
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit());
+
+    // Debug print for the full command
+    println!("Full command: {:?}", command);
 
     let mut process = command.spawn()?;
     process.wait()
