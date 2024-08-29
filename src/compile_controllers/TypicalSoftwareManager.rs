@@ -14,6 +14,9 @@ pub struct SoftwareConfig {
     pub build_command: String,
     pub jar_regex: String,
     pub jar_location: String,
+    pub before_building_function: Option<Box<dyn Fn(&PathBuf)>>,
+    pub custom_find_jar_function: Option<Box<dyn Fn(&PathBuf) -> Result<PathBuf, std::io::Error>>>,
+    pub after_building_function: Option<Box<dyn Fn(&PathBuf)>>,
 }
 
 pub async fn handle_software(config: SoftwareConfig, compile_path: &PathBuf, path: &mut String) {
@@ -26,9 +29,19 @@ pub async fn handle_software(config: SoftwareConfig, compile_path: &PathBuf, pat
 
     // Print software path
     println!("{}", format!("compile_path: {}", compile_path.display()).cyan());
-    println!("{}", format!("Software path: {}", software_path.display()).cyan());
+    println!("{}", format!("software_path: {}", software_path.display()).cyan());
 
-    build(&software_path, &config.build_command, path, &config.jar_regex, &config.jar_location);
+    // Call before_building_function if provided
+    if let Some(before_build) = &config.before_building_function {
+        before_build(&software_path);
+    }
+
+    build(&software_path, &config.build_command, path, &config.jar_regex, &config.jar_location, &config.custom_find_jar_function);
+
+    // Call after_building_function if provided
+    if let Some(after_build) = &config.after_building_function {
+        after_build(&software_path);
+    }
 }
 
 async fn git_clone(repo_url: &str, branch: &Option<String>, compile_path: &PathBuf) {
@@ -124,7 +137,7 @@ fn run_build_command(software_path: &PathBuf, build_command: &str) -> Result<std
     process.wait()
 }
 
-fn build(software_path: &PathBuf, build_command: &str, path: &String, jar_regex: &str, jar_location: &str) {
+fn build(software_path: &PathBuf, build_command: &str, path: &String, jar_regex: &str, jar_location: &str, custom_find_jar_function: &Option<Box<dyn Fn(&PathBuf) -> Result<PathBuf, std::io::Error>>>) {
     println!(
         "{} {}",
         format!("Please wait patiently while the software compiles for you!").yellow(),
@@ -151,40 +164,42 @@ fn build(software_path: &PathBuf, build_command: &str, path: &String, jar_regex:
 
     println!("{}", format!("Software compiled successfully!").green());
 
-    let libs_dir = software_path.join(jar_location);
-
-    println!("{}", format!("Looking for the JAR file in {}", libs_dir.display()).cyan());
-
-    let jar_files: Vec<PathBuf> = download_controllers::find_jar_files(&libs_dir, &Regex::new(jar_regex).unwrap());
-
-    if jar_files.is_empty() {
-        eprintln!("{}", "No JAR files found in the libs directory.".red());
-        return;
-    }
-
-    jar_files.iter().for_each(|jar_file| {
-        println!("{}", format!("Found JAR file: {}", jar_file.display()).cyan());
-    });
-
-    let our_jar_file = jar_files.iter().find(|&jar_file| {
-        let file_name = jar_file.file_name().unwrap().to_string_lossy();
-        println!("{}", format!("Checking file: {}", file_name).cyan());
-
-        !file_name.contains("-sources") && !file_name.contains("-javadoc")
-    });
-
-    match our_jar_file {
-        Some(jar_path) => {
-            fs::rename(&jar_path, &path).expect("Failed to move the JAR file");
-            println!(
-                "{}",
-                format!("Moved {} to {}", jar_path.file_name().unwrap().to_str().unwrap(), path.as_str()).green()
-            );
+    let jar_file = if let Some(custom_find_jar) = custom_find_jar_function {
+        match custom_find_jar(software_path) {
+            Ok(jar) => jar,
+            Err(e) => {
+                eprintln!("{}", format!("Failed to find JAR file: {:?}", e).red());
+                return;
+            }
         }
-        None => {
-            eprintln!("{}", "No matching JAR file found in the libs directory.".red());
+    } else {
+        let libs_dir = software_path.join(jar_location);
+        println!("{}", format!("Looking for the JAR files in {}", libs_dir.display()).cyan());
+        let jar_files: Vec<PathBuf> = download_controllers::find_jar_files(&libs_dir, &Regex::new(jar_regex).unwrap());
+
+        if jar_files.is_empty() {
+            eprintln!("{}", "No JAR files found in the libs directory.".red());
+            return;
         }
-    }
+
+        jar_files.iter().for_each(|jar_file| {
+            println!("{}", format!("Found JAR file: {}", jar_file.file_name().expect("Couldn't get file_name").to_str().unwrap().to_string()).cyan());
+        });
+
+        jar_files.into_iter().find(|jar_file| {
+            let file_name = jar_file.file_name().unwrap().to_string_lossy();
+            println!("{}", format!("Checking file: {}", file_name).cyan());
+
+            !file_name.contains("-sources") && !file_name.contains("-javadoc")
+        }).expect("No matching JAR file found in the libs directory.")
+    };
+
+    println!("{}", format!("Found Correct JAR file: {}", jar_file.file_name().unwrap().to_str().unwrap().to_string()).green());
+
+    // Copy the JAR file to the output path
+    let path = PathBuf::from(path);
+    fs::copy(&jar_file, &path).expect("Failed to copy the JAR file");
+    println!("{}", format!("Copied JAR file to: {}", path.display()).green());
 
     let duration = start.elapsed();
     println!(
