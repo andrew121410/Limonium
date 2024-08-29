@@ -6,6 +6,7 @@ use std::process::Command;
 
 mod spigotmc;
 mod plotsquared;
+mod TypicalSoftwareManager;
 
 pub(crate) struct CompileController;
 
@@ -25,7 +26,7 @@ impl CompileController {
         let mut path_string = compile_matches.get_one::<String>("path").unwrap_or(&temp).to_string();
 
         let optional_version = compile_matches.get_one::<String>("version");
-        let optional_branch = compile_matches.get_one::<String>("branch");
+        let optional_branch = compile_matches.get_one::<String>("branch"); // We need to implement this
 
         // Check if Java is installed on the system
         if !is_java_installed() {
