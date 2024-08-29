@@ -2,8 +2,17 @@
 
 ## Limonium is a tiny Minecraft Server management tool.
 
+> [!WARNING]
+> I am aware that the code in this project is messy, as I started it to learn Rust. 
+> Although I am not particularly fond of the Rust programming language, I am committed to continuing my work on this project.
+> As I'm lazy and don't want to rewrite the entire project in another language lol
+
+### Supported Platforms:
+- x86_64-unknown-linux-gnu
+
 ### Features:
 - Can download & update MC Server Software
+- Can compile software (Spigot, PlotSquared etc)
 - Can backup your Minecraft Server
 - Can search in logs for specific text
 
