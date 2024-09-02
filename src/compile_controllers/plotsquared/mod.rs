@@ -24,6 +24,7 @@ impl PlotSquaredAPI {
             })),
             custom_find_jar_function: None,
             after_building_function: None,
+            delete_after_building: true,
         };
 
         TypicalSoftwareManager::handle_software(config, compile_path, path).await;

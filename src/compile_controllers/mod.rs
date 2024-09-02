@@ -7,6 +7,7 @@ use std::process::Command;
 mod spigotmc;
 mod plotsquared;
 mod TypicalSoftwareManager;
+mod mcmmo;
 
 pub(crate) struct CompileController;
 
@@ -45,6 +46,8 @@ impl CompileController {
             spigotmc::SpigotAPI::handle_spigot(&compile_dir, optional_version.unwrap(), &mut path_string);
         } else if software.eq_ignore_ascii_case("PlotSquared") {
             plotsquared::PlotSquaredAPI::handle_plotsquared(&compile_dir, &mut path_string, our_optional_branch).await;
+        } else if software.eq_ignore_ascii_case("mcMMO") {
+            mcmmo::mcMMOAPI::handle_mcmmo(&compile_dir, &mut path_string, our_optional_branch).await;
         } else {
             println!("{}", format!("Unknown software: {}", software).red());
         }

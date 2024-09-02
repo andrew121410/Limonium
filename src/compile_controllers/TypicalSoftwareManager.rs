@@ -1,12 +1,13 @@
 use crate::download_controllers;
 use colored::Colorize;
 use regex::Regex;
-use std::fs;
 use std::io::BufRead;
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::time::Instant;
+use std::sync::mpsc;
+use std::time::{Duration, Instant};
+use std::{fs, thread};
 
 pub struct SoftwareConfig {
     pub repo_url: String,
@@ -17,6 +18,7 @@ pub struct SoftwareConfig {
     pub before_building_function: Option<Box<dyn Fn(&PathBuf)>>,
     pub custom_find_jar_function: Option<Box<dyn Fn(&PathBuf) -> Result<PathBuf, std::io::Error>>>,
     pub after_building_function: Option<Box<dyn Fn(&PathBuf)>>,
+    pub delete_after_building: bool,
 }
 
 pub async fn handle_software(config: SoftwareConfig, compile_path: &PathBuf, path: &mut String) {
@@ -41,6 +43,12 @@ pub async fn handle_software(config: SoftwareConfig, compile_path: &PathBuf, pat
     // Call after_building_function if provided
     if let Some(after_build) = &config.after_building_function {
         after_build(&software_path);
+    }
+
+    // Delete the software path if delete_after_building is true
+    if config.delete_after_building {
+        fs::remove_dir_all(&software_path).expect("Failed to delete software path");
+        println!("{}", format!("Deleted software path: {}", software_path.display()).green());
     }
 }
 
@@ -110,21 +118,30 @@ fn run_build_command(software_path: &PathBuf, build_command: &str) -> Result<std
     let main_command = parts.next().unwrap();
     let args: Vec<&str> = parts.collect();
 
-    let main_command_path = software_path.join(main_command);
-    if !main_command_path.exists() {
-        return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Build command not found"));
+    // Check if the main command is maven
+    if main_command.contains("mvn") && !check_if_maven_is_installed() {
+        eprintln!("{}", format!("Maven is not installed on your system. Please install Maven and try again.").red());
+        return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Maven is not installed"));
     }
 
-    // Main command path
-    println!("{}", format!("Main command path: {}", main_command_path.display()).cyan());
+    // If the executable is in the software path like gradlew NOT maven though
+    let main_command_path = software_path.join(main_command);
+    if main_command_path.exists() {
+        // Main command path
+        println!("{}", format!("Main command path: {}", main_command_path.display()).cyan());
 
-    // Ensure the main command is executable
-    ensure_executable(&main_command_path)?;
+        // Ensure the main command is executable
+        ensure_executable(&main_command_path)?;
 
-    // Convert the main command to Unix format
-    convert_to_unix_format(&main_command_path)?;
+        // Convert the main command to Unix format
+        convert_to_unix_format(&main_command_path)?;
+    }
 
-    let mut command = Command::new(main_command_path);
+    let mut command = Command::new(if main_command_path.exists() {
+        main_command_path.as_path()
+    } else {
+        Path::new(main_command)
+    });
     command.args(&args)
         .current_dir(software_path)
         .stdout(Stdio::inherit())
@@ -164,14 +181,11 @@ fn build(software_path: &PathBuf, build_command: &str, path: &String, jar_regex:
 
     println!("{}", format!("Software compiled successfully!").green());
 
-    let jar_file = if let Some(custom_find_jar) = custom_find_jar_function {
-        match custom_find_jar(software_path) {
-            Ok(jar) => jar,
-            Err(e) => {
-                eprintln!("{}", format!("Failed to find JAR file: {:?}", e).red());
-                return;
-            }
-        }
+    let mut jar_file: PathBuf;
+
+    // If there's a custom find_jar_function, use it
+    if let Some(custom_find_jar) = custom_find_jar_function {
+        jar_file = custom_find_jar(software_path).expect("Failed to find JAR file");
     } else {
         let libs_dir = software_path.join(jar_location);
         println!("{}", format!("Looking for the JAR files in {}", libs_dir.display()).cyan());
@@ -186,12 +200,59 @@ fn build(software_path: &PathBuf, build_command: &str, path: &String, jar_regex:
             println!("{}", format!("Found JAR file: {}", jar_file.file_name().expect("Couldn't get file_name").to_str().unwrap().to_string()).cyan());
         });
 
-        jar_files.into_iter().find(|jar_file| {
+        // If there is only one JAR file, use it
+        if jar_files.len() == 1 {
+            jar_file = jar_files[0].clone();
+        }
+
+        // If there are multiple JAR files, let's try to sort them
+        let did_we_find_one_auto: Option<PathBuf> = jar_files.clone().into_iter().find(|jar_file| {
             let file_name = jar_file.file_name().unwrap().to_string_lossy();
             println!("{}", format!("Checking file: {}", file_name).cyan());
 
             !file_name.contains("-sources") && !file_name.contains("-javadoc")
-        }).expect("No matching JAR file found in the libs directory.")
+        });
+
+        if did_we_find_one_auto.is_some() {
+            jar_file = did_we_find_one_auto.unwrap();
+        } else {
+            // Else let the user choose let there be like a timer to pick within 30 seconds else fail
+            println!("{}", "Multiple JAR files found. Please choose one:".yellow());
+            for (index, jar_file) in jar_files.iter().enumerate() {
+                println!("{}: {}", index, jar_file.file_name().expect("Couldn't get file_name").to_str().unwrap());
+            }
+
+            let (tx, rx) = mpsc::channel();
+            let thread = thread::spawn(move || {
+                let mut input = String::new();
+                std::io::stdin().read_line(&mut input).expect("Failed to read line");
+                tx.send(input).expect("Failed to send input");
+            });
+
+            let input = match rx.recv_timeout(Duration::from_secs(30)) {
+                Ok(input) => input,
+                Err(_) => {
+                    eprintln!("{}", "No input received within 30 seconds. Exiting.".red());
+                    return;
+                }
+            };
+
+            let index: usize = match input.trim().parse() {
+                Ok(index) => index,
+                Err(_) => {
+                    eprintln!("{}", "Failed to parse input".red());
+                    return;
+                }
+            };
+
+            if index >= jar_files.len() {
+                eprintln!("{}", "Invalid index".red());
+                return;
+            }
+
+            jar_file = jar_files[index].clone();
+            println!("{}", format!("Found Correct JAR file: {}", jar_file.file_name().unwrap().to_str().unwrap().to_string()).green());
+        }
     };
 
     println!("{}", format!("Found Correct JAR file: {}", jar_file.file_name().unwrap().to_str().unwrap().to_string()).green());
@@ -206,4 +267,15 @@ fn build(software_path: &PathBuf, build_command: &str, path: &String, jar_regex:
         "{}",
         format!("Build completed in {:.2?} seconds", duration).cyan()
     );
+}
+
+fn check_if_maven_is_installed() -> bool {
+    let output = Command::new("mvn")
+        .arg("-version")
+        .output();
+
+    match output {
+        Ok(output) => output.status.success(),
+        Err(_) => false,
+    }
 }
