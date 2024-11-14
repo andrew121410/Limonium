@@ -5,7 +5,7 @@ use std::string::String;
 use async_trait::async_trait;
 use colored::Colorize;
 
-use crate::{download_controllers, number_utils};
+use crate::{clap_utils, download_controllers, number_utils};
 use crate::download_controllers::platform;
 use crate::hash_utils::Hash;
 use crate::objects::DownloadedJar::DownloadedJar;
@@ -42,7 +42,7 @@ impl platform::IPlatform for PaperAPI {
         versions.retain(|x| !x.contains("-pre"));
 
         // See if we don't include snapshot versions
-        let dont_include_snapshot_versions: bool = download_controllers::clap_get_flag_or_fallback(&String::from("no-snapshot-version"));
+        let dont_include_snapshot_versions: bool = clap_utils::clap_get_flag_or_false(&String::from("no-snapshot-version"));
         if dont_include_snapshot_versions {
             versions.retain(|x| !x.contains("-SNAPSHOT"));
         }
@@ -119,7 +119,7 @@ impl platform::IPlatform for PaperAPI {
 
         if paper_build_info_json.downloads.is_some() {
             let downloads = paper_build_info_json.downloads.unwrap();
-            let channel = download_controllers::clap_get_one_or_fallback(&String::from("channel"), &String::from(DEFAULT_PAPER_CHANNEL));
+            let channel = clap_utils::clap_get_one_or_fallback(&String::from("channel"), &String::from(DEFAULT_PAPER_CHANNEL));
 
             // Check if channel exists
             if !downloads.contains_key(&channel) {

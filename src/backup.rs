@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
 
-use crate::download_controllers;
+use crate::{clap_utils, download_controllers};
 use chrono::{NaiveDate, Utc};
 use colored::Colorize;
 use indicatif::{HumanDuration, ProgressBar, ProgressStyle};
@@ -129,7 +129,7 @@ impl Backup {
                     }
                 }
 
-                let i_override = download_controllers::clap_get_one_or_fallback(&"I".to_string(), &"NONE".to_string());
+                let i_override = clap_utils::clap_get_one_or_fallback(&"I".to_string(), &"NONE".to_string());
                 if self.backup_format == BackupFormat::TarZst {
                     // If we have a compression level, use it
                     if self.compression_level.is_some() && i_override.eq("NONE") {
@@ -224,7 +224,7 @@ impl Backup {
             }
         };
 
-        let verbose = download_controllers::clap_get_flag_or_fallback(&"verbose".to_string());
+        let verbose = clap_utils::clap_get_flag_or_false(&"verbose".to_string());
         // Verbose before
         if verbose { // Capture the output of the backup command
             cmd.stdout(Stdio::piped());

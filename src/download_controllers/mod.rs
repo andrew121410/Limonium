@@ -1,27 +1,25 @@
-use std::{fs, io};
 use std::env::temp_dir;
 use std::fs::File;
 use std::io::{Cursor, Write};
 use std::path::{Path, PathBuf};
+use std::{fs, io};
 
-use clap::ArgMatches;
 use colored::Colorize;
 use futures_util::stream::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use regex::Regex;
-use reqwest::{Client, header};
+use reqwest::{header, Client};
 use uuid::Uuid;
 
 use crate::download_controllers::platform::IPlatform;
 use crate::objects::DownloadedJar::DownloadedJar;
-use crate::SUB_COMMAND_ARG_MATCHES;
 
-pub mod platform;
-pub mod papermc;
-pub mod purpurmc;
-pub mod pufferfish;
-pub mod spigotmc;
 pub mod geysermc;
+pub mod papermc;
+pub mod platform;
+pub mod pufferfish;
+pub mod purpurmc;
+pub mod spigotmc;
 mod viaversion;
 
 pub fn get_platform(the_project: &String) -> &dyn IPlatform {
@@ -56,22 +54,6 @@ pub fn is_valid_platform(the_project: &String) -> bool {
     };
 }
 
-pub fn clap_get_one_or_fallback(flag: &String, fallback: &String) -> String {
-    unsafe {
-        let args: &ArgMatches = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
-        let flag = args.get_one::<String>(flag).unwrap_or(&fallback);
-        return flag.to_string();
-    }
-}
-
-pub fn clap_get_flag_or_fallback(flag: &String) -> bool {
-    unsafe {
-        let args: &ArgMatches = SUB_COMMAND_ARG_MATCHES.as_ref().expect("SUB_COMMAND_ARG_MATCHES is not set");
-        let flag = args.get_flag(flag);
-        return flag;
-    }
-}
-
 pub fn random_file_name(fileExtension: &String) -> String {
     let mut tmp_jar_name = String::from("limonium-");
     tmp_jar_name.push_str(&Uuid::new_v4().to_string());
@@ -83,10 +65,7 @@ pub async fn download_jar_to_temp_dir(link: &String) -> DownloadedJar {
     let tmp_jar_name = random_file_name(&".jar".to_string());
 
     let mut headers = header::HeaderMap::new();
-    headers.insert(
-        header::USER_AGENT,
-        "rust-reqwest/limonium".parse().unwrap(),
-    );
+    headers.insert(header::USER_AGENT, "rust-reqwest/limonium".parse().unwrap());
 
     // This seems to break some downloads?
     // headers.insert(
@@ -108,7 +87,11 @@ pub async fn download_jar_to_temp_dir(link: &String) -> DownloadedJar {
     if !response.status().is_success() {
         println!("{} {}", "Failed to download file from".red(), link);
         println!("{} {}", "Status code:".red(), response.status());
-        println!("{} {}", "Status text:".red(), response.status().canonical_reason().unwrap());
+        println!(
+            "{} {}",
+            "Status text:".red(),
+            response.status().canonical_reason().unwrap()
+        );
     }
 
     let path = temp_dir().join(&tmp_jar_name);
@@ -127,10 +110,7 @@ pub async fn download_jar_to_temp_dir_with_progress_bar(link: &String) -> Downlo
     let tmp_jar_name = random_file_name(&".jar".to_string());
 
     let mut headers = header::HeaderMap::new();
-    headers.insert(
-        header::USER_AGENT,
-        "rust-reqwest/limonium".parse().unwrap(),
-    );
+    headers.insert(header::USER_AGENT, "rust-reqwest/limonium".parse().unwrap());
 
     // This seems to break some downloads?
     // headers.insert(
@@ -155,8 +135,9 @@ pub async fn download_jar_to_temp_dir_with_progress_bar(link: &String) -> Downlo
     let pb = ProgressBar::new(content_length);
     pb.set_style(
         ProgressStyle::default_bar()
-            .template("{spinner:.green} [{elapsed_precise}] {bar} {bytes}/{total_bytes} ({eta})").unwrap()
-            .progress_chars("#>-")
+            .template("{spinner:.green} [{elapsed_precise}] {bar} {bytes}/{total_bytes} ({eta})")
+            .unwrap()
+            .progress_chars("#>-"),
     );
 
     // Create a new file to write the downloaded data
@@ -164,7 +145,12 @@ pub async fn download_jar_to_temp_dir_with_progress_bar(link: &String) -> Downlo
     let mut file = File::create(path).unwrap();
 
     // Create a stream of the file data
-    let mut stream = client.get(link).send().await.expect("Failed to get file data?").bytes_stream();
+    let mut stream = client
+        .get(link)
+        .send()
+        .await
+        .expect("Failed to get file data?")
+        .bytes_stream();
 
     // Loop over the stream and write to the file
     while let Some(item) = stream.next().await {
@@ -172,7 +158,8 @@ pub async fn download_jar_to_temp_dir_with_progress_bar(link: &String) -> Downlo
         let chunk = item.expect("Failed to get chunk");
 
         // Write the chunk to the file
-        file.write_all(&chunk).expect("Failed to write_all of chunk?");
+        file.write_all(&chunk)
+            .expect("Failed to write_all of chunk?");
 
         // Update the progress bar
         pb.inc(chunk.len() as u64);
@@ -189,7 +176,8 @@ pub async fn download_jar_to_temp_dir_with_progress_bar(link: &String) -> Downlo
 }
 
 pub fn copy_jar_from_temp_dir_to_dest(tmp_jar_name: &String, final_path: &String) {
-    fs::copy(temp_dir().join(&tmp_jar_name), &final_path).expect("Failed copying jar from temp directory to final path");
+    fs::copy(temp_dir().join(&tmp_jar_name), &final_path)
+        .expect("Failed copying jar from temp directory to final path");
 }
 
 pub(crate) fn find_jar_files(dir: &Path, jar_pattern: &Regex) -> Vec<PathBuf> {
@@ -201,7 +189,9 @@ pub(crate) fn find_jar_files(dir: &Path, jar_pattern: &Regex) -> Vec<PathBuf> {
                 let path = entry.path();
                 if path.is_file() {
                     if let Some(extension) = path.extension() {
-                        if extension == "jar" && jar_pattern.is_match(path.file_name().unwrap().to_str().unwrap()) {
+                        if extension == "jar"
+                            && jar_pattern.is_match(path.file_name().unwrap().to_str().unwrap())
+                        {
                             jar_files.push(path.clone());
                         }
                     }
