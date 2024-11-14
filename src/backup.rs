@@ -416,73 +416,75 @@ impl Backup {
         Ok(())
     }
 
-    pub fn local_delete_after_time(&self, input: &String) {
-        // Deletes backups after a certain amount of time
-        // Example input: 1m = 1 month, 1w = 1 week, 1d = 1 day
+    pub fn local_delete_after_time(&self, input: &String, always_keep: Option<usize>) {
+        // Deletes backups after a certain amount of time, optionally keeping at least `always_keep` files.
 
         let backup_directory = self.backup_directory.clone();
 
         // Parse the input duration
         let (amount, unit) = input.split_at(input.len() - 1);
-        let amount: i64 = amount.parse().unwrap_or(0);
+        let amount: i64 = match amount.parse() {
+            Ok(n) => n,
+            Err(_) => {
+                eprintln!("Invalid amount provided.");
+                return;
+            }
+        };
 
         // Get the current date
         let current_date = Utc::now().naive_utc().date();
 
-        // For each file in the backup directory
-        for entry in fs::read_dir(&backup_directory).unwrap() {
-            let entry = entry.unwrap();
-            let path = entry.path();
-            if path.is_dir() {
-                continue;
+        // Collect all valid backups
+        let mut backups = fs::read_dir(&backup_directory)
+            .unwrap()
+            .filter_map(|entry| {
+                let entry = entry.ok()?;
+                let path = entry.path();
+                if path.is_file() {
+                    let file_name = path.file_name()?.to_str()?;
+                    let date = extract_date_from_file_name(&file_name.to_string());
+                    if !date.is_empty() && file_name.starts_with(&self.name) {
+                        let date_chrono = NaiveDate::parse_from_str(&date, "%-m-%-d-%Y").ok()?;
+                        let days_difference = (current_date - date_chrono).num_days();
+                        Some((path, days_difference))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        // Sort backups by age, oldest first
+        backups.sort_by_key(|&(_, days_difference)| days_difference);
+
+        for (path, days_difference) in &backups {
+            // Check if `always_keep` is set and if deleting this file would fall below the threshold
+            if let Some(min_count) = always_keep {
+                if backups.len() <= min_count {
+                    println!("Keeping {} as it falls within the always-keep threshold.", path.display());
+                    break;
+                }
             }
 
-            if path.is_file() {
-                let file_name = path.file_name().unwrap().to_str().unwrap();
-                let date = extract_date_from_file_name(&file_name.to_string());
-
-                // If the file name does not contain a date or does not start with the backup name, skip it
-                if date.is_empty() || !file_name.starts_with(&self.name) {
-                    continue;
+            // Determine if the file should be deleted based on the input duration
+            let should_delete = match unit {
+                "m" => *days_difference > amount * 30,
+                "w" => *days_difference > amount * 7,
+                "d" => *days_difference > amount,
+                _ => {
+                    eprintln!("Invalid time unit: {}", unit);
+                    false
                 }
+            };
 
-                let date_chrono = NaiveDate::parse_from_str(&date, "%-m-%-d-%Y").unwrap();
-
-                // Calculate the difference in days between the current date and the backup date
-                let days_difference = (current_date - date_chrono).num_days();
-
-                // Delete if it's older than the input duration
-                match unit {
-                    "m" => {
-                        if days_difference > amount * 30 {
-                            // Delete the file
-                            fs::remove_file(&path).unwrap_or_else(|e| {
-                                eprintln!("Error deleting file: {}", e);
-                            });
-                            println!("{}", format!("(delete-after-time) Deleted file {} in the backup directory it was too OLD", file_name).yellow());
-                        }
-                    }
-                    "w" => {
-                        if days_difference > amount * 7 {
-                            // Delete the file
-                            fs::remove_file(&path).unwrap_or_else(|e| {
-                                eprintln!("Error deleting file: {}", e);
-                            });
-                            println!("{}", format!("(delete-after-time) Deleted file {} in the backup directory it was too OLD", file_name).yellow());
-                        }
-                    }
-                    "d" => {
-                        if days_difference > amount {
-                            // Delete the file
-                            fs::remove_file(&path).unwrap_or_else(|e| {
-                                eprintln!("Error deleting file: {}", e);
-                            });
-                            println!("{}", format!("(delete-after-time) Deleted file {} in the backup directory it was too OLD", file_name).yellow());
-                        }
-                    }
-                    _ => {
-                        eprintln!("Invalid time unit: {}", unit);
-                    }
+            // Delete if it meets deletion criteria
+            if should_delete {
+                if let Err(e) = fs::remove_file(path) {
+                    eprintln!("Error deleting file: {}", e);
+                } else {
+                    println!("Deleted file {} as it was too old.", path.display());
                 }
             }
         }
@@ -756,12 +758,53 @@ mod backup_testing {
         let deletion_input = "7d".to_string();
 
         // Call the local_delete_after_time function
-        backup.local_delete_after_time(&deletion_input);
+        backup.local_delete_after_time(&deletion_input, None);
 
         // Check if the old backup file is deleted
         assert!(!old_backup_file_path.exists(), "Old backup file should be deleted");
 
         // Check if the recent backup file is not deleted
+        assert!(recent_backup_file_path.exists(), "Recent backup file should not be deleted");
+    }
+
+    #[test]
+    fn test_local_delete_after_time_with_always_keep() {
+        // Create a temporary directory for testing
+        let temp_dir_dir_to_backup = tempdir::TempDir::new("directory-to-backup").expect("Failed to create temp dir");
+        let temp_dir_backup_directory = tempdir::TempDir::new("backup-directory").expect("Failed to create temp dir");
+
+        // Define a backup object with a sample configuration
+        let backup = Backup {
+            name: "testing-backup".to_string(),
+            directory_to_backup: temp_dir_dir_to_backup.path().to_string_lossy().to_string(),
+            backup_directory: temp_dir_backup_directory.path().to_path_buf(),
+            backup_format: BackupFormat::TarGz,
+            exclude: None,
+            compression_level: None,
+        };
+
+        // Create a backup file with a date that should be deleted based on the provided input
+        let old_backup_date = Utc::now().naive_utc().date() - Duration::days(10); // Example: 10 days old
+        let old_backup_file_name = format!("{}-{}.tar.gz", backup.name, old_backup_date.format("%-m-%-d-%Y"));
+        let old_backup_file_path = backup.backup_directory.join(&old_backup_file_name);
+        File::create(&old_backup_file_path).expect("Failed to create old backup file");
+
+        // Create a backup file with a recent date that should not be deleted
+        let recent_backup_date = Utc::now().naive_utc().date() - Duration::days(2); // Example: 2 days old
+        let recent_backup_file_name = format!("{}-{}.tar.gz", backup.name, recent_backup_date.format("%-m-%-d-%Y"));
+        let recent_backup_file_path = backup.backup_directory.join(&recent_backup_file_name);
+        File::create(&recent_backup_file_path).expect("Failed to create recent backup file");
+
+        // Define the input for deletion (e.g., 7d for 7 days)
+        let deletion_input = "7d".to_string();
+
+        // Call the local_delete_after_time function with always_keep set to 2
+        backup.local_delete_after_time(&deletion_input, Some(2));
+
+        // Check if the old backup file is not deleted because of the always_keep threshold
+        assert!(old_backup_file_path.exists(), "Old backup file should not be deleted due to always_keep");
+
+        // Check if the recent backup file is also not deleted
         assert!(recent_backup_file_path.exists(), "Recent backup file should not be deleted");
     }
 }

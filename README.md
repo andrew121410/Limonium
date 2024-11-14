@@ -2,11 +2,6 @@
 
 ## Limonium is a tiny Minecraft Server management tool.
 
-> [!WARNING]
-> I am aware that the code in this project is messy, as I started it to learn Rust. 
-> Although I am not particularly fond of the Rust programming language, I am committed to continuing my work on this project.
-> As I'm lazy and don't want to rewrite the entire project in another language lol
-
 ### Supported Platforms:
 - x86_64-unknown-linux-gnu
 
@@ -112,12 +107,13 @@ By default, it will use tar.gz, unless specified otherwise.
 ### Optional Backup Arguments
 1. --format `The format to use (tar.gz, tar.zst, zip)`
 2. --level `The compression level to use (tar.gz 0-9) (tar.zst 1-22) (zip 0-9)`
-2. --exclude `Excludes files from the backup`
-3. --sftp `Uploads the backup to a SFTP server. Example 1: --sftp user@host:22 /remote/path Example 2: --sftp "user@host:22 path/to/key /remote/path"` (**Password Authentication is not supported.**)
-4. --delete-after-upload `Deletes the local backup after uploading it to the SFTP server.`
-5. --ask-before-uploading `Asks before uploading the backup to the SFTP server.`
-6. --local-delete-after-time `Deletes backups locally after a certain amount of time. Example: --local-delete-after-time 1m (1 month) --local-delete-after-time 1w (1 week) --local-delete-after-time 1d (1 day)`
-6. --remote-delete-after-time `Deletes backups remotely after a certain amount of time. Example: --remote-delete-after-time 1m (1 month) --remote-delete-after-time 1w (1 week) --remote-delete-after-time 1d (1 day)`
+3. --exclude `Excludes files from the backup`
+4. --sftp `Uploads the backup to a SFTP server. Example 1: --sftp user@host:22 /remote/path Example 2: --sftp "user@host:22 path/to/key /remote/path"` (**Password Authentication is not supported.**)
+5. --delete-after-upload `Deletes the local backup after uploading it to the SFTP server.`
+6. --ask-before-uploading `Asks before uploading the backup to the SFTP server.`
+7. --local-delete-after-time `Deletes backups locally after a certain amount of time. Example: --local-delete-after-time 1m (1 month) --local-delete-after-time 1w (1 week) --local-delete-after-time 1d (1 day)`
+8. --local-always-keep `Always keep a certain number of backups locally when using --local-delete-after-time.`
+9. --remote-delete-after-time `Deletes backups remotely after a certain amount of time. Example: --remote-delete-after-time 1m (1 month) --remote-delete-after-time 1w (1 week) --remote-delete-after-time 1d (1 day)`
 
 Debug Arguments
 1. --verbose `Shows more information`

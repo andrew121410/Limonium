@@ -169,6 +169,11 @@ async fn main() {
                 .long("local-delete-after-time")
                 .action(ArgAction::Set)
                 .required(false))
+            .arg(clap::Arg::new("local-always-keep")
+                .help("Always keep a certain amount of backups LOCALLY")
+                .long("local-always-keep")
+                .action(ArgAction::Set)
+                .required(false))
             .arg(clap::Arg::new("remote-delete-after-time")
                 .help("Deletes backups after a certain amount of time REMOTELY")
                 .long("remote-delete-after-time")
@@ -521,9 +526,10 @@ async fn handle_backup(backup_matches: &ArgMatches) {
 
     // Handle deleting backups after a certain amount of time LOCALLY
     let local_delete_after_time = backup_matches.get_one::<String>("local-delete-after-time");
+    let local_always_keep = backup_matches.get_one::<u64>("local-always-keep");
     if local_delete_after_time.is_some() {
         let local_delete_after_time_input = local_delete_after_time.unwrap().to_string();
-        backup.local_delete_after_time(&local_delete_after_time_input);
+        backup.local_delete_after_time(&local_delete_after_time_input, local_always_keep.map(|&v| v as usize));
 
         println!("{} {}", format!("Deleting LOCAL backups after").yellow(), format!("{}", local_delete_after_time_input).green());
     }
