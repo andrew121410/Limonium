@@ -15,6 +15,7 @@
 1. --help `Shows the help menu`
 2. --version `Shows the version of Limonium`
 3. --self-update `Updates limonium if there is a new version available`
+4. --nb `Doesn't show the banner when running the program`
 
 ## Download Function
 Download function uses platform specific download APIs(Paper, Purpur) or Jenkins(Pufferfish) to download the software.

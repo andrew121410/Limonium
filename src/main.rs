@@ -6,6 +6,9 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
+use crate::backup::BackupFormat;
+use crate::log_search::LogSearch;
+use crate::objects::DownloadedJar::DownloadedJar;
 use clap::builder::TypedValueParser;
 use clap::{ArgAction, ArgMatches};
 use colored::Colorize;
@@ -15,10 +18,6 @@ use std::path::{Path, PathBuf};
 use std::string::String;
 use std::time::Instant;
 use std::{env, fs, process};
-use std::fmt::format;
-use crate::backup::BackupFormat;
-use crate::log_search::LogSearch;
-use crate::objects::DownloadedJar::DownloadedJar;
 
 mod backup;
 mod clap_utils;
@@ -40,13 +39,17 @@ fn show_example() {
     );
 }
 
-fn print_console_box() {
+fn print_banner() {
     let title = "Limonium";
     let subtitle = "A tiny Minecraft Server management tool";
     let version = format!("Version: {}", cargo_crate_version!());
+    let developer = "Developed by Andrew121410!";
 
     // Determine the width of the box based on the longest line
-    let width = usize::max(title.len(), usize::max(subtitle.len(), version.len())) + 4;
+    let width = usize::max(
+        title.len(),
+        usize::max(subtitle.len(), usize::max(version.len(), developer.len())),
+    ) + 4; // Adding padding for border
 
     // Border
     let border = "*".repeat(width);
@@ -82,15 +85,21 @@ fn print_console_box() {
             " ".repeat((width - version.len() - 2) / 2)
         )
     );
+    println!("*{}*", " ".repeat(width - 2)); // Empty line
+    println!(
+        "*{}*",
+        format!(
+            "{}{}{}",
+            " ".repeat((width - developer.len() - 2) / 2),
+            developer.cyan(),
+            " ".repeat((width - developer.len() - 2) / 2)
+        )
+    );
     println!("{}", border.green().bold());
 }
 
 #[tokio::main]
 async fn main() {
-    print_console_box();
-    println!();
-    println!();
-
     let matches_commands = clap::Command::new("limonium")
         .version(cargo_crate_version!())
         .author("Andrew121410")
@@ -103,6 +112,12 @@ async fn main() {
             .global(true)
             .action(ArgAction::SetTrue)
             .required(false))
+        .arg(clap::Arg::new("no-banner")
+            .short('b')
+            .long("nb")
+            .aliases(["b"]) // --b
+            .help("Do not display the cool banner when program starts")
+            .action(ArgAction::SetTrue))
         .subcommand(clap::Command::new("self-update")
             .about("Updates Limonium"))
         .subcommand(clap::Command::new("compile")
@@ -286,6 +301,13 @@ async fn main() {
                 .default_value("./logs")));
 
     let command_matches: ArgMatches = matches_commands.get_matches();
+
+    // Do not display the cool box if it's passed.
+    if !command_matches.get_flag("no-banner") {
+        print_banner();
+        println!();
+        println!();
+    }
 
     // Handle self-update flag
     if command_matches.get_flag("self-update") {
