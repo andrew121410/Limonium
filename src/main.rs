@@ -35,7 +35,7 @@ fn show_example() {
         "{} {} {}",
         format!("Something went wrong!").red().bold(),
         format!("Example:").yellow(),
-        format!("./limonium download paper 1.21.3").green()
+        format!("./limonium download paper 1.21.4").green()
     );
 }
 
