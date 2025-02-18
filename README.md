@@ -82,6 +82,7 @@ All the software will be downloaded & compiled in the ./limonium-compile directo
 1. [Spigot](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/browse) -> `./limonium compile spigot server.jar --version 1.21.4` (Not recommended to use)
 2. [PlotSquared](https://github.com/IntellectualSites/PlotSquared) -> `./limonium compile plotsquared PlotSquared.jar`
 3. [mcMMO](https://github.com/mcMMO-Dev/mcMMO) -> `./limonium compile mcmmo mcMMO.jar`
+4. [CoreProtect](https://github.com/PlayPro/CoreProtect) -> `./limonium compile coreprotect CoreProtect.jar --version 23.2`
 
 ### Examples
 

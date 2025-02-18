@@ -8,6 +8,7 @@ mod spigotmc;
 mod plotsquared;
 mod TypicalSoftwareManager;
 mod mcmmo;
+mod coreprotect;
 
 pub(crate) struct CompileController;
 
@@ -48,7 +49,15 @@ impl CompileController {
             plotsquared::PlotSquaredAPI::handle_plotsquared(&compile_dir, &mut path_string, our_optional_branch).await;
         } else if software.eq_ignore_ascii_case("mcMMO") {
             mcmmo::mcMMOAPI::handle_mcmmo(&compile_dir, &mut path_string, our_optional_branch).await;
-        } else {
+        }else if software.eq_ignore_ascii_case("CoreProtect") {
+            // Version is required for CoreProtect
+            if optional_version.is_none() {
+                println!("{}", "--version <version> is required for CoreProtect".red());
+                return;
+            }
+
+            coreprotect::CoreProtectAPI::handle_coreprotect(&compile_dir, &mut path_string, our_optional_branch, optional_version.unwrap()).await;
+    } else {
             println!("{}", format!("Unknown software: {}", software).red());
         }
     }
