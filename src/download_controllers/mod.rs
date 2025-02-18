@@ -35,14 +35,13 @@ pub fn get_platform(the_project: &String) -> &dyn IPlatform {
 
 pub fn is_valid_platform(the_project: &String) -> bool {
     return match the_project.to_lowercase().as_str() {
-        "spigot" => true,
+        "spigot" => true, // A message will be displayed to the user saying that Spigot must be compiled.
         "bungeecord" => true,
 
         "purpur" => true,
         "pufferfish" => true,
 
         "paper" => true,
-        "waterfall" => true,
         "velocity" => true,
 
         "geyser" => true,
