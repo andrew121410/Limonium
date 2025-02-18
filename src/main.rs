@@ -891,10 +891,22 @@ fn ask_for_input_for_to_upload_to_sftp() -> bool {
 
 fn self_update() -> bool {
     println!("Current Version: {}", cargo_crate_version!());
+
+    // Determine the target architecture (x86_64 or aarch64)
+    let target = if std::env::consts::ARCH == "x86_64" {
+        "limonium-x86_64-unknown-linux-gnu.zip"
+    } else if std::env::consts::ARCH == "aarch64" {
+        "limonium-aarch64-unknown-linux-gnu.zip"
+    } else {
+        panic!("Unsupported architecture: {}", env::consts::ARCH);
+    };
+
+    println!("Target: {}", target);
+
     let status = self_update::backends::github::Update::configure()
         .repo_owner("andrew121410")
         .repo_name("limonium")
-        .target("limonium-x86_64-unknown-linux-gnu.zip")
+        .target(target)
         .bin_name("limonium")
         .no_confirm(true)
         .show_download_progress(false)
@@ -904,7 +916,8 @@ fn self_update() -> bool {
         .expect("Failed to build update")
         .update()
         .expect("Failed to update");
-    return if status.updated() {
+
+    if status.updated() {
         println!(
             "Updated Limonium from {} to {}",
             cargo_crate_version!(),
@@ -914,5 +927,5 @@ fn self_update() -> bool {
     } else {
         println!("Limonium is already up to date!");
         false
-    };
+    }
 }
