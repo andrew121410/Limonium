@@ -4,6 +4,7 @@
 
 ### Supported Platforms:
 - x86_64-unknown-linux-gnu
+- aarch64-unknown-linux-gnu
 
 ### Features:
 - Can download & update MC Server Software
