@@ -526,7 +526,7 @@ async fn handle_download(download_matches: &ArgMatches) {
             .expect("Failed to delete downloaded jar from temp directory");
 
         // Download the JVM Downgrader to the temp directory
-        let jvm_downgrader_download_link = "https://github.com/unimined/JvmDowngrader/releases/download/1.2.1/jvmdowngrader-1.2.1-all.jar".to_string();
+        let jvm_downgrader_download_link = "https://github.com/unimined/JvmDowngrader/releases/download/1.2.2/jvmdowngrader-1.2.2-all.jar".to_string();
         let jvm_downgrader_downloaded_jar =
             download_controllers::download_jar_to_temp_dir_with_progress_bar(
                 &jvm_downgrader_download_link,
