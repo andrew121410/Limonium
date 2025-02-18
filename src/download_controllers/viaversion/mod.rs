@@ -81,7 +81,7 @@ impl platform::IPlatform for ViaVersionAPI {
     }
 
     async fn custom_download_functionality(&self, project: &String, version: &String, build: &String, link: &String) -> Option<DownloadedJar> {
-        let downloaded_jar_option: Option<DownloadedJar> = jenkins_utils::jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the_tmp_directory(
+        let downloaded_jar_option: Option<DownloadedJar> = jenkins_utils::download_and_extract_jenkins_artifact(
             &project,
             &version,
             &build,

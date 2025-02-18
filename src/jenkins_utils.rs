@@ -1,6 +1,6 @@
-use std::{env, fs};
 use std::path::PathBuf;
 use std::process::Command;
+use std::{env, fs};
 
 use colored::Colorize;
 use regex::Regex;
@@ -28,8 +28,28 @@ pub async fn extract_file_fingerprint_hash(url: &String) -> Hash {
     return hash;
 }
 
-// Returns file name found in the /tmp directory
-pub async fn jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in_the_tmp_directory(_project: &String, _version: &String, _build: &String, link: &String, regex: &str) -> Option<DownloadedJar> {
+/// Downloads a Jenkins artifacts bundle zip, extracts it, finds the jar file matching the regex,
+/// and places the jar file in the temp directory with a random name.
+/// could be used for things besides jar files as well.
+///
+/// # Arguments
+///
+/// * `project` - The project name (not used in this function).
+/// * `version` - The version of the project (not used in this function).
+/// * `build` - The build number (not used in this function).
+/// * `link` - The URL to the Jenkins artifacts bundle zip file.
+/// * `regex` - The regex pattern to match the jar file name.
+///
+/// # Returns
+///
+/// * `Option<DownloadedJar>` - The downloaded jar file information, or `None` if an error occurred.
+pub async fn download_and_extract_jenkins_artifact(
+    _project: &String,
+    _version: &String,
+    _build: &String,
+    link: &String,
+    regex: &str,
+) -> Option<DownloadedJar> {
     let random_zip_name = download_controllers::random_file_name(&".zip".to_string());
     let random_folder_name = download_controllers::random_file_name(&"".to_string());
 
@@ -77,7 +97,14 @@ pub async fn jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in
     }
 
     // Get the name of the jar file
-    let jar_file_name = the_jar_file_path.clone().unwrap().file_name().unwrap().to_str().unwrap().to_string();
+    let jar_file_name = the_jar_file_path
+        .clone()
+        .unwrap()
+        .file_name()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
 
     // Generate a random name for the jar file
     let random_jar_name = download_controllers::random_file_name(&".jar".to_string());
@@ -90,7 +117,12 @@ pub async fn jenkins_artifacts_bundle_zip_download_and_find_jar_and_place_jar_in
     fs::remove_dir_all(&created_folder).unwrap();
 
     // Name of the jar file in the temp directory (random name)
-    let final_jar_file_name = final_jar_path.file_name().unwrap().to_str().unwrap().to_string();
+    let final_jar_file_name = final_jar_path
+        .file_name()
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_string();
 
     let downloaded_jar: DownloadedJar = DownloadedJar {
         real_jar_name: Some(jar_file_name),

@@ -21,6 +21,7 @@ pub mod pufferfish;
 pub mod purpurmc;
 pub mod spigotmc;
 mod viaversion;
+mod citizens;
 
 pub fn get_platform(the_project: &String) -> &dyn IPlatform {
     return match the_project.to_lowercase().as_str() {
@@ -29,6 +30,7 @@ pub fn get_platform(the_project: &String) -> &dyn IPlatform {
         "geyser" | "floodgate" => &geysermc::GeyserAPI {} as &dyn IPlatform,
         "viaversion" | "viabackwards" => &viaversion::ViaVersionAPI {} as &dyn IPlatform,
         "bungeecord" => &spigotmc::bungeecord::BungeeCordAPI {} as &dyn IPlatform,
+        "citizens" | "citizens2" => &citizens::Citizens2API {} as &dyn IPlatform,
         _ => &papermc::PaperAPI {} as &dyn IPlatform,
     };
 }
@@ -49,6 +51,8 @@ pub fn is_valid_platform(the_project: &String) -> bool {
 
         "viaversion" => true,
         "viabackwards" => true,
+
+        "citizens" | "citizens2" => true,
         _ => false,
     };
 }

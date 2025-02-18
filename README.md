@@ -41,6 +41,7 @@ It will download the software and check the hash of the file to make sure it dow
 1. [Floodgate](https://github.com/GeyserMC/Floodgate) -> `./limonium download floodgate latest`
 2. [ViaVersion](https://github.com/ViaVersion/ViaVersion) -> `./limonium download viaversion latest` (Available channels: dev, compatibility)
 3. [ViaBackwards](https://github.com/ViaVersion/ViaBackwards) -> `./limonium download viabackwards latest` (Available channels: dev, compatibility)
+4. [Citizens2](https://github.com/CitizensDev/Citizens2) -> `./limonium download citizens2 latest`
 
 ### Important
 
