@@ -34,8 +34,7 @@ It will download the software and check the hash of the file to make sure it dow
 ### Proxies
 
 1. [Velocity](https://github.com/PaperMC/Velocity) -> `./limonium download velocity 3.2.0-SNAPSHOT`
-2. [Waterfall](https://github.com/PaperMC/Waterfall) -> `./limonium download waterfall 1.20`
-3. [BungeeCord](https://github.com/SpigotMC/BungeeCord) -> `./limonium download bungeecord latest`
+2. [BungeeCord](https://github.com/SpigotMC/BungeeCord) -> `./limonium download bungeecord latest`
 
 ### Plugins
 1. [Floodgate](https://github.com/GeyserMC/Floodgate) -> `./limonium download floodgate latest`
