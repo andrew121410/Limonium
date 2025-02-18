@@ -9,30 +9,55 @@ env:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Rust target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Install cross (for cross-compilation)
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
       - name: Build
-        run: cargo build --release
+        run: cross build --release --target=${{ matrix.target }}
 
       - name: Get Version from Cargo.toml
         id: cargo_version
         run: |
           THE_VERSION_STRING=$(cargo pkgid | cut -d@ -f2 | cut -d: -f2)
-          echo "::set-output name=t_cargo_version::$THE_VERSION_STRING"
+          echo "t_cargo_version=$THE_VERSION_STRING" >> $GITHUB_ENV
 
-      - name: Zip Linux Binary
+      - name: Zip Binary
         uses: vimtor/action-zip@v1
         with:
-          files: /target/release/limonium
-          dest: /target/release/limonium-x86_64-unknown-linux-gnu.zip
+          files: target/${{ matrix.target }}/release/limonium
+          dest: target/${{ matrix.target }}/release/limonium-${{ matrix.target }}.zip
 
-      - name: Deploy Release With Artifact
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: limonium-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/limonium-${{ matrix.target }}.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Deploy Release With Artifacts
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "${{ steps.cargo_version.outputs.t_cargo_version }}"
+          automatic_release_tag: "${{ env.t_cargo_version }}"
           prerelease: false
-          files: |
-            target/release/limonium-x86_64-unknown-linux-gnu.zip
+          files: artifacts/**
