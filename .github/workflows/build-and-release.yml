@@ -54,10 +54,16 @@ jobs:
         with:
           path: artifacts
 
+      - name: Set Version from Cargo.toml
+        id: cargo_version
+        run: |
+          THE_VERSION_STRING=$(cargo pkgid | cut -d@ -f2 | cut -d: -f2)
+          echo "t_cargo_version=$THE_VERSION_STRING" >> $GITHUB_ENV
+
       - name: Deploy Release With Artifacts
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "${{ env.t_cargo_version }}"
+          automatic_release_tag: "${{ env.t_cargo_version }}"  # Now using the extracted version
           prerelease: false
           files: artifacts/**
