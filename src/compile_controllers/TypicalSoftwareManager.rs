@@ -1,4 +1,4 @@
-use crate::download_controllers;
+use crate::{download_controllers, ensurer};
 use colored::Colorize;
 use regex::Regex;
 use std::io::BufRead;
@@ -22,6 +22,12 @@ pub struct SoftwareConfig {
 }
 
 pub async fn handle_software(config: SoftwareConfig, compile_path: &PathBuf, path: &mut String) {
+    // Check if Git is installed on the system
+    if !ensurer::Ensurer::is_installed(&ensurer::Program::Git) {
+        eprintln!("{}", "Git is not installed on your system. Please install Git and try again.".red());
+        return;
+    }
+
     let software_path = compile_path.join(config.repo_url.split('/').last().unwrap().replace(".git", ""));
     if !software_path.exists() {
         git_clone(&config.repo_url, &config.branch, &compile_path).await;
@@ -119,7 +125,7 @@ fn run_build_command(software_path: &PathBuf, build_command: &str) -> Result<std
     let args: Vec<&str> = parts.collect();
 
     // Check if the main command is maven
-    if main_command.contains("mvn") && !check_if_maven_is_installed() {
+    if main_command.contains("mvn") && ensurer::Ensurer::is_installed(&ensurer::Program::Mvn) {
         eprintln!("{}", format!("Maven is not installed on your system. Please install Maven and try again.").red());
         return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Maven is not installed"));
     }
@@ -267,15 +273,4 @@ fn build(software_path: &PathBuf, build_command: &str, path: &String, jar_regex:
         "{}",
         format!("Build completed in {:.2?} seconds", duration).cyan()
     );
-}
-
-fn check_if_maven_is_installed() -> bool {
-    let output = Command::new("mvn")
-        .arg("-version")
-        .output();
-
-    match output {
-        Ok(output) => output.status.success(),
-        Err(_) => false,
-    }
 }

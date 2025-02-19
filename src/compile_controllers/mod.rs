@@ -3,6 +3,7 @@ use colored::Colorize;
 use std::ascii::AsciiExt;
 use std::env;
 use std::process::Command;
+use crate::ensurer;
 
 mod spigotmc;
 mod plotsquared;
@@ -32,7 +33,7 @@ impl CompileController {
         let our_optional_branch = optional_branch.map(|branch| branch.to_string());
 
         // Check if Java is installed on the system
-        if !is_java_installed() {
+        if !ensurer::Ensurer::is_installed(&ensurer::Program::Java) {
             println!("{}", "Java is not installed on your system. Please install Java and try again.".red());
             return;
         }
@@ -60,16 +61,5 @@ impl CompileController {
     } else {
             println!("{}", format!("Unknown software: {}", software).red());
         }
-    }
-}
-
-pub fn is_java_installed() -> bool {
-    let output = Command::new("java")
-        .arg("-version")
-        .output();
-
-    match output {
-        Ok(output) => output.status.success(),
-        Err(_) => false,
     }
 }

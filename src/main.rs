@@ -29,6 +29,7 @@ mod jenkins_utils;
 mod log_search;
 mod number_utils;
 mod objects;
+mod ensurer;
 
 fn show_example() {
     println!(
@@ -509,6 +510,8 @@ async fn handle_download(download_matches: &ArgMatches) {
     // Run the JVM Downgrader if specified
     let run_jvmdowngrader = download_matches.get_one::<String>("run-jvmdowngrader");
     if run_jvmdowngrader.is_some() {
+        ensurer::Ensurer::ensure_programs(&[ensurer::Program::Java]);
+
         let major_version = run_jvmdowngrader.unwrap();
 
         // Create a temp directory for the JVM Downgrader in the temp directory

@@ -5,9 +5,9 @@ use std::{env, fs};
 use colored::Colorize;
 use regex::Regex;
 
-use crate::download_controllers;
 use crate::hash_utils::Hash;
 use crate::objects::DownloadedJar::DownloadedJar;
+use crate::{download_controllers, ensurer};
 
 // Returns hash of the file fingerprint found on the Jenkins page (md5)
 pub async fn extract_file_fingerprint_hash(url: &String) -> Hash {
@@ -50,6 +50,8 @@ pub async fn download_and_extract_jenkins_artifact(
     link: &String,
     regex: &str,
 ) -> Option<DownloadedJar> {
+    ensurer::Ensurer::ensure_programs(&[ensurer::Program::Unzip]);
+
     let random_zip_name = download_controllers::random_file_name(&".zip".to_string());
     let random_folder_name = download_controllers::random_file_name(&"".to_string());
 

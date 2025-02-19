@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{Duration, Instant};
 
-use crate::{clap_utils, download_controllers};
+use crate::{clap_utils, ensurer};
 use chrono::{NaiveDate, Utc};
 use colored::Colorize;
 use indicatif::{HumanDuration, ProgressBar, ProgressStyle};
@@ -60,19 +60,13 @@ impl Backup {
         // Check if the compression format is installed
         match self.backup_format {
             BackupFormat::TarGz => {
-                if !does_tar_command_exist() {
-                    return Err(Error::new(ErrorKind::Other, "The tar command does not exist. Please install it and try again."));
-                }
+                ensurer::Ensurer::ensure_programs(&[ensurer::Program::Tar]);
             }
             BackupFormat::TarZst => {
-                if !does_zstd_command_exist() {
-                    return Err(Error::new(ErrorKind::Other, "The zstd command does not exist. Please install it and try again."));
-                }
+                ensurer::Ensurer::ensure_programs(&[ensurer::Program::Tar, ensurer::Program::Zstd]);
             }
             BackupFormat::Zip => {
-                if !does_zip_command_exist() {
-                    return Err(Error::new(ErrorKind::Other, "The zip command does not exist. Please install it and try again."));
-                }
+                ensurer::Ensurer::ensure_programs(&[ensurer::Program::Zip]);
             }
         }
 
@@ -665,39 +659,6 @@ fn extract_date_from_file_name(file_name: &String) -> String {
 
     // Default value if no match is found
     String::new()
-}
-
-fn does_tar_command_exist() -> bool {
-    let output = Command::new("tar").arg("--version").output();
-
-    if output.is_err() {
-        return false;
-    }
-
-    let the_output = output.unwrap();
-    the_output.status.success()
-}
-
-fn does_zstd_command_exist() -> bool {
-    let output = Command::new("zstd").arg("--version").output();
-
-    if output.is_err() {
-        return false;
-    }
-
-    let the_output = output.unwrap();
-    the_output.status.success()
-}
-
-fn does_zip_command_exist() -> bool {
-    let output = Command::new("zip").arg("--version").output();
-
-    if output.is_err() {
-        return false;
-    }
-
-    let the_output = output.unwrap();
-    the_output.status.success()
 }
 
 #[cfg(test)]

@@ -6,11 +6,15 @@ use std::string::String;
 use std::time::Instant;
 
 use colored::Colorize;
+use crate::ensurer;
 
 pub struct SpigotAPI;
 
 impl SpigotAPI {
     pub fn handle_spigot(compile_path: &PathBuf, version: &String, path: &mut String) {
+        ensurer::Ensurer::ensure_programs(&[ensurer::Program::Wget]);
+        ensurer::Ensurer::ensure_programs(&[ensurer::Program::Java]);
+
         // In the limonium-compile folder, we will create a new folder called spigot
         let spigot_path = compile_path.join("spigot");
         if !spigot_path.exists() {
