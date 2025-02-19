@@ -125,7 +125,7 @@ fn run_build_command(software_path: &PathBuf, build_command: &str) -> Result<std
     let args: Vec<&str> = parts.collect();
 
     // Check if the main command is maven
-    if main_command.contains("mvn") && ensurer::Ensurer::is_installed(&ensurer::Program::Mvn) {
+    if main_command.contains("mvn") && !ensurer::Ensurer::is_installed(&ensurer::Program::Mvn) {
         eprintln!("{}", format!("Maven is not installed on your system. Please install Maven and try again.").red());
         return Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Maven is not installed"));
     }
