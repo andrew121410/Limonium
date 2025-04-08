@@ -12,6 +12,7 @@ use reqwest::{header, Client};
 use uuid::Uuid;
 
 use crate::download_controllers::platform::IPlatform;
+use crate::file_utils;
 use crate::objects::DownloadedJar::DownloadedJar;
 
 pub mod geysermc;
@@ -24,7 +25,7 @@ mod viaversion;
 mod citizens;
 
 pub fn get_platform(the_project: &String) -> &dyn IPlatform {
-    return match the_project.to_lowercase().as_str() {
+    match the_project.to_lowercase().as_str() {
         "purpur" => &purpurmc::PurpurAPI as &dyn IPlatform,
         "pufferfish" => &pufferfish::PufferfishAPI as &dyn IPlatform,
         "geyser" | "floodgate" => &geysermc::GeyserAPI {} as &dyn IPlatform,
@@ -32,11 +33,11 @@ pub fn get_platform(the_project: &String) -> &dyn IPlatform {
         "bungeecord" => &spigotmc::bungeecord::BungeeCordAPI {} as &dyn IPlatform,
         "citizens" | "citizens2" => &citizens::Citizens2API {} as &dyn IPlatform,
         _ => &papermc::PaperAPI {} as &dyn IPlatform,
-    };
+    }
 }
 
 pub fn is_valid_platform(the_project: &String) -> bool {
-    return match the_project.to_lowercase().as_str() {
+    match the_project.to_lowercase().as_str() {
         "spigot" => true, // A message will be displayed to the user saying that Spigot must be compiled.
         "bungeecord" => true,
 
@@ -54,18 +55,11 @@ pub fn is_valid_platform(the_project: &String) -> bool {
 
         "citizens" | "citizens2" => true,
         _ => false,
-    };
-}
-
-pub fn random_file_name(fileExtension: &String) -> String {
-    let mut tmp_jar_name = String::from("limonium-");
-    tmp_jar_name.push_str(&Uuid::new_v4().to_string());
-    tmp_jar_name.push_str(fileExtension);
-    return tmp_jar_name;
+    }
 }
 
 pub async fn download_jar_to_temp_dir(link: &String) -> DownloadedJar {
-    let tmp_jar_name = random_file_name(&".jar".to_string());
+    let tmp_jar_name = file_utils::random_file_name(&".jar".to_string());
 
     let mut headers = header::HeaderMap::new();
     headers.insert(header::USER_AGENT, "rust-reqwest/limonium".parse().unwrap());
@@ -76,7 +70,7 @@ pub async fn download_jar_to_temp_dir(link: &String) -> DownloadedJar {
     //     "application/octet-stream".parse().unwrap(),
     // );
 
-    let response = reqwest::Client::builder()
+    let response = Client::builder()
         .redirect(reqwest::redirect::Policy::limited(10))
         .build()
         .unwrap()
@@ -97,20 +91,20 @@ pub async fn download_jar_to_temp_dir(link: &String) -> DownloadedJar {
         );
     }
 
-    let path = temp_dir().join(&tmp_jar_name);
+    let path = file_utils::get_or_create_limonium_dir().join(&tmp_jar_name);
     let mut file = File::create(path).unwrap();
     let mut content = Cursor::new(response.bytes().await.unwrap());
     io::copy(&mut content, &mut file).unwrap();
 
-    return DownloadedJar {
+    DownloadedJar {
         real_jar_name: None, // We might not know the real jar name
         temp_jar_name: tmp_jar_name.clone(),
-        temp_jar_path: temp_dir().join(&tmp_jar_name),
-    };
+        temp_jar_path: file_utils::get_or_create_limonium_dir().join(&tmp_jar_name),
+    }
 }
 
 pub async fn download_jar_to_temp_dir_with_progress_bar(link: &String) -> DownloadedJar {
-    let tmp_jar_name = random_file_name(&".jar".to_string());
+    let tmp_jar_name = file_utils::random_file_name(&".jar".to_string());
 
     let mut headers = header::HeaderMap::new();
     headers.insert(header::USER_AGENT, "rust-reqwest/limonium".parse().unwrap());
@@ -144,7 +138,7 @@ pub async fn download_jar_to_temp_dir_with_progress_bar(link: &String) -> Downlo
     );
 
     // Create a new file to write the downloaded data
-    let path = temp_dir().join(&tmp_jar_name);
+    let path = file_utils::get_or_create_limonium_dir().join(&tmp_jar_name);
     let mut file = File::create(path).unwrap();
 
     // Create a stream of the file data
@@ -171,39 +165,9 @@ pub async fn download_jar_to_temp_dir_with_progress_bar(link: &String) -> Downlo
     // Finish the progress bar
     pb.finish_and_clear();
 
-    return DownloadedJar {
+    DownloadedJar {
         real_jar_name: None, // We might not know the real jar name
         temp_jar_name: tmp_jar_name.clone(),
-        temp_jar_path: temp_dir().join(&tmp_jar_name),
-    };
-}
-
-pub fn copy_jar_from_temp_dir_to_dest(tmp_jar_name: &String, final_path: &String) {
-    fs::copy(temp_dir().join(&tmp_jar_name), &final_path)
-        .expect("Failed copying jar from temp directory to final path");
-}
-
-pub(crate) fn find_jar_files(dir: &Path, jar_pattern: &Regex) -> Vec<PathBuf> {
-    let mut jar_files = Vec::new();
-
-    if let Ok(entries) = fs::read_dir(dir) {
-        for entry in entries {
-            if let Ok(entry) = entry {
-                let path = entry.path();
-                if path.is_file() {
-                    if let Some(extension) = path.extension() {
-                        if extension == "jar"
-                            && jar_pattern.is_match(path.file_name().unwrap().to_str().unwrap())
-                        {
-                            jar_files.push(path.clone());
-                        }
-                    }
-                } else if path.is_dir() {
-                    jar_files.extend(find_jar_files(&path, jar_pattern));
-                }
-            }
-        }
+        temp_jar_path: file_utils::get_or_create_limonium_dir().join(&tmp_jar_name),
     }
-
-    jar_files
 }

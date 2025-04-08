@@ -30,6 +30,7 @@ mod log_search;
 mod number_utils;
 mod objects;
 mod ensurer;
+mod file_utils;
 
 fn show_example() {
     println!(
@@ -502,7 +503,7 @@ async fn handle_download(download_matches: &ArgMatches) {
         .await;
     if hash_after_downloaded_jar.is_some() {
         let hash = &hash_after_downloaded_jar.unwrap();
-        hash_utils::validate_the_hash(&hash, &temp_dir(), &downloaded_jar.temp_jar_name, true);
+        hash_utils::validate_the_hash(&hash, &file_utils::get_or_create_limonium_dir(), &downloaded_jar.temp_jar_name, true);
     } else {
         println!("{}", format!("Not checking hash!").yellow().bold());
     }
@@ -515,7 +516,7 @@ async fn handle_download(download_matches: &ArgMatches) {
         let major_version = run_jvmdowngrader.unwrap();
 
         // Create a temp directory for the JVM Downgrader in the temp directory
-        let jvm_downgrader_temp_dir = temp_dir().join("jvm_downgrader");
+        let jvm_downgrader_temp_dir = file_utils::get_or_create_limonium_dir().join("jvm_downgrader");
         fs::create_dir_all(&jvm_downgrader_temp_dir)
             .expect("Failed to create JVM Downgrader temp directory");
 
@@ -607,7 +608,7 @@ async fn handle_download(download_matches: &ArgMatches) {
 
         // Move the final new_output.jar to the temp directory
         let final_path = jvm_downgrader_temp_dir.join("new_output.jar");
-        let new_final_path = temp_dir().join(&downloaded_jar.temp_jar_name);
+        let new_final_path = file_utils::get_or_create_limonium_dir().join(&downloaded_jar.temp_jar_name);
         fs::copy(&final_path, &new_final_path)
             .expect("Failed to copy JVM Downgrader output to temp directory");
 
@@ -623,7 +624,7 @@ async fn handle_download(download_matches: &ArgMatches) {
     }
 
     // Copy the downloaded jar to the destination
-    download_controllers::copy_jar_from_temp_dir_to_dest(
+    file_utils::copy_jar_from_temp_dir_to_dest(
         &downloaded_jar.temp_jar_name,
         &path_string,
     );

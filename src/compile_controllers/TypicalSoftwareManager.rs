@@ -1,4 +1,4 @@
-use crate::{download_controllers, ensurer};
+use crate::{download_controllers, ensurer, file_utils};
 use colored::Colorize;
 use regex::Regex;
 use std::io::BufRead;
@@ -195,7 +195,7 @@ fn build(software_path: &PathBuf, build_command: &str, path: &String, jar_regex:
     } else {
         let libs_dir = software_path.join(jar_location);
         println!("{}", format!("Looking for the JAR files in {}", libs_dir.display()).cyan());
-        let jar_files: Vec<PathBuf> = download_controllers::find_jar_files(&libs_dir, &Regex::new(jar_regex).unwrap());
+        let jar_files: Vec<PathBuf> = file_utils::find_jar_files(&libs_dir, &Regex::new(jar_regex).unwrap());
 
         if jar_files.is_empty() {
             eprintln!("{}", "No JAR files found in the libs directory.".red());

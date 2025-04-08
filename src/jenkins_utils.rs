@@ -7,7 +7,7 @@ use regex::Regex;
 
 use crate::hash_utils::Hash;
 use crate::objects::DownloadedJar::DownloadedJar;
-use crate::{download_controllers, ensurer};
+use crate::{download_controllers, ensurer, file_utils};
 
 // Returns hash of the file fingerprint found on the Jenkins page (md5)
 pub async fn extract_file_fingerprint_hash(url: &String) -> Hash {
@@ -52,11 +52,13 @@ pub async fn download_and_extract_jenkins_artifact(
 ) -> Option<DownloadedJar> {
     ensurer::Ensurer::ensure_programs(&[ensurer::Program::Unzip]);
 
-    let random_zip_name = download_controllers::random_file_name(&".zip".to_string());
-    let random_folder_name = download_controllers::random_file_name(&"".to_string());
+    let random_zip_name = file_utils::random_file_name(&".zip".to_string());
+    let random_folder_name = file_utils::random_file_name(&"".to_string());
+
+    let our_temp_dir = file_utils::get_or_create_limonium_dir();
 
     // Create a folder in the temp directory with a random name
-    let created_folder = env::temp_dir().join(&random_folder_name);
+    let created_folder = our_temp_dir.join(&random_folder_name);
     if !created_folder.exists() {
         fs::create_dir(&created_folder).unwrap();
     }
@@ -84,7 +86,7 @@ pub async fn download_and_extract_jenkins_artifact(
 
     // Find the .jar using the regex
     let jar_pattern = Regex::new(regex).unwrap();
-    let jar_files = download_controllers::find_jar_files(&created_folder, &jar_pattern);
+    let jar_files = file_utils::find_jar_files(&created_folder, &jar_pattern);
 
     let mut the_jar_file_path: Option<PathBuf> = None;
     // Find the jar file (should only be one)
@@ -109,10 +111,10 @@ pub async fn download_and_extract_jenkins_artifact(
         .to_string();
 
     // Generate a random name for the jar file
-    let random_jar_name = download_controllers::random_file_name(&".jar".to_string());
+    let random_jar_name = file_utils::random_file_name(&".jar".to_string());
 
     // Move the jar file to the temp directory with the random name
-    let final_jar_path = env::temp_dir().join(&random_jar_name);
+    let final_jar_path = our_temp_dir.join(&random_jar_name);
     fs::rename(&the_jar_file_path.unwrap(), &final_jar_path).unwrap();
 
     // Delete the created folder
@@ -132,5 +134,5 @@ pub async fn download_and_extract_jenkins_artifact(
         temp_jar_path: final_jar_path,
     };
 
-    return Some(downloaded_jar);
+    Some(downloaded_jar)
 }
