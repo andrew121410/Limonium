@@ -27,9 +27,9 @@ It will download the software and check the hash of the file to make sure it dow
 
 ### Softwares
 
-1. [Paper](https://github.com/PaperMC/Paper) -> `./limonium download paper 1.21.4`
-2. [Purpur](https://github.com/PurpurMC/Purpur) -> `./limonium download purpur 1.21.4`
-3. [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) -> `./limonium download pufferfish 1.21.4`
+1. [Paper](https://github.com/PaperMC/Paper) -> `./limonium download paper 1.21.5`
+2. [Purpur](https://github.com/PurpurMC/Purpur) -> `./limonium download purpur 1.21.5`
+3. [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) -> `./limonium download pufferfish 1.21.5`
 4. [Geyser](https://github.com/GeyserMc/Geyser) -> `./limonium download geyser 2.1.0` (default is geyser-standalone)
 
 ### Proxies
@@ -60,15 +60,15 @@ Limonium is not affiliated with any of the projects listed.
 *Usage: &lt;software&gt; &lt;version&gt;*
 
 ```
-./limonium download paper 1.21.4
+./limonium download paper 1.21.5
 ```
 
 ```
-./limonium download paper 1.21.4 --o Paper.jar
+./limonium download paper 1.21.5 --o Paper.jar
 ```
 
 ```
-./limonium download paper 1.21.4 --o ./mc-servers/hub/Paper.jar
+./limonium download paper 1.21.5 --o ./mc-servers/hub/Paper.jar
 ```
 
 ## Compile Function
@@ -79,7 +79,7 @@ All the software will be downloaded & compiled in the ./limonium-compile directo
 
 ### Softwares
 
-1. [Spigot](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/browse) -> `./limonium compile spigot server.jar --version 1.21.4` (Not recommended to use)
+1. [Spigot](https://hub.spigotmc.org/stash/projects/SPIGOT/repos/spigot/browse) -> `./limonium compile spigot server.jar --version 1.21.5` (Not recommended to use)
 2. [PlotSquared](https://github.com/IntellectualSites/PlotSquared) -> `./limonium compile plotsquared PlotSquared.jar`
 3. [mcMMO](https://github.com/mcMMO-Dev/mcMMO) -> `./limonium compile mcmmo mcMMO.jar`
 4. [CoreProtect](https://github.com/PlayPro/CoreProtect) -> `./limonium compile coreprotect CoreProtect.jar --version 23.2`
@@ -95,7 +95,7 @@ All the software will be downloaded & compiled in the ./limonium-compile directo
 *Usage: &lt;software&gt; &lt;output&gt;*
 
 ```
-./limonium compile spigot server.jar --version 1.21.4
+./limonium compile spigot server.jar --version 1.21.5
 ```
 
 ``` 
