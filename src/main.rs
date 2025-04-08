@@ -425,7 +425,7 @@ async fn handle_download(download_matches: &ArgMatches) {
         println!("{}", format!("Example:").yellow());
         println!(
             "{}",
-            format!("./limonium compile spigot server.jar --version 1.21.1").green()
+            format!("./limonium compile spigot server.jar --version 1.21.5").green()
         );
 
         return; // Don't continue
@@ -451,10 +451,21 @@ async fn handle_download(download_matches: &ArgMatches) {
         version = latest_version.unwrap();
     }
 
-    let build = platform
+    // Get the latest build for the version
+    let build_option = platform
         .get_latest_build(&software, &version)
-        .await
-        .expect("Getting the latest build failed?");
+        .await;
+    if build_option.is_none() {
+        println!(
+            "{} {}",
+            format!("Something went wrong!").red().bold(),
+            format!("Couldn't get the latest build!").yellow()
+        );
+        println!("{}", format!("This is most likely because that platform has no build for that version({})", &version).yellow());
+
+        process::exit(102);
+    }
+    let build = build_option.unwrap();
 
     // Set the path if it's empty
     if path_string.eq("") {
