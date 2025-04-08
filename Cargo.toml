@@ -7,22 +7,22 @@ edition = "2024"
 
 # https://crates.io/
 [dependencies]
-openssl = { version = "0.10.68", features = ["vendored"] }
-reqwest = { version = "0.12.12", features = ["stream"] }
-serde = "1.0.217"
-serde_derive = "1.0.217"
-serde_json = "1.0.138"
-async-trait = "0.1.86"
-tokio = { version = "1.43.0", features = ["rt-multi-thread", "macros"] }
+openssl = { version = "0.10.72", features = ["vendored"] }
+reqwest = { version = "0.12.15", features = ["stream"] }
+serde = "1.0.219"
+serde_derive = "1.0.219"
+serde_json = "1.0.140"
+async-trait = "0.1.88"
+tokio = { version = "1.44.2", features = ["rt-multi-thread", "macros"] }
 colored = "3.0.0"
 self_update = { version = "0.42.0", features = ["archive-zip", "compression-zip-deflate"] }
-uuid = { version = "1.13.2", features = ["v4"] }
-chrono = "0.4.39"
-clap = "4.5.30"
+uuid = { version = "1.16.0", features = ["v4"] }
+chrono = "0.4.40"
+clap = "4.5.35"
 openssh-sftp-client = "0.15.2"
 openssh = "0.11.5"
 indicatif = "0.17.11"
 regex = "1.11.1"
 tempdir = "0.3.7"
 futures-util = "0.3.31"
-once_cell = "1.20.3"
+once_cell = "1.21.3"
