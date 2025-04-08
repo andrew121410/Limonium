@@ -318,6 +318,13 @@ async fn main() {
         }
     }
 
+    // Cleanup temp directory
+    if file_utils::get_limonium_dir().exists() {
+        println!("{}", "Cleaning up /tmp/limonium folder...".yellow());
+        file_utils::delete_limonium_folder().unwrap();
+        println!("{}", "Done! Cleaning up /tmp/limonium folder...".green());
+    }
+
     match command_matches.subcommand() {
         // Handle self-update subcommand
         Some(("self-update", _)) => {

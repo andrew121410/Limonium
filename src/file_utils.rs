@@ -26,6 +26,12 @@ pub fn delete_limonium_folder() -> std::io::Result<()> {
     Ok(())
 }
 
+pub fn get_limonium_dir() -> PathBuf {
+    let mut dir = env::temp_dir();
+    dir.push("limonium");
+    dir
+}
+
 pub fn copy_jar_from_temp_dir_to_dest(tmp_jar_name: &String, final_path: &String) {
     fs::copy(get_or_create_limonium_dir().join(&tmp_jar_name), &final_path)
         .expect("Failed copying jar from temp directory to final path");
