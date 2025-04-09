@@ -443,7 +443,7 @@ async fn handle_download(download_matches: &ArgMatches) {
                 format!("Something went wrong!").red().bold(),
                 format!("Couldn't get the latest version!").yellow()
             );
-            println!("{}", format!("This is most likely because the platform doesn't support getting the latest version!").yellow());
+            println!("{}", format!("This is most likely because the platform({}) doesn't support getting the latest version!", &software).yellow());
 
             process::exit(102);
         }
@@ -461,7 +461,7 @@ async fn handle_download(download_matches: &ArgMatches) {
             format!("Something went wrong!").red().bold(),
             format!("Couldn't get the latest build!").yellow()
         );
-        println!("{}", format!("This is most likely because that platform has no build for that version({})", &version).yellow());
+        println!("{}", format!("This is most likely because that platform({}) has no build for that version({})", &software, &version).yellow());
 
         process::exit(102);
     }
