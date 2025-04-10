@@ -109,65 +109,43 @@ pub async fn download_jar_to_temp_dir_with_progress_bar(link: &String) -> Downlo
     let mut headers = header::HeaderMap::new();
     headers.insert(header::USER_AGENT, "rust-reqwest/limonium".parse().unwrap());
 
-    // This seems to break some downloads?
-    // headers.insert(
-    //     header::ACCEPT,
-    //     "application/octet-stream".parse().unwrap(),
-    // );
+    println!("{}", format!("{}", "Downloading...").bright_green());
 
-    // Create a new HTTP client
     let client = Client::new();
-
-    // Get the content length of the file
-    let content_length = client
-        .head(link)
+    let response = client
+        .get(link)
+        .headers(headers.clone())
         .send()
         .await
-        .expect("Failed to get content length")
-        .content_length()
-        .expect("No content length header");
+        .expect("Failed to get file data?");
 
-    println!("{}", format!("{}", "Downloading...").bright_green());
+    let content_length = response.content_length().unwrap_or(0);
 
     let pb = ProgressBar::new(content_length);
     pb.set_style(
-        ProgressStyle::default_bar()
-            .template("{spinner:.green} [{elapsed_precise}] {bar} {bytes}/{total_bytes} ({eta})")
+        ProgressStyle::with_template(
+            "⬇️  {msg}\n{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes:>7}/{total_bytes:7} ({bytes_per_sec}, {eta})",
+        )
             .unwrap()
-            .progress_chars("#>-"),
+            .progress_chars("█░-"),
     );
 
-    // Create a new file to write the downloaded data
     let path = file_utils::get_or_create_limonium_dir().join(&tmp_jar_name);
-    let mut file = File::create(path).unwrap();
+    let mut file = File::create(&path).unwrap();
 
-    // Create a stream of the file data
-    let mut stream = client
-        .get(link)
-        .send()
-        .await
-        .expect("Failed to get file data?")
-        .bytes_stream();
+    let mut stream = response.bytes_stream();
 
-    // Loop over the stream and write to the file
     while let Some(item) = stream.next().await {
-        // Get the chunk of data
         let chunk = item.expect("Failed to get chunk");
-
-        // Write the chunk to the file
-        file.write_all(&chunk)
-            .expect("Failed to write_all of chunk?");
-
-        // Update the progress bar
+        file.write_all(&chunk).expect("Failed to write_all of chunk?");
         pb.inc(chunk.len() as u64);
     }
 
-    // Finish the progress bar
     pb.finish_and_clear();
 
     DownloadedJar {
-        real_jar_name: None, // We might not know the real jar name
+        real_jar_name: None,
         temp_jar_name: tmp_jar_name.clone(),
-        temp_jar_path: file_utils::get_or_create_limonium_dir().join(&tmp_jar_name),
+        temp_jar_path: path,
     }
 }
