@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::download_controllers::platform::IPlatform;
 use crate::file_utils;
-use crate::objects::DownloadedJar::DownloadedJar;
+pub(crate) use crate::objects::DownloadedJar::DownloadedJar;
 
 pub mod geysermc;
 pub mod papermc;
