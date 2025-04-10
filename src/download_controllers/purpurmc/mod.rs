@@ -4,7 +4,7 @@ use async_trait::async_trait;
 
 use crate::download_controllers::platform;
 use crate::hash_utils::Hash;
-use crate::objects::DownloadedJar::DownloadedJar;
+use crate::objects::downloaded_file::DownloadedFile;
 
 // https://github.com/PurpurMC/Purpur
 pub struct PurpurAPI;
@@ -34,7 +34,7 @@ impl platform::IPlatform for PurpurAPI {
         return Some(String::from("latest"));
     }
 
-    async fn get_hash_from_web(&self, _project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedJar>) -> Option<Hash> {
+    async fn get_hash_from_web(&self, _project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedFile>) -> Option<Hash> {
         let mut link = String::from("https://api.purpurmc.org/v2/purpur/");
         link.push_str(&version);
         link.push_str("/");
@@ -53,7 +53,7 @@ impl platform::IPlatform for PurpurAPI {
         None
     }
 
-    async fn custom_download_functionality(&self, _project: &String, _version: &String, _build: &String, _link: &String) -> Option<DownloadedJar> {
+    async fn custom_download_functionality(&self, _project: &String, _version: &String, _build: &String, _link: &String) -> Option<DownloadedFile> {
         None
     }
 }

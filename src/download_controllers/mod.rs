@@ -13,7 +13,7 @@ use uuid::Uuid;
 
 use crate::download_controllers::platform::IPlatform;
 use crate::file_utils;
-pub(crate) use crate::objects::DownloadedJar::DownloadedJar;
+pub(crate) use crate::objects::downloaded_file::DownloadedFile;
 
 pub mod geysermc;
 pub mod papermc;
@@ -58,53 +58,8 @@ pub fn is_valid_platform(the_project: &String) -> bool {
     }
 }
 
-pub async fn download_jar_to_temp_dir(link: &String) -> DownloadedJar {
-    let tmp_jar_name = file_utils::random_file_name(&".jar".to_string());
-
-    let mut headers = header::HeaderMap::new();
-    headers.insert(header::USER_AGENT, "rust-reqwest/limonium".parse().unwrap());
-
-    // This seems to break some downloads?
-    // headers.insert(
-    //     header::ACCEPT,
-    //     "application/octet-stream".parse().unwrap(),
-    // );
-
-    let response = Client::builder()
-        .redirect(reqwest::redirect::Policy::limited(10))
-        .build()
-        .unwrap()
-        .get(link)
-        .headers(headers)
-        .send()
-        .await
-        .unwrap();
-
-    // If the response is not successful, we should alert not exit though
-    if !response.status().is_success() {
-        println!("{} {}", "Failed to download file from".red(), link);
-        println!("{} {}", "Status code:".red(), response.status());
-        println!(
-            "{} {}",
-            "Status text:".red(),
-            response.status().canonical_reason().unwrap()
-        );
-    }
-
-    let path = file_utils::get_or_create_limonium_dir().join(&tmp_jar_name);
-    let mut file = File::create(path).unwrap();
-    let mut content = Cursor::new(response.bytes().await.unwrap());
-    io::copy(&mut content, &mut file).unwrap();
-
-    DownloadedJar {
-        real_jar_name: None, // We might not know the real jar name
-        temp_jar_name: tmp_jar_name.clone(),
-        temp_jar_path: file_utils::get_or_create_limonium_dir().join(&tmp_jar_name),
-    }
-}
-
-pub async fn download_jar_to_temp_dir_with_progress_bar(link: &String) -> DownloadedJar {
-    let tmp_jar_name = file_utils::random_file_name(&".jar".to_string());
+pub async fn download_file_to_temp_dir_with_progress_bar(link: &String, extension: &String, temp_directory: &PathBuf) -> DownloadedFile {
+    let tmp_file_name = file_utils::random_file_name(&extension);
 
     let mut headers = header::HeaderMap::new();
     headers.insert(header::USER_AGENT, "rust-reqwest/limonium".parse().unwrap());
@@ -130,11 +85,10 @@ pub async fn download_jar_to_temp_dir_with_progress_bar(link: &String) -> Downlo
             .progress_chars("█░-"),
     );
 
-    let path = file_utils::get_or_create_limonium_dir().join(&tmp_jar_name);
+    let path = temp_directory.join(&tmp_file_name);
     let mut file = File::create(&path).unwrap();
 
     let mut stream = response.bytes_stream();
-
     while let Some(item) = stream.next().await {
         let chunk = item.expect("Failed to get chunk");
         file.write_all(&chunk).expect("Failed to write_all of chunk?");
@@ -143,9 +97,9 @@ pub async fn download_jar_to_temp_dir_with_progress_bar(link: &String) -> Downlo
 
     pb.finish_and_clear();
 
-    DownloadedJar {
-        real_jar_name: None,
-        temp_jar_name: tmp_jar_name.clone(),
-        temp_jar_path: path,
+    DownloadedFile {
+        real_file_name: None,
+        temp_file_name: tmp_file_name.clone(),
+        temp_file_path: path,
     }
 }

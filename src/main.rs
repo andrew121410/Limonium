@@ -8,7 +8,7 @@ extern crate serde_json;
 
 use crate::backup::BackupFormat;
 use crate::log_search::LogSearch;
-use crate::objects::DownloadedJar::DownloadedJar;
+use crate::objects::downloaded_file::DownloadedFile;
 use clap::builder::TypedValueParser;
 use clap::{ArgAction, ArgMatches};
 use colored::Colorize;
@@ -502,7 +502,7 @@ async fn handle_download(download_matches: &ArgMatches) {
     }
 
     let download_link = platform.get_download_link(&software, &version, &build);
-    let mut downloaded_jar: DownloadedJar = DownloadedJar::empty();
+    let mut downloaded_jar: DownloadedFile = DownloadedFile::empty();
 
     // Check if the platform has a custom download functionality
     let custom_download_function_result = platform
@@ -513,7 +513,7 @@ async fn handle_download(download_matches: &ArgMatches) {
     } else {
         // If there's no custom download functionality, download the jar to the temp directory
         downloaded_jar =
-            download_controllers::download_jar_to_temp_dir_with_progress_bar(&download_link).await;
+            download_controllers::download_file_to_temp_dir_with_progress_bar(&download_link, &".jar".to_string(), &file_utils::get_or_create_limonium_dir()).await;
     }
 
     // Verify the hash of the downloaded jar in the temp directory
@@ -522,7 +522,7 @@ async fn handle_download(download_matches: &ArgMatches) {
         .await;
     if hash_after_downloaded_jar.is_some() {
         let hash = &hash_after_downloaded_jar.unwrap();
-        hash_utils::validate_the_hash(&hash, &file_utils::get_or_create_limonium_dir(), &downloaded_jar.temp_jar_name, true);
+        hash_utils::validate_the_hash(&hash, &file_utils::get_or_create_limonium_dir(), &downloaded_jar.temp_file_name, true);
     } else {
         println!("{}", format!("Not checking hash!").yellow().bold());
     }
@@ -531,15 +531,15 @@ async fn handle_download(download_matches: &ArgMatches) {
     let run_jvmdowngrader = download_matches.get_one::<String>("run-jvmdowngrader");
     if run_jvmdowngrader.is_some() {
         let major_version = run_jvmdowngrader.unwrap().to_string();
-        let input_jar = downloaded_jar.temp_jar_path;
-        let output_jar = file_utils::get_or_create_limonium_dir().join(&downloaded_jar.temp_jar_name);
+        let input_jar = downloaded_jar.temp_file_path;
+        let output_jar = file_utils::get_or_create_limonium_dir().join(&downloaded_jar.temp_file_name);
 
         jvm_downgrader::run_jvm_downgrader(&major_version, &input_jar, &output_jar).await;
     }
 
     // Copy the downloaded jar to the destination
     file_utils::copy_jar_from_temp_dir_to_dest(
-        &downloaded_jar.temp_jar_name,
+        &downloaded_jar.temp_file_name,
         &path_string,
     );
 

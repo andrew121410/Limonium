@@ -6,7 +6,7 @@ use colored::Colorize;
 use regex::Regex;
 
 use crate::hash_utils::Hash;
-use crate::objects::DownloadedJar::DownloadedJar;
+use crate::objects::downloaded_file::DownloadedFile;
 use crate::{download_controllers, ensurer, file_utils};
 
 // Returns hash of the file fingerprint found on the Jenkins page (md5)
@@ -49,29 +49,24 @@ pub async fn download_and_extract_jenkins_artifact(
     _build: &String,
     link: &String,
     regex: &str,
-) -> Option<DownloadedJar> {
+) -> Option<DownloadedFile> {
     ensurer::Ensurer::ensure_programs(&[ensurer::Program::Unzip]);
-
-    let random_zip_name = file_utils::random_file_name(&".zip".to_string());
-    let random_folder_name = file_utils::random_file_name(&"".to_string());
 
     let our_temp_dir = file_utils::get_or_create_limonium_dir();
 
     // Create a folder in the temp directory with a random name
+    let random_folder_name = file_utils::random_file_name(&"".to_string());
     let created_folder = our_temp_dir.join(&random_folder_name);
     if !created_folder.exists() {
         fs::create_dir(&created_folder).unwrap();
     }
 
-    // Download the .zip file to the created folder
-    let zip_file_path = created_folder.join(&random_zip_name);
-    let response = reqwest::get(link).await.expect("Failed to send request.");
-    let bytes = response.bytes().await.expect("Failed to get bytes.");
-    fs::write(&zip_file_path, &bytes).expect("Failed to write file.");
+    // Download file
+    let downloaded_zip: DownloadedFile = download_controllers::download_file_to_temp_dir_with_progress_bar(&link, &".zip".to_string(), &created_folder).await;
 
     // Extract the .zip file in the created folder
     let output = Command::new("unzip")
-        .arg(&zip_file_path)
+        .arg(&downloaded_zip.temp_file_path)
         .current_dir(&created_folder)
         .output()
         .expect("Failed to execute command.");
@@ -82,7 +77,7 @@ pub async fn download_and_extract_jenkins_artifact(
     }
 
     // Delete the .zip file in the created folder
-    fs::remove_file(&zip_file_path).unwrap();
+    fs::remove_file(&downloaded_zip.temp_file_path).unwrap();
 
     // Find the .jar using the regex
     let jar_pattern = Regex::new(regex).unwrap();
@@ -128,10 +123,10 @@ pub async fn download_and_extract_jenkins_artifact(
         .unwrap()
         .to_string();
 
-    let downloaded_jar: DownloadedJar = DownloadedJar {
-        real_jar_name: Some(jar_file_name),
-        temp_jar_name: final_jar_file_name,
-        temp_jar_path: final_jar_path,
+    let downloaded_jar: DownloadedFile = DownloadedFile {
+        real_file_name: Some(jar_file_name),
+        temp_file_name: final_jar_file_name,
+        temp_file_path: final_jar_path,
     };
 
     Some(downloaded_jar)

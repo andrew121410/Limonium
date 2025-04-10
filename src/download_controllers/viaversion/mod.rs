@@ -6,7 +6,7 @@ use colored::Colorize;
 
 use crate::download_controllers::platform;
 use crate::hash_utils::Hash;
-use crate::objects::DownloadedJar::DownloadedJar;
+use crate::objects::downloaded_file::DownloadedFile;
 use crate::{clap_utils, jenkins_utils};
 
 // https://github.com/ViaVersion
@@ -50,7 +50,7 @@ impl platform::IPlatform for ViaVersionAPI {
         exit(1);
     }
 
-    async fn get_hash_from_web(&self, project: &String, version: &String, build: &String, downloaded_jar_option: Option<&DownloadedJar>) -> Option<Hash> {
+    async fn get_hash_from_web(&self, project: &String, version: &String, build: &String, downloaded_jar_option: Option<&DownloadedFile>) -> Option<Hash> {
         if downloaded_jar_option.is_none() {
             return None;
         }
@@ -67,11 +67,11 @@ impl platform::IPlatform for ViaVersionAPI {
         let downloaded_jar = downloaded_jar_option.unwrap();
 
         // We must have the real jar name.
-        if downloaded_jar.real_jar_name.is_none() {
+        if downloaded_jar.real_file_name.is_none() {
             return None;
         }
 
-        let jar_name = downloaded_jar.real_jar_name.as_ref().unwrap();
+        let jar_name = downloaded_jar.real_file_name.as_ref().unwrap();
 
         let fingerprint_link = get_fingerprint_link(&project, &channel_selected, &jar_name);
 
@@ -80,8 +80,8 @@ impl platform::IPlatform for ViaVersionAPI {
         return Some(hash);
     }
 
-    async fn custom_download_functionality(&self, project: &String, version: &String, build: &String, link: &String) -> Option<DownloadedJar> {
-        let downloaded_jar_option: Option<DownloadedJar> = jenkins_utils::download_and_extract_jenkins_artifact(
+    async fn custom_download_functionality(&self, project: &String, version: &String, build: &String, link: &String) -> Option<DownloadedFile> {
+        let downloaded_jar_option: Option<DownloadedFile> = jenkins_utils::download_and_extract_jenkins_artifact(
             &project,
             &version,
             &build,

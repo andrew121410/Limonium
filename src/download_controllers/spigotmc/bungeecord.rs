@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use crate::download_controllers::platform;
 use crate::hash_utils::Hash;
 use crate::jenkins_utils;
-use crate::objects::DownloadedJar::DownloadedJar;
+use crate::objects::downloaded_file::DownloadedFile;
 
 // https://github.com/SpigotMC/BungeeCord
 // https://ci.md-5.net/job/BungeeCord/
@@ -34,7 +34,7 @@ impl platform::IPlatform for BungeeCordAPI {
 
     // https://ci.md-5.net/job/BungeeCord/lastSuccessfulBuild/artifact/bootstrap/target/BungeeCord.jar/*fingerprint*/
     // Will return a md5 hash
-    async fn get_hash_from_web(&self, project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedJar>) -> Option<Hash> {
+    async fn get_hash_from_web(&self, project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedFile>) -> Option<Hash> {
         let jar_name = BungeeCordAPI::get_jar_name(&self, &project, &version, &build);
 
         // Make the url
@@ -53,7 +53,7 @@ impl platform::IPlatform for BungeeCordAPI {
         return Some(String::from(""));
     }
 
-    async fn custom_download_functionality(&self, _project: &String, _version: &String, _build: &String, _link: &String) -> Option<DownloadedJar> {
+    async fn custom_download_functionality(&self, _project: &String, _version: &String, _build: &String, _link: &String) -> Option<DownloadedFile> {
         None
     }
 }

@@ -8,7 +8,7 @@ use colored::Colorize;
 use crate::{clap_utils, download_controllers, number_utils};
 use crate::download_controllers::platform;
 use crate::hash_utils::Hash;
-use crate::objects::DownloadedJar::DownloadedJar;
+use crate::objects::downloaded_file::DownloadedFile;
 
 // https://github.com/GeyserMC/
 pub struct GeyserAPI {}
@@ -102,7 +102,7 @@ impl platform::IPlatform for GeyserAPI {
         return Some(latest_build);
     }
 
-    async fn get_hash_from_web(&self, project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedJar>) -> Option<Hash> {
+    async fn get_hash_from_web(&self, project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedFile>) -> Option<Hash> {
         let mut link = String::from(&GEYSER_API_ENDPOINT.to_string());
         link.push_str("/v2/projects/");
         link.push_str(&project);
@@ -132,7 +132,7 @@ impl platform::IPlatform for GeyserAPI {
         return None;
     }
 
-    async fn custom_download_functionality(&self, _project: &String, _version: &String, _build: &String, _link: &String) -> Option<DownloadedJar> {
+    async fn custom_download_functionality(&self, _project: &String, _version: &String, _build: &String, _link: &String) -> Option<DownloadedFile> {
         None
     }
 }

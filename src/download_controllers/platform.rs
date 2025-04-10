@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 
 use crate::hash_utils::Hash;
-use crate::objects::DownloadedJar::DownloadedJar;
+use crate::objects::downloaded_file::DownloadedFile;
 
 #[async_trait]
 pub trait IPlatform: Sync {
@@ -13,7 +13,7 @@ pub trait IPlatform: Sync {
 
     fn get_jar_name(&self, project: &String, version: &String, build: &String) -> String;
 
-    async fn get_hash_from_web(&self, project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedJar>) -> Option<Hash>;
+    async fn get_hash_from_web(&self, project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedFile>) -> Option<Hash>;
 
-    async fn custom_download_functionality(&self, project: &String, version: &String, build: &String, link: &String) -> Option<DownloadedJar>;
+    async fn custom_download_functionality(&self, project: &String, version: &String, build: &String, link: &String) -> Option<DownloadedFile>;
 }

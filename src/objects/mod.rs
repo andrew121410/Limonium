@@ -1,1 +1,1 @@
-pub mod DownloadedJar;
+pub mod downloaded_file;

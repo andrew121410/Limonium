@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use crate::download_controllers::platform;
 use crate::hash_utils::Hash;
 use crate::jenkins_utils;
-use crate::objects::DownloadedJar::DownloadedJar;
+use crate::objects::downloaded_file::DownloadedFile;
 
 // https://github.com/CitizensDev/Citizens2
 // https://ci.citizensnpcs.co/job/Citizens2/
@@ -34,7 +34,7 @@ impl platform::IPlatform for Citizens2API {
         project: &String,
         version: &String,
         build: &String,
-        downloaded_jar_option: Option<&DownloadedJar>,
+        downloaded_jar_option: Option<&DownloadedFile>,
     ) -> Option<Hash> {
         if downloaded_jar_option.is_none() {
             return None;
@@ -43,11 +43,11 @@ impl platform::IPlatform for Citizens2API {
         let downloaded_jar = downloaded_jar_option.unwrap();
 
         // We must have the real jar name.
-        if downloaded_jar.real_jar_name.is_none() {
+        if downloaded_jar.real_file_name.is_none() {
             return None;
         }
 
-        let jar_name = downloaded_jar.real_jar_name.as_ref().unwrap();
+        let jar_name = downloaded_jar.real_file_name.as_ref().unwrap();
         // https://ci.citizensnpcs.co/job/Citizens2/lastSuccessfulBuild/artifact/dist/target/Citizens-2.0.37-b3714.jar/*fingerprint*/
         let fingerprint_link = format!("https://ci.citizensnpcs.co/job/Citizens2/lastSuccessfulBuild/artifact/dist/target/{}/*fingerprint*/", jar_name);
         let hash = jenkins_utils::extract_file_fingerprint_hash(&fingerprint_link).await;
@@ -60,8 +60,8 @@ impl platform::IPlatform for Citizens2API {
         version: &String,
         build: &String,
         link: &String,
-    ) -> Option<DownloadedJar> {
-        let downloaded_jar_option: Option<DownloadedJar> =
+    ) -> Option<DownloadedFile> {
+        let downloaded_jar_option: Option<DownloadedFile> =
             jenkins_utils::download_and_extract_jenkins_artifact(
                 &project,
                 &version,
