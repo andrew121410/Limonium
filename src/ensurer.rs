@@ -14,6 +14,7 @@ pub enum Program {
     Sha256Sum,
     Ls,
     Zstd,
+    Gzip
 }
 
 impl Program {
@@ -31,6 +32,7 @@ impl Program {
             Program::Sha256Sum => ("sha256sum", &["--version"]),
             Program::Ls => ("ls", &["--version"]),
             Program::Zstd => ("zstd", &["--version"]),
+            Program::Gzip => ("gzip", &["--version"]),
         }
     }
 }

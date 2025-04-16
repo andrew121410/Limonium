@@ -60,7 +60,7 @@ impl Backup {
         // Check if the compression format is installed
         match self.backup_format {
             BackupFormat::TarGz => {
-                ensurer::Ensurer::ensure_programs(&[ensurer::Program::Tar]);
+                ensurer::Ensurer::ensure_programs(&[ensurer::Program::Tar, ensurer::Program::Gzip]);
             }
             BackupFormat::TarZst => {
                 ensurer::Ensurer::ensure_programs(&[ensurer::Program::Tar, ensurer::Program::Zstd]);
