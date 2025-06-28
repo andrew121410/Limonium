@@ -367,7 +367,7 @@ async fn handle_download(download_matches: &ArgMatches) {
     let current_dir_path_buffer = env::current_dir().unwrap();
     let current_path = current_dir_path_buffer.as_path();
 
-    let software = download_matches.get_one::<String>("software").unwrap();
+    let software = download_matches.get_one::<String>("software").unwrap().to_lowercase();
     let mut version: String = download_matches
         .get_one::<String>("version")
         .unwrap()
