@@ -1,15 +1,11 @@
-use std::env::temp_dir;
 use std::fs::File;
-use std::io::{Cursor, Write};
-use std::path::{Path, PathBuf};
-use std::{fs, io};
+use std::io::Write;
+use std::path::PathBuf;
 
 use colored::Colorize;
 use futures_util::stream::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
-use regex::Regex;
 use reqwest::{header, Client};
-use uuid::Uuid;
 
 use crate::download_controllers::platform::IPlatform;
 use crate::file_utils;
@@ -61,15 +57,12 @@ pub fn is_valid_platform(the_project: &String) -> bool {
 pub async fn download_file_to_temp_dir_with_progress_bar(link: &String, extension: &String, temp_directory: &PathBuf) -> DownloadedFile {
     let tmp_file_name = file_utils::random_file_name(&extension);
 
-    let mut headers = header::HeaderMap::new();
-    headers.insert(header::USER_AGENT, "rust-reqwest/limonium".parse().unwrap());
-
     println!("{}", format!("{}", "Downloading...").bright_green());
 
     let client = Client::new();
     let response = client
         .get(link)
-        .headers(headers.clone())
+        .headers(limonium_headers())
         .send()
         .await
         .expect("Failed to get file data?");
@@ -102,4 +95,16 @@ pub async fn download_file_to_temp_dir_with_progress_bar(link: &String, extensio
         temp_file_name: tmp_file_name.clone(),
         temp_file_path: path,
     }
+}
+
+fn limonium_headers() -> reqwest::header::HeaderMap {
+    let version = env!("CARGO_PKG_VERSION");
+    let mut headers = reqwest::header::HeaderMap::new();
+    headers.insert(
+        reqwest::header::USER_AGENT,
+        format!("Limonium/{} (https://github.com/andrew121410/Limonium)", version)
+            .parse()
+            .unwrap(),
+    );
+    headers
 }
