@@ -88,7 +88,7 @@ All the software will be downloaded & compiled in the ./limonium-compile directo
 
 ### Optional Compile Arguments
 1. --branch `The branch to use (If you don't specify a branch, it will use the default branch)`
-2. --version `The version to use (used only for Spigot for now)`
+2. --version `The version to use (Used for Spigot and CoreProtect)`
 
 ### Compile Usage
 

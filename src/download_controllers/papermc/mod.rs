@@ -19,70 +19,55 @@ static BUILD_INFO: OnceCell<FillBuildInfo> = OnceCell::new();
 #[async_trait]
 impl platform::IPlatform for PaperAPI {
     async fn get_latest_version(&self, project: &String) -> Option<String> {
-        let mut link = String::from(&PAPER_API_ENDPOINT.to_string());
-        link.push_str("/v3/projects/");
-        link.push_str(&project);
+        let url = format!("{}/v3/projects/{}", PAPER_API_ENDPOINT, project);
 
         let client = reqwest::Client::new();
         let response = client
-            .get(&link)
+            .get(&url)
             .headers(limonium_headers())
             .send()
             .await
-            .unwrap();
-        let text = response.text().await.unwrap();
+            .ok()?;
+        let text = response.text().await.ok()?;
 
-        let json: FillProjectJSON = serde_json::from_str(text.as_str()).unwrap();
+        let json: FillProjectJSON = serde_json::from_str(&text).ok()?;
 
-        if json.error.is_some() {
-            println!("{} {}", "Error:".red(), json.error.unwrap());
+        if let Some(error) = json.error {
+            eprintln!("{} {}", "Error:".red(), error);
             return None;
         }
 
-        if json.versions.is_none() {
-            println!("{} {}", "Error:".red(), "No versions found");
+        let versions_map = json.versions?;
+
+        // Collect both major keys and all dot versions into one list
+        let mut all_versions: Vec<String> = versions_map
+            .iter()
+            .flat_map(|(major, versions)| {
+                let mut combined = vec![major.clone()];
+                combined.extend(versions.clone());
+                combined
+            })
+            .collect();
+
+        // Remove "-pre" versions
+        all_versions.retain(|v| !v.contains("-pre"));
+
+        // Respect the --no-snapshot-version flag
+        if clap_utils::clap_get_flag_or_false("no-snapshot-version") {
+            all_versions.retain(|v| !v.contains("-SNAPSHOT"));
+        }
+
+        if all_versions.is_empty() {
+            eprintln!("{} {}", "Error:".red(), "No valid versions found");
             return None;
         }
 
-        let mut versions: HashMap<String, Vec<String>> = json.versions.unwrap();
+        // Sort and return the latest
+        number_utils::sort_versions(&mut all_versions);
+        let latest_version = all_versions.last()?.to_string();
 
-        // HashMap keys are the major_versions of a version so like (1.19, 1.20, 1.21) and then the values are the dot versions like 1.21.1, 1.21.2, etc.
-        // Essentially we need to get the highest major version and then the highest dot version of that major version.
-
-        let mut major_versions: Vec<String> = versions.keys().cloned().collect();
-
-        if major_versions.is_empty() {
-            println!(
-                "{} {}",
-                "Error:".red(),
-                "No versions found (keys are empty)"
-            );
-            return None;
-        }
-
-        // Sort major versions
-        number_utils::sort_versions(&mut major_versions);
-
-        let highest_major_version: String = major_versions.last().unwrap().to_string();
-        let mut dot_versions: Vec<String> = versions.get(&highest_major_version).unwrap().to_vec();
-
-        // Sort dot versions
-        number_utils::sort_versions(&mut dot_versions);
-
-        // Paper for some reason has "1.13-pre-7" lol
-        dot_versions.retain(|x| !x.contains("-pre"));
-
-        // See if we don't include snapshot versions
-        let dont_include_snapshot_versions: bool =
-            clap_utils::clap_get_flag_or_false(&String::from("no-snapshot-version"));
-        if dont_include_snapshot_versions {
-            dot_versions.retain(|x| !x.contains("-SNAPSHOT"));
-        }
-
-        let latest_version: String = dot_versions.last().unwrap().to_string();
-
-        println!("{} {}", "Latest version:".green(), latest_version);
-        Some(latest_version.to_string())
+        println!("{} {}", "Latest version:".green(), &latest_version);
+        Some(latest_version)
     }
 
     fn get_download_link(&self, project: &String, version: &String, build: &String) -> String {
@@ -226,7 +211,7 @@ struct FillProjectJSON {
     versions: Option<HashMap<String, Vec<String>>>,
 }
 
-// https://fill.papermc.io/v3/projects/paper/versions/1.20.5
+// https://fill.papermc.io/v3/projects/paper/versions/1.21.7
 #[derive(Deserialize, Default)]
 struct FillBuildsJSON {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -238,7 +223,7 @@ struct FillBuildsJSON {
     builds: Option<Vec<i64>>,
 }
 
-// https://fill.papermc.io/v3/projects/paper/versions/1.20.5/builds/latest
+// https://fill.papermc.io/v3/projects/paper/versions/1.21.7/builds/latest
 #[derive(Deserialize, Default, Clone)]
 struct FillBuildInfo {
     id: i32,
