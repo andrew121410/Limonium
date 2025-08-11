@@ -1,10 +1,10 @@
+use std::process;
 use std::string::String;
-
-use async_trait::async_trait;
 
 use crate::download_controllers::platform;
 use crate::hash_utils::Hash;
 use crate::objects::downloaded_file::DownloadedFile;
+use async_trait::async_trait;
 
 // https://github.com/PurpurMC/Purpur
 pub struct PurpurAPI;
@@ -30,7 +30,6 @@ impl platform::IPlatform for PurpurAPI {
     }
 
     async fn get_latest_build(&self, _project: &String, _version: &String) -> Option<String> {
-        // Thank you purpur for keeping the latest tag <3
         return Some(String::from("latest"));
     }
 
@@ -42,6 +41,12 @@ impl platform::IPlatform for PurpurAPI {
 
         let text = reqwest::get(&link).await.unwrap().text().await.unwrap();
         let purpur_build_info_json: PurpurBuildInfo = serde_json::from_str(text.as_str()).unwrap();
+
+        if purpur_build_info_json.error.is_some() {
+            eprintln!("\x1b[31mPurpur Error: {}\x1b[0m", purpur_build_info_json.error.unwrap());
+            process::exit(102);
+            return None;
+        }
 
         if purpur_build_info_json.md5.is_some() {
             return Some(Hash::new(String::from("md5"), purpur_build_info_json.md5.unwrap()));
@@ -58,10 +63,14 @@ impl platform::IPlatform for PurpurAPI {
     }
 }
 
-// Example https://api.purpurmc.org/v2/purpur/1.18.2/latest
+// Example https://api.purpurmc.org/v2/purpur/1.21.8/latest
 #[derive(Deserialize, Default)]
 struct PurpurBuildInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(default)]
     md5: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default)]
+    error: Option<String>,
 }
