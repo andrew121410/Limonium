@@ -8,7 +8,7 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         target:
@@ -19,7 +19,7 @@ jobs:
       cargo_version: ${{ steps.cargo_version.outputs.t_cargo_version }}  # Expose version to other jobs
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Rust target
         run: rustup target add ${{ matrix.target }}
@@ -50,7 +50,7 @@ jobs:
 
   release:
     needs: build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v5
