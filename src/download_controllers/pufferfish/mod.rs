@@ -1,149 +1,138 @@
 use std::process::exit;
-use std::string::String;
 
 use async_trait::async_trait;
 use colored::Colorize;
 use regex::Regex;
+use semver::Version;
 
 use crate::download_controllers::platform;
 use crate::hash_utils::Hash;
 use crate::jenkins_utils;
 use crate::objects::downloaded_file::DownloadedFile;
 
-// https://github.com/pufferfish-gg/Pufferfish
-// https://ci.pufferfish.host/
 pub struct PufferfishAPI;
 
 #[async_trait]
 impl platform::IPlatform for PufferfishAPI {
     fn get_download_link(&self, project: &String, version: &String, build: &String) -> String {
-        let jar_name = PufferfishAPI::get_jar_name(&self, &project, &version, &build);
-        let jenkins_version = get_jenkins_version(version);
-
-        // Example https://ci.pufferfish.host/job/Pufferfish-1.20/lastSuccessfulBuild/artifact/build/libs/pufferfish-paperclip-1.20.4-R0.1-SNAPSHOT-reobf.jar
-        let mut to_return = String::from("https://ci.pufferfish.host/job/Pufferfish-");
-        to_return.push_str(&jenkins_version);
-        to_return.push_str("/");
-        to_return.push_str(&build);
-        to_return.push_str("/artifact/build/libs/");
-        to_return.push_str(&jar_name);
-        return to_return;
-    }
-
-    fn get_jar_name(&self, _project: &String, version: &String, _build: &String) -> String {
-        let version_number: f32 = version.split('.').take(2).collect::<Vec<&str>>().join(".").parse().unwrap_or(0.0);
-        let mut to_return = String::from("pufferfish-paperclip-");
-        to_return.push_str(&version);
-        if version_number >= 1.21 {
-            to_return.push_str("-R0.1-SNAPSHOT-mojmap.jar");
-        } else {
-            to_return.push_str("-R0.1-SNAPSHOT-reobf.jar");
-        }
-        return to_return;
-    }
-
-    async fn get_latest_build(&self, _project: &String, version: &String) -> Option<String> {
-        // Verify Pufferfish Version even exists.
-        let jenkins_version = get_jenkins_version(version);
-        validate_jenkins_version(&jenkins_version, &version).await;
-
-        return Some(String::from("lastSuccessfulBuild"));
-    }
-
-    // https://ci.pufferfish.host/job/Pufferfish-1.20/lastSuccessfulBuild/artifact/build/libs/pufferfish-paperclip-1.20.4-R0.1-SNAPSHOT-reobf.jar/*fingerprint*/
-    // Will return a md5 hash
-    async fn get_hash_from_web(&self, project: &String, version: &String, build: &String, downloaded_jar: Option<&DownloadedFile>) -> Option<Hash> {
         let jar_name = self.get_jar_name(project, version, build);
         let jenkins_version = get_jenkins_version(version);
 
-        // Make the URL
-        let mut url = String::from("https://ci.pufferfish.host/job/Pufferfish-");
-        url.push_str(&jenkins_version);
-        url.push_str("/");
-        url.push_str(&build);
-        url.push_str("/artifact/build/libs/");
+        let mut to_return = format!(
+            "https://ci.pufferfish.host/job/Pufferfish-{}/{}",
+            jenkins_version, build
+        );
+
+        if is_new_artifact_structure(version) {
+            to_return.push_str("/artifact/pufferfish-server/build/libs/");
+        } else {
+            to_return.push_str("/artifact/build/libs/");
+        }
+
+        to_return.push_str(&jar_name);
+        to_return
+    }
+
+    fn get_jar_name(&self, _project: &String, version: &String, _build: &String) -> String {
+        let suffix = if is_new_artifact_structure(version) {
+            "-R0.1-SNAPSHOT-mojmap.jar"
+        } else {
+            "-R0.1-SNAPSHOT-reobf.jar"
+        };
+
+        format!("pufferfish-paperclip-{}{}", version, suffix)
+    }
+
+    async fn get_latest_build(&self, _project: &String, version: &String) -> Option<String> {
+        let jenkins_version = get_jenkins_version(version);
+        validate_jenkins_version(&jenkins_version, version).await.ok()?;
+        Some("lastSuccessfulBuild".to_string())
+    }
+
+    async fn get_hash_from_web(
+        &self,
+        project: &String,
+        version: &String,
+        build: &String,
+        _downloaded_jar: Option<&DownloadedFile>,
+    ) -> Option<Hash> {
+        let jar_name = self.get_jar_name(project, version, build);
+        let jenkins_version = get_jenkins_version(version);
+
+        let mut url = format!(
+            "https://ci.pufferfish.host/job/Pufferfish-{}/{}",
+            jenkins_version, build
+        );
+
+        if is_new_artifact_structure(version) {
+            url.push_str("/artifact/pufferfish-server/build/libs/");
+        } else {
+            url.push_str("/artifact/build/libs/");
+        }
+
         url.push_str(&jar_name);
         url.push_str("/*fingerprint*/");
 
         let hash = jenkins_utils::extract_file_fingerprint_hash(&url).await;
-        return Some(hash);
+        Some(hash)
     }
 
     async fn get_latest_version(&self, _project: &String) -> Option<String> {
         None
     }
 
-    async fn custom_download_functionality(&self, _project: &String, _version: &String, _build: &String, _link: &String) -> Option<DownloadedFile> {
+    async fn custom_download_functionality(
+        &self,
+        _project: &String,
+        _version: &String,
+        _build: &String,
+        _link: &String,
+    ) -> Option<DownloadedFile> {
         None
     }
 }
 
-
-// Makes like https://ci.pufferfish.host/job/Pufferfish-1.20/
-pub fn make_link_for_jenkins_version(jenkins_version: &String) -> String {
-    let mut url = String::from("https://ci.pufferfish.host/job/Pufferfish-");
-    url.push_str(jenkins_version);
-    url.push_str("/");
-
-    return url;
+pub fn make_link_for_jenkins_version(jenkins_version: &str) -> String {
+    format!("https://ci.pufferfish.host/job/Pufferfish-{}/", jenkins_version)
 }
 
-pub async fn validate_jenkins_version(jenkins_version: &String, version: &String) {
-    let url = make_link_for_jenkins_version(&jenkins_version);
-
-    // Validate the Minecraft Version associated with the Jenkins Version
+pub async fn validate_jenkins_version(jenkins_version: &str, version: &str) -> Result<(), String> {
+    let url = make_link_for_jenkins_version(jenkins_version);
     let confirm = get_minecraft_version_from_page(&url).await;
 
-    if confirm.is_none() {
-        println!("Something went wrong while trying to get the Minecraft Version does that version exist?");
-        exit(1);
-    }
-
-    let compare = confirm.unwrap();
+    let compare = confirm.ok_or_else(|| {
+        "Something went wrong while trying to get the Minecraft Version. Does that version exist?"
+            .to_string()
+    })?;
 
     if !compare.eq_ignore_ascii_case(version) {
-        let mut build = String::from("The Minecraft Version you want (");
-        build.push_str(version);
-        build.push_str(") cannot be installed as only you can get the latest for that version which is ");
-        build.push_str(&compare);
-
-        println!("{}", format!("{}", build).red());
-        exit(1);
+        let msg = format!(
+            "The Minecraft Version you want ({}) cannot be installed. Only the latest for that version is available: {}",
+            version, compare
+        );
+        println!("{}", msg.red());
+        return Err(msg);
     }
+
+    Ok(())
 }
 
 pub fn get_jenkins_version(version: &str) -> String {
-    let components: Vec<&str> = version.split('.').collect();
-
-    // Check if there are more than two components
-    if components.len() > 2 {
-        // Join the first two components with a dot to get the stripped version
-        return components[..2].join(".");
-    }
-
-    // Return the version string unchanged
-    version.to_string()
+    version.split('.').take(2).collect::<Vec<&str>>().join(".")
 }
 
-// Needs something like https://ci.pufferfish.host/job/Pufferfish-1.20/
-// Returns latest minecraft version so if it's 1.20.4 then returns 1.20.4
-pub async fn get_minecraft_version_from_page(url: &String) -> Option<String> {
-    // Get the HTML
-    let response = reqwest::get(url).await;
-    let html = response.unwrap().text().await.unwrap();
+pub fn is_new_artifact_structure(version: &str) -> bool {
+    Version::parse(version).map_or(false, |v| v >= Version::new(1, 21, 0))
+}
 
-    // Extract the MC Version using regex
-    let regex = Regex::new(r#"pufferfish-paperclip-(\d+\.\d+\.\d+)"#).unwrap();
-    let captures_option = regex.captures(&html);
+pub async fn get_minecraft_version_from_page(url: &str) -> Option<String> {
+    let response = reqwest::get(url).await.ok()?;
+    let html = response.text().await.ok()?;
 
-    if captures_option.is_none() {
-        return None;
-    }
+    let regex = Regex::new(r#"pufferfish-paperclip-(\d+\.\d+\.\d+)"#).ok()?;
+    let captures = regex.captures(&html)?;
 
-    let captures = captures_option.unwrap();
-    let mc_version = captures.get(1).unwrap().as_str();
-
-    return Some(mc_version.to_string());
+    Some(captures.get(1)?.as_str().to_string())
 }
 
 #[cfg(test)]
@@ -152,16 +141,24 @@ mod pufferfish_tests {
 
     #[tokio::test]
     async fn test_get_minecraft_version_from_page() {
-        let url = String::from("https://ci.pufferfish.host/job/Pufferfish-1.19/");
-        let expected_version = String::from("1.19.4");
+        let url = "https://ci.pufferfish.host/job/Pufferfish-1.19/";
+        let expected_version = "1.19.4";
 
-        let version = get_minecraft_version_from_page(&url).await;
-        assert_eq!(version, Some(expected_version));
+        let version = get_minecraft_version_from_page(url).await;
+        assert_eq!(version, Some(expected_version.to_string()));
 
-        let url = String::from("https://ci.pufferfish.host/job/Pufferfish-1.20/");
-        let expected_version = String::from("1.20.4");
+        let url = "https://ci.pufferfish.host/job/Pufferfish-1.20/";
+        let expected_version = "1.20.4";
 
-        let version = get_minecraft_version_from_page(&url).await;
-        assert_eq!(version, Some(expected_version));
+        let version = get_minecraft_version_from_page(url).await;
+        assert_eq!(version, Some(expected_version.to_string()));
+    }
+
+    #[test]
+    fn test_is_new_artifact_structure() {
+        assert!(is_new_artifact_structure("1.21.0"));
+        assert!(is_new_artifact_structure("1.21.8"));
+        assert!(!is_new_artifact_structure("1.20.4"));
+        assert!(!is_new_artifact_structure("1.19.4"));
     }
 }
