@@ -54,7 +54,7 @@ fn modify_pom_xml(software_path: &PathBuf, version: &str) -> io::Result<()> {
             new_pom_content.push_str(&format!("    <version>{}</version>\n", version));
             version_updated = true;
         } else if !branch_updated && line.trim().starts_with("<project.branch>") && line.trim().ends_with("</project.branch>") {
-            new_pom_content.push_str("    <project.branch>master</project.branch>\n");
+            new_pom_content.push_str("    <project.branch>development</project.branch>\n");
             branch_updated = true;
         } else {
             new_pom_content.push_str(line);
