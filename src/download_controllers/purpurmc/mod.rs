@@ -63,7 +63,7 @@ impl platform::IPlatform for PurpurAPI {
     }
 }
 
-// Example https://api.purpurmc.org/v2/purpur/1.21.8/latest
+// Example https://api.purpurmc.org/v2/purpur/1.21.10/latest
 #[derive(Deserialize, Default)]
 struct PurpurBuildInfo {
     #[serde(skip_serializing_if = "Option::is_none")]

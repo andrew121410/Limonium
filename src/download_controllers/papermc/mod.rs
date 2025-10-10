@@ -211,7 +211,7 @@ struct FillProjectJSON {
     versions: Option<HashMap<String, Vec<String>>>,
 }
 
-// https://fill.papermc.io/v3/projects/paper/versions/1.21.8
+// https://fill.papermc.io/v3/projects/paper/versions/1.21.10
 #[derive(Deserialize, Default)]
 struct FillBuildsJSON {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -223,7 +223,7 @@ struct FillBuildsJSON {
     builds: Option<Vec<i64>>,
 }
 
-// https://fill.papermc.io/v3/projects/paper/versions/1.21.8/builds/latest
+// https://fill.papermc.io/v3/projects/paper/versions/1.21.10/builds/latest
 #[derive(Deserialize, Default, Clone)]
 struct FillBuildInfo {
     id: i32,

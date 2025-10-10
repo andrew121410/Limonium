@@ -157,7 +157,7 @@ mod pufferfish_tests {
     #[test]
     fn test_is_new_artifact_structure() {
         assert!(is_new_artifact_structure("1.21.0"));
-        assert!(is_new_artifact_structure("1.21.8"));
+        assert!(is_new_artifact_structure("1.21.10"));
         assert!(!is_new_artifact_structure("1.20.4"));
         assert!(!is_new_artifact_structure("1.19.4"));
     }
