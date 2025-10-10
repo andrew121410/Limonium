@@ -16,8 +16,8 @@ impl platform::IPlatform for BungeeCordAPI {
     fn get_download_link(&self, project: &String, version: &String, build: &String) -> String {
         let jar_name = BungeeCordAPI::get_jar_name(&self, &project, &version, &build);
 
-        // Example https://ci.md-5.net/job/BungeeCord/lastSuccessfulBuild/artifact/bootstrap/target/BungeeCord.jar
-        let mut to_return = String::from("https://ci.md-5.net/job/BungeeCord/");
+        // Example https://hub.spigotmc.org/jenkins/job/BungeeCord/lastSuccessfulBuild/artifact/bootstrap/target/BungeeCord.jar
+        let mut to_return = String::from("https://hub.spigotmc.org/jenkins/job/BungeeCord/");
         to_return.push_str(&build);
         to_return.push_str("/artifact/bootstrap/target/");
         to_return.push_str(&jar_name);
@@ -38,7 +38,7 @@ impl platform::IPlatform for BungeeCordAPI {
         let jar_name = BungeeCordAPI::get_jar_name(&self, &project, &version, &build);
 
         // Make the url
-        let mut url = String::from("https://ci.md-5.net/job/BungeeCord/");
+        let mut url = String::from("https://hub.spigotmc.org/jenkins/job/BungeeCord/");
         url.push_str(&build);
         url.push_str("/artifact/bootstrap/target/");
         url.push_str(&jar_name);

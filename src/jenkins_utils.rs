@@ -1,6 +1,6 @@
+use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
-use std::{env, fs};
 
 use colored::Colorize;
 use regex::Regex;
@@ -11,9 +11,16 @@ use crate::{download_controllers, ensurer, file_utils};
 
 // Returns hash of the file fingerprint found on the Jenkins page (md5)
 pub async fn extract_file_fingerprint_hash(url: &String) -> Hash {
-    // Get the HTML
-    let response = reqwest::get(url).await;
-    let html = response.unwrap().text().await.unwrap();
+    let client = reqwest::Client::new();
+    let response = client
+        .get(url)
+        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
+        .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+        .header("Accept-Language", "en-US,en;q=0.5")
+        .send()
+        .await
+        .unwrap();
+    let html = response.text().await.unwrap();
 
     // Extract the MD5 hash using regex
     let re = Regex::new(r#"The fingerprint (\w{32})"#).unwrap();
@@ -62,7 +69,13 @@ pub async fn download_and_extract_jenkins_artifact(
     }
 
     // Download file
-    let downloaded_zip: DownloadedFile = download_controllers::download_file_to_temp_dir_with_progress_bar(&link, &".zip".to_string(), &created_folder).await;
+    let downloaded_zip: DownloadedFile =
+        download_controllers::download_file_to_temp_dir_with_progress_bar(
+            &link,
+            &".zip".to_string(),
+            &created_folder,
+        )
+        .await;
 
     // Extract the .zip file in the created folder
     let output = Command::new("unzip")
