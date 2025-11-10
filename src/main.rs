@@ -597,6 +597,14 @@ async fn handle_backup(backup_matches: &ArgMatches) {
         compression_level_ours,
     );
 
+    // Ask if you want to upload the backup to SFTP before creating the backup
+    let ask_before_upload = backup_matches.get_flag("ask-before-uploading");
+    let sftp_option = backup_matches.get_one::<String>("sftp");
+    let mut skip_upload = false;
+    if ask_before_upload && sftp_option.is_some() {
+        skip_upload = ask_for_input_for_to_upload_to_sftp();
+    }
+
     let time = Instant::now();
 
     // If error show error
@@ -630,15 +638,7 @@ async fn handle_backup(backup_matches: &ArgMatches) {
         );
     }
 
-    // Ask if you want to upload the backup to SFTP before uploading
-    let ask_before_upload = backup_matches.get_flag("ask-before-uploading");
-    let mut skip_upload = false;
-    if ask_before_upload {
-        skip_upload = ask_for_input_for_to_upload_to_sftp();
-    }
-
-    // Handle uploading to SFTP if SFTP is specified
-    let sftp_option = backup_matches.get_one::<String>("sftp");
+    // Handle uploading to SFTP if SFTP is specified (skip_upload was determined before backup)
     if sftp_option.is_some() && !skip_upload {
         println!(
             "{} {}",
@@ -793,7 +793,7 @@ fn ask_for_input_for_to_upload_to_sftp() -> bool {
     let mut input = String::new();
     println!(
         "{} {}",
-        format!("Do you want to upload the backup to SFTP?").yellow(),
+        format!("Do you want to upload the backup to SFTP after it's created?").yellow(),
         format!("(y/n)").green()
     );
     std::io::stdin().read_line(&mut input).unwrap();

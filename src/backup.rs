@@ -20,7 +20,7 @@ pub enum BackupFormat {
     Zip,
 }
 
-pub struct Backup_Result {
+pub struct BackupResult {
     pub file_name: String,
     pub file_path: PathBuf,
     pub sha256_hash: String,
@@ -47,7 +47,7 @@ impl Backup {
         }
     }
 
-    pub fn backup(&self) -> Result<Backup_Result, Error> {
+    pub fn backup(&self) -> Result<BackupResult, Error> {
         let timestamp = chrono::Local::now().format("%-m-%-d-%Y");
 
         // The extension of the backup archive
@@ -305,7 +305,7 @@ impl Backup {
         }
 
         let combined_backup_hash = String::from_utf8_lossy(&hash_output.stdout).split(" ").collect::<Vec<&str>>()[0].to_string();
-        let backup_result = Backup_Result {
+        let backup_result = BackupResult {
             file_name: combined_backup_path.file_name().unwrap().to_str().unwrap().to_string(),
             file_path: combined_backup_path,
             sha256_hash: combined_backup_hash,
