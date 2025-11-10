@@ -128,6 +128,8 @@ async fn main() {
             .action(ArgAction::SetTrue))
         .subcommand(clap::Command::new("self-update")
             .about("Updates Limonium"))
+        .subcommand(clap::Command::new("cleanup")
+            .about("Cleans up the temp directory and exits"))
         .subcommand(clap::Command::new("compile")
             .about("Compiles software")
             .arg(clap::Arg::new("software")
@@ -330,13 +332,20 @@ async fn main() {
             "{}",
             format!("Cleaned up the temp directory!").green().bold()
         );
-        process::exit(0);
     }
 
     match command_matches.subcommand() {
         // Handle self-update subcommand
         Some(("self-update", _)) => {
             self_update();
+            process::exit(0);
+        }
+        Some(("cleanup", _)) => {
+            file_utils::cleanup();
+            println!(
+                "{}",
+                format!("Cleaned up the temp directory!").green().bold()
+            );
             process::exit(0);
         }
         Some(("download", download_matches)) => {

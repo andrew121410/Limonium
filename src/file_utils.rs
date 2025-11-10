@@ -71,6 +71,14 @@ fn cleanup_old_instance_dirs() -> std::io::Result<()> {
                             if elapsed > one_day {
                                 // Try to remove old directory, ignore errors
                                 let _ = fs::remove_dir_all(&path);
+                                println!(
+                                    "{}",
+                                    format!(
+                                        "Removed old temporary directory: {}",
+                                        path.display()
+                                    )
+                                    .yellow()
+                                );
                             }
                         }
                     }
