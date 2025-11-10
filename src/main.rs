@@ -12,7 +12,6 @@ use crate::objects::downloaded_file::DownloadedFile;
 use clap::builder::TypedValueParser;
 use clap::{ArgAction, ArgMatches};
 use colored::Colorize;
-use std::env::temp_dir;
 use std::ops::Index;
 use std::path::{Path, PathBuf};
 use std::string::String;
@@ -109,6 +108,12 @@ async fn main() {
         .about("A tiny Minecraft Server management tool")
         .subcommand_required(true)
         .arg_required_else_help(true)
+        .arg(clap::Arg::new("cleanup")
+            .help("Cleans up the temp directory and exits")
+            .long("cleanup")
+            .global(true)
+            .action(ArgAction::SetTrue)
+            .required(false))
         .arg(clap::Arg::new("self-update")
             .help("Updates Limonium")
             .long("self-update")
@@ -309,7 +314,6 @@ async fn main() {
     if !command_matches.get_flag("no-banner") {
         print_banner();
         println!();
-        println!();
     }
 
     // Handle self-update flag
@@ -319,11 +323,14 @@ async fn main() {
         }
     }
 
-    // Cleanup temp directory
-    if file_utils::get_limonium_dir().exists() {
-        println!("{}", "Cleaning up /tmp/limonium folder...".yellow());
-        file_utils::delete_limonium_folder().unwrap();
-        println!("{}", "Done! Cleaning up /tmp/limonium folder...".green());
+    // Handle cleanup flag
+    if command_matches.get_flag("cleanup") {
+        file_utils::cleanup();
+        println!(
+            "{}",
+            format!("Cleaned up the temp directory!").green().bold()
+        );
+        process::exit(0);
     }
 
     match command_matches.subcommand() {
