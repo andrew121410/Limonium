@@ -19,7 +19,7 @@ jobs:
       cargo_version: ${{ steps.cargo_version.outputs.t_cargo_version }}  # Expose version to other jobs
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Install Rust target
         run: rustup target add ${{ matrix.target }}
