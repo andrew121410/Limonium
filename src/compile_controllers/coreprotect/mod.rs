@@ -15,7 +15,7 @@ impl CoreProtectAPI {
             repo_url: "https://github.com/PlayPro/CoreProtect.git".to_string(),
             branch: Some("master".to_string()),
             build_command: "mvn clean package".to_string(),
-            jar_regex: r"CoreProtect-\d+\.\d+\.jar".to_string(),
+            jar_regex: r"^CoreProtect-\d+\.\d+\.jar$".to_string(),
             jar_location: "target/".to_string(),
             before_building_function: Some(Box::new(move |software_path| {
                 modify_pom_xml(software_path, &version).expect("Failed to modify pom.xml");
