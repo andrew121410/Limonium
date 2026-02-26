@@ -57,10 +57,11 @@ jobs:
         with:
           path: artifacts
 
-      - name: Deploy Release With Artifacts
-        uses: marvinpinto/action-automatic-releases@latest
+      - name: Deploy Release With Artifact # https://github.com/softprops/action-gh-release
+        uses: softprops/action-gh-release@v2
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "${{ needs.build.outputs.cargo_version }}"  # Use version from build
-          prerelease: false
+          tag_name: ${{ needs.build.outputs.cargo_version }}  # Use version from build
+          body: |
+            Automated build from commit ${{ github.sha }}
+          make_latest: true
           files: artifacts/**
