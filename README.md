@@ -9,7 +9,7 @@
 ### Features:
 - Can download & update MC Server Software
 - Can compile software (Spigot, PlotSquared etc)
-- Can backup your Minecraft Server
+- Can backup your Minecraft Server (with SFTP and WebDAV upload support)
 - Can search in logs for specific text
 
 #### Global Arguments
@@ -112,11 +112,14 @@ By default, it will use tar.gz, unless specified otherwise.
 2. --level `The compression level to use (tar.gz 0-9) (tar.zst 1-22) (zip 0-9)`
 3. --exclude `Excludes files from the backup`
 4. --sftp `Uploads the backup to a SFTP server. Example 1: --sftp user@host:22 /remote/path Example 2: --sftp "user@host:22 path/to/key /remote/path"` (**Password Authentication is not supported.**)
-5. --delete-after-upload `Deletes the local backup after uploading it to the SFTP server.`
-6. --ask-before-uploading `Asks before uploading the backup to the SFTP server.`
-7. --local-delete-after-time `Deletes backups locally after a certain amount of time. Example: --local-delete-after-time 1m (1 month) --local-delete-after-time 1w (1 week) --local-delete-after-time 1d (1 day)`
-8. --local-always-keep `Always keep a certain number of backups locally when using --local-delete-after-time.`
-9. --remote-delete-after-time `Deletes backups remotely after a certain amount of time. Example: --remote-delete-after-time 1m (1 month) --remote-delete-after-time 1w (1 week) --remote-delete-after-time 1d (1 day)`
+5. --webdav `Uploads the backup to a WebDAV server. Example: --webdav "https://example.com/remote.php/dav/files/user/backups username password"`
+6. --delete-after-upload `Deletes the local backup after uploading it to the remote server.`
+7. --ask-before-uploading `Asks before uploading the backup to the remote server.`
+8. --local-delete-after-time `Deletes backups locally after a certain amount of time. Example: --local-delete-after-time 1m (1 month) --local-delete-after-time 1w (1 week) --local-delete-after-time 1d (1 day)`
+9. --local-always-keep `Always keep a certain number of backups locally when using --local-delete-after-time.`
+10. --remote-delete-after-time `Deletes backups remotely after a certain amount of time. Example: --remote-delete-after-time 1m (1 month) --remote-delete-after-time 1w (1 week) --remote-delete-after-time 1d (1 day)`
+
+> **Note:** `--sftp` and `--webdav` can be used independently or together. When both are specified, the backup will be uploaded to both destinations. `--delete-after-upload`, `--ask-before-uploading`, and `--remote-delete-after-time` apply to all configured remote destinations.
 
 Debug Arguments
 1. --verbose `Shows more information`

@@ -31,6 +31,8 @@ mod objects;
 mod ensurer;
 mod file_utils;
 mod jvm_downgrader;
+mod sftp;
+mod webdav;
 
 fn show_example() {
     println!(
@@ -232,8 +234,13 @@ async fn main() {
                 .required(false)
                 .value_parser(clap::value_parser!(i64)))
             .arg(clap::Arg::new("sftp")
-                .help("The SFTP server to backup to")
+                .help("The SFTP server to backup to (format: \"user@host:optional_port key_file remote_dir\")")
                 .long("sftp")
+                .action(ArgAction::Set)
+                .required(false))
+            .arg(clap::Arg::new("webdav")
+                .help("The WebDAV server to backup to (format: \"url username password\")")
+                .long("webdav")
                 .action(ArgAction::Set)
                 .required(false))
             .arg(clap::Arg::new("delete-after-upload")
@@ -250,14 +257,15 @@ async fn main() {
                 .help("Always keep a certain amount of backups LOCALLY")
                 .long("local-always-keep")
                 .action(ArgAction::Set)
-                .required(false))
+                .required(false)
+                .value_parser(clap::value_parser!(u64)))
             .arg(clap::Arg::new("remote-delete-after-time")
                 .help("Deletes backups after a certain amount of time REMOTELY")
                 .long("remote-delete-after-time")
                 .action(ArgAction::Set)
                 .required(false))
             .arg(clap::Arg::new("ask-before-uploading")
-                .help("Ask if you want to upload the backup to SFTP before uploading")
+                .help("Ask if you want to upload the backup to the remote server before uploading")
                 .long("ask-before-uploading")
                 .action(ArgAction::SetTrue)
                 .required(false))
@@ -613,12 +621,14 @@ async fn handle_backup(backup_matches: &ArgMatches) {
         compression_level_ours,
     );
 
-    // Ask if you want to upload the backup to SFTP before creating the backup
+    // Ask if you want to upload the backup to a remote server before creating the backup
     let ask_before_upload = backup_matches.get_flag("ask-before-uploading");
     let sftp_option = backup_matches.get_one::<String>("sftp");
+    let webdav_option = backup_matches.get_one::<String>("webdav");
+    let has_remote_upload = sftp_option.is_some() || webdav_option.is_some();
     let mut skip_upload = false;
-    if ask_before_upload && sftp_option.is_some() {
-        skip_upload = ask_for_input_for_to_upload_to_sftp();
+    if ask_before_upload && has_remote_upload {
+        skip_upload = ask_for_input_to_upload();
     }
 
     let time = Instant::now();
@@ -654,7 +664,9 @@ async fn handle_backup(backup_matches: &ArgMatches) {
         );
     }
 
-    // Handle uploading to SFTP if SFTP is specified (skip_upload was determined before backup)
+    let mut did_upload = false;
+
+    // Handle uploading to SFTP if SFTP is specified
     if sftp_option.is_some() && !skip_upload {
         println!(
             "{} {}",
@@ -687,17 +699,34 @@ async fn handle_backup(backup_matches: &ArgMatches) {
 
         let sftp_remote_dir = sftp_args_vector[sftp_args_vector.len() - 1];
 
-        let result = backup
-            .upload_sftp(
-                sftp_user.to_string(),
-                sftp_host.to_string(),
-                sftp_port,
-                sftp_key_file,
-                &backup_result.file_path,
-                backup_result.file_name,
-                sftp_remote_dir.to_string(),
-                (&backup_result.sha256_hash).to_string(),
-            )
+        // Login to SFTP once and reuse the session
+        let sftp_session = sftp::login(
+            sftp_user.to_string(),
+            sftp_host.to_string(),
+            sftp_port,
+            sftp_key_file,
+        )
+            .await;
+
+        if sftp_session.is_err() {
+            println!(
+                "{} {} {}",
+                format!("Something went wrong!").red().bold(),
+                format!("Error:").yellow(),
+                format!("{}", sftp_session.err().unwrap()).red()
+            );
+            process::exit(102);
+        }
+
+        let sftp_session = sftp_session.unwrap();
+
+        let result = sftp::upload_file(
+            &sftp_session,
+            &backup_result.file_path,
+            &backup_result.file_name,
+            sftp_remote_dir,
+            &backup_result.sha256_hash,
+        )
             .await;
 
         if result.is_err() {
@@ -710,32 +739,102 @@ async fn handle_backup(backup_matches: &ArgMatches) {
             process::exit(102);
         }
 
-        // Handle deleting backups after a certain amount of time REMOTELY
+        did_upload = true;
+
+        // Handle deleting backups after a certain amount of time REMOTELY (SFTP)
         let remote_delete_after_time = backup_matches.get_one::<String>("remote-delete-after-time");
         if remote_delete_after_time.is_some() {
             let remote_delete_after_time_input = remote_delete_after_time.unwrap().to_string();
-            backup
-                .sftp_delete_after_time(
-                    &remote_delete_after_time_input,
-                    sftp_user.to_string(),
-                    sftp_host.to_string(),
-                    sftp_port,
-                    sftp_key_file,
-                    sftp_remote_dir.to_string(),
-                )
+            sftp::delete_after_time(
+                &sftp_session,
+                name,
+                &remote_delete_after_time_input,
+                sftp_remote_dir,
+            )
                 .await;
 
             println!(
                 "{} {}",
-                format!("Deleting REMOTE backups after").yellow(),
+                format!("Deleting REMOTE (SFTP) backups after").yellow(),
                 format!("{}", remote_delete_after_time_input).green()
             );
         }
+    }
 
+    // Handle uploading to WebDAV if WebDAV is specified
+    if webdav_option.is_some() && !skip_upload {
+        println!(
+            "{} {}",
+            format!("Uploading to WebDAV!").green().bold(),
+            format!("This may take a while depending on the size of the backup!").yellow()
+        );
+
+        let webdav_args = webdav_option.unwrap();
+        let webdav_args_vector = webdav_args.split(" ").collect::<Vec<&str>>();
+
+        if webdav_args_vector.len() != 3 {
+            println!(
+                "{} {} {}",
+                format!("Something went wrong!").red().bold(),
+                format!("Error:").yellow(),
+                format!("Invalid WebDAV arguments. Expected format: \"url username password\"").red()
+            );
+            process::exit(102);
+        }
+
+        // --webdav "url username password"
+        let webdav_url = webdav_args_vector[0];
+        let webdav_username = webdav_args_vector[1];
+        let webdav_password = webdav_args_vector[2];
+
+        let webdav_client = webdav::WebDavClient::new(
+            webdav_url.to_string(),
+            webdav_username.to_string(),
+            webdav_password.to_string(),
+        );
+
+        let result = webdav_client.upload_file(
+            &backup_result.file_path,
+            &backup_result.file_name,
+        )
+            .await;
+
+        if result.is_err() {
+            println!(
+                "{} {} {}",
+                format!("Something went wrong!").red().bold(),
+                format!("Error:").yellow(),
+                format!("{}", result.err().unwrap()).red()
+            );
+            process::exit(102);
+        }
+
+        did_upload = true;
+
+        // Handle deleting backups after a certain amount of time REMOTELY (WebDAV)
+        let remote_delete_after_time = backup_matches.get_one::<String>("remote-delete-after-time");
+        if remote_delete_after_time.is_some() {
+            let remote_delete_after_time_input = remote_delete_after_time.unwrap().to_string();
+            webdav_client.delete_after_time(
+                name,
+                &remote_delete_after_time_input,
+            )
+                .await;
+
+            println!(
+                "{} {}",
+                format!("Deleting REMOTE (WebDAV) backups after").yellow(),
+                format!("{}", remote_delete_after_time_input).green()
+            );
+        }
+    }
+
+    // Handle post-upload actions
+    if did_upload {
         // Handle deleting the file after upload if specified
         let delete_after_upload = backup_matches.get_flag("delete-after-upload");
         if delete_after_upload {
-            let file_to_delete = backup_result.file_path;
+            let file_to_delete = &backup_result.file_path;
             let result = fs::remove_file(file_to_delete);
             println!(
                 "{} {}",
@@ -752,11 +851,11 @@ async fn handle_backup(backup_matches: &ArgMatches) {
                 process::exit(102);
             }
         }
-    } else if sftp_option.is_some() && skip_upload {
+    } else if has_remote_upload && skip_upload {
         println!(
             "{} {}",
-            format!("Skipping upload to SFTP!").green().bold(),
-            format!("Skipping upload to SFTP!").yellow()
+            format!("Skipping remote upload!").green().bold(),
+            format!("Skipping remote upload!").yellow()
         );
     }
 
@@ -805,11 +904,11 @@ async fn handle_log_search(log_search: &ArgMatches) {
     }
 }
 
-fn ask_for_input_for_to_upload_to_sftp() -> bool {
+fn ask_for_input_to_upload() -> bool {
     let mut input = String::new();
     println!(
         "{} {}",
-        format!("Do you want to upload the backup to SFTP after it's created?").yellow(),
+        format!("Do you want to upload the backup to the remote server after it's created?").yellow(),
         format!("(y/n)").green()
     );
     std::io::stdin().read_line(&mut input).unwrap();
@@ -819,7 +918,7 @@ fn ask_for_input_for_to_upload_to_sftp() -> bool {
     } else if input.eq_ignore_ascii_case("n") || input.eq_ignore_ascii_case("no") {
         return true;
     } else {
-        return ask_for_input_for_to_upload_to_sftp();
+        return ask_for_input_to_upload();
     }
 }
 
