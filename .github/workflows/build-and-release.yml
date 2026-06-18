@@ -19,7 +19,7 @@ jobs:
       cargo_version: ${{ steps.cargo_version.outputs.t_cargo_version }}  # Expose version to other jobs
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Rust target
         run: rustup target add ${{ matrix.target }}
@@ -58,7 +58,7 @@ jobs:
           path: artifacts
 
       - name: Deploy Release With Artifact # https://github.com/softprops/action-gh-release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.build.outputs.cargo_version }}  # Use version from build
           body: |
