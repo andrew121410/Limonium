@@ -39,7 +39,7 @@ fn show_example() {
         "{} {} {}",
         format!("Something went wrong!").red().bold(),
         format!("Example:").yellow(),
-        format!("./limonium download paper 1.21.10").green()
+        format!("./limonium download paper 26.2").green()
     );
 }
 
@@ -450,7 +450,7 @@ async fn handle_download(download_matches: &ArgMatches) {
         println!("{}", format!("Example:").yellow());
         println!(
             "{}",
-            format!("./limonium compile spigot server.jar --version 1.21.10").green()
+            format!("./limonium compile spigot server.jar --version 26.2").green()
         );
 
         return; // Don't continue
