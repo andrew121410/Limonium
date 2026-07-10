@@ -1,5 +1,3 @@
-use std::process::exit;
-
 use async_trait::async_trait;
 use colored::Colorize;
 use regex::Regex;
@@ -45,7 +43,9 @@ impl platform::IPlatform for PufferfishAPI {
 
     async fn get_latest_build(&self, _project: &String, version: &String) -> Option<String> {
         let jenkins_version = get_jenkins_version(version);
-        validate_jenkins_version(&jenkins_version, version).await.ok()?;
+        validate_jenkins_version(&jenkins_version, version)
+            .await
+            .ok()?;
         Some("lastSuccessfulBuild".to_string())
     }
 
@@ -93,7 +93,10 @@ impl platform::IPlatform for PufferfishAPI {
 }
 
 pub fn make_link_for_jenkins_version(jenkins_version: &str) -> String {
-    format!("https://ci.pufferfish.host/job/Pufferfish-{}/", jenkins_version)
+    format!(
+        "https://ci.pufferfish.host/job/Pufferfish-{}/",
+        jenkins_version
+    )
 }
 
 pub async fn validate_jenkins_version(jenkins_version: &str, version: &str) -> Result<(), String> {
@@ -141,15 +144,21 @@ mod pufferfish_tests {
 
     #[tokio::test]
     async fn test_get_minecraft_version_from_page() {
+        // 1.19.4
         let url = "https://ci.pufferfish.host/job/Pufferfish-1.19/";
         let expected_version = "1.19.4";
-
         let version = get_minecraft_version_from_page(url).await;
         assert_eq!(version, Some(expected_version.to_string()));
 
+        // 1.20.4
         let url = "https://ci.pufferfish.host/job/Pufferfish-1.20/";
         let expected_version = "1.20.4";
+        let version = get_minecraft_version_from_page(url).await;
+        assert_eq!(version, Some(expected_version.to_string()));
 
+        // 1.21.10
+        let url = "https://ci.pufferfish.host/job/Pufferfish-1.21/";
+        let expected_version = "1.21.10";
         let version = get_minecraft_version_from_page(url).await;
         assert_eq!(version, Some(expected_version.to_string()));
     }
@@ -157,7 +166,7 @@ mod pufferfish_tests {
     #[test]
     fn test_is_new_artifact_structure() {
         assert!(is_new_artifact_structure("1.21.0"));
-        assert!(is_new_artifact_structure("26.2"));
+        assert!(is_new_artifact_structure("1.21.10"));
         assert!(!is_new_artifact_structure("1.20.4"));
         assert!(!is_new_artifact_structure("1.19.4"));
     }

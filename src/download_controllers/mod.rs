@@ -72,7 +72,7 @@ pub async fn download_file_to_temp_dir_with_progress_bar(link: &String, extensio
     let pb = ProgressBar::new(content_length);
     pb.set_style(
         ProgressStyle::with_template(
-            "⬇️  {msg}\n{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes:>7}/{total_bytes:7} ({bytes_per_sec}, {eta})",
+            "{msg}\n{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes:>7}/{total_bytes:7} ({bytes_per_sec}, {eta})",
         )
             .unwrap()
             .progress_chars("█░-"),
